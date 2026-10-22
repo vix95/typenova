@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "TypeNova",
+  "version": "0.5.113",
+  "identifier": "pl.itvix.typenova",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "TypeNova",
+        "width": 1665,
+        "height": 896,
+        "minWidth": 900,
+        "minHeight": 500,
+        "backgroundColor": "#101521"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' asset: http://asset.localhost; img-src 'self' asset: http://asset.localhost https: data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; script-src 'self'; worker-src 'self' blob:; connect-src ipc: http://ipc.localhost",
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$HOME/**",
+          "$APPDATA/**"
+        ]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis",
+      "msi"
+    ],
+    "category": "Utility",
+    "shortDescription": "TypeNova \u2014 Markdown workspace",
+    "longDescription": "A fast, private Markdown workspace for writing, thinking and building knowledge.",
+    "icon": [
+      "icons/icon.ico"
+    ]
+  }
+}

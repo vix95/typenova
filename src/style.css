@@ -1,0 +1,4 @@
+/* Ordered imports preserve the established cascade while keeping major UI areas navigable. */
+@import "./styles/foundation.css";
+@import "./styles/theme-project.css";
+@import "./styles/graph-workspace.css";
