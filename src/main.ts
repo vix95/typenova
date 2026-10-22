@@ -7,6 +7,7 @@ import { initEditorView, view } from "./editor/editor-view";
 import { initTabs, renderTabs, configureLanguageForTab, persistOpenSession } from "./documents/tabs";
 import { initPreviewObservers } from "./preview/preview-observers";
 import { initPreviewContextMenu } from "./preview/preview-context-menu";
+import { initImageLightbox } from "./preview/image-lightbox";
 import { initOutline } from "./outline/outline";
 import { initExportPrint } from "./preview/export-print";
 import { initProjectBindings, initProjectRestore } from "./project/project-bindings";
@@ -84,6 +85,7 @@ initTabs();
 // Preview
 initPreviewObservers();
 initPreviewContextMenu();
+initImageLightbox();
 initOutline();
 initExportPrint();
 

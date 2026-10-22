@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="190" viewBox="0 0 760 190" role="img" aria-labelledby="t d">
+  <title id="t">RAG pipeline</title>
+  <desc id="d">Documents are chunked and embedded into an index; a question retrieves passages that a language model uses to answer.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 10 5 0 10z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="760" height="190" rx="14" fill="#f8fafc" stroke="#cbd5e1"/>
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="15" text-anchor="middle" fill="#0f172a">
+    <rect x="24" y="62" width="130" height="66" rx="10" fill="#dbeafe" stroke="#60a5fa"/>
+    <text x="89" y="91" font-weight="600">Documents</text><text x="89" y="111" font-size="13" fill="#475569">Markdown, PDF</text>
+    <rect x="206" y="62" width="130" height="66" rx="10" fill="#e0e7ff" stroke="#818cf8"/>
+    <text x="271" y="91" font-weight="600">Chunk + embed</text><text x="271" y="111" font-size="13" fill="#475569">vectors</text>
+    <rect x="388" y="62" width="130" height="66" rx="10" fill="#dcfce7" stroke="#4ade80"/>
+    <text x="453" y="91" font-weight="600">Index</text><text x="453" y="111" font-size="13" fill="#475569">dense + keyword</text>
+    <rect x="570" y="62" width="166" height="66" rx="10" fill="#fef3c7" stroke="#fbbf24"/>
+    <text x="653" y="91" font-weight="600">Retrieve + answer</text><text x="653" y="111" font-size="13" fill="#475569">cited passages</text>
+    <text x="380" y="30" font-size="13" fill="#475569">offline</text>
+    <text x="653" y="30" font-size="13" fill="#475569">per question</text>
+  </g>
+  <g stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <path d="M154 95h46"/><path d="M336 95h46"/><path d="M518 95h46"/>
+  </g>
+  <path d="M453 130v26h200v-26" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 4" fill="none" marker-end="url(#arrow)"/>
+  <text x="553" y="176" font-family="Segoe UI, Arial, sans-serif" font-size="13" text-anchor="middle" fill="#475569">user question</text>
+</svg>

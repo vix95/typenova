@@ -1,5 +1,5 @@
 /** Code-block toolbar (language label, copy action) and local image resolution. */
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { normalizeLocalImagePath } from "../filesystem/path-utils";
 import { documentState } from "../documents/document-state";
 import { langText } from "../i18n/language";
@@ -90,6 +90,61 @@ export function decorateCodeBlocks(root: HTMLElement) {
     pre.dataset.languagePill = "yes";
   }
 }
+const IMAGE_UNAVAILABLE_CLASS = "image-unavailable";
+
+const imageUnavailableLabel = (path: string) => langText(
+  `Nie można wczytać obrazu: ${path}. Sprawdź, czy plik istnieje.`,
+  `Cannot load image: ${path}. Check that the file exists.`
+);
+
+/** Shows a local image that could not be loaded (usually a missing file) as a labelled placeholder that names the path. */
+function markLocalImageUnavailable(img: HTMLImageElement): void {
+  const label = imageUnavailableLabel(img.dataset.localPath || "");
+  img.classList.add(IMAGE_UNAVAILABLE_CLASS);
+  img.setAttribute("aria-label", label);
+  img.dataset.tooltip = label;
+}
+
+function markLocalImageAvailable(img: HTMLImageElement): void {
+  if (!img.classList.contains(IMAGE_UNAVAILABLE_CLASS)) return;
+  img.classList.remove(IMAGE_UNAVAILABLE_CLASS);
+  img.removeAttribute("aria-label");
+  delete img.dataset.tooltip;
+}
+
+/** Re-localizes the labels of images that are currently unavailable (called on language change). */
+export function relabelUnavailableImages(): void {
+  document.querySelectorAll<HTMLImageElement>(`img.${IMAGE_UNAVAILABLE_CLASS}`).forEach(markLocalImageUnavailable);
+}
+
+/** Image files the host already allowed the asset protocol to serve during this run. */
+const grantedImagePaths = new Set<string>();
+
+/**
+ * Asks the host to allow the asset protocol to serve this one image file. The protocol only serves the
+ * home and app-data folders and folders the user picked in a dialog, but a document the user opened may
+ * legitimately refer to an image elsewhere (`../assets/a.png`, another drive). The host validates the
+ * request (existing regular file with an image extension) and grants that single file, so no folder is
+ * ever exposed and the user is never asked to choose anything.
+ */
+async function ensureImageAccess(path: string): Promise<void> {
+  if (grantedImagePaths.has(path)) return;
+  try {
+    await invoke("allow_preview_image", { path });
+    grantedImagePaths.add(path);
+  } catch { /* Missing file or not an image: the load below fails and the placeholder names the path. */ }
+}
+
+/** Starts loading a resolved local image, first making sure the asset protocol may serve it. */
+function loadLocalImage(img: HTMLImageElement, absolutePath: string): void {
+  img.dataset.localPath = absolutePath;
+  img.addEventListener("error", () => markLocalImageUnavailable(img));
+  img.addEventListener("load", () => markLocalImageAvailable(img));
+  const assign = () => { img.src = convertFileSrc(absolutePath); };
+  if (grantedImagePaths.has(absolutePath)) assign();
+  else void ensureImageAccess(absolutePath).then(assign);
+}
+
 export function resolveLocalImages(root: HTMLElement, sourcePath: string | null = documentState.currentPath) {
   for (const img of Array.from(root.querySelectorAll<HTMLImageElement>("img"))) {
     const src = img.getAttribute("src") || "";
@@ -101,6 +156,8 @@ export function resolveLocalImages(root: HTMLElement, sourcePath: string | null 
     try { clean = decodeURIComponent(clean); } catch { /* Keep the literal path if it contains an invalid escape. */ }
     const parent = sourcePath.replace(/[\\/][^\\/]*$/, "");
     const combined = /^(?:[A-Za-z]:[\\/]|\/)/.test(clean) ? clean : `${parent}/${clean}`;
-    img.src = convertFileSrc(normalizeLocalImagePath(combined)); img.loading = "lazy"; img.decoding = "async"; img.dataset.resolved = "yes";
+    const absolutePath = normalizeLocalImagePath(combined);
+    img.loading = "lazy"; img.decoding = "async"; img.dataset.resolved = "yes";
+    loadLocalImage(img, absolutePath);
   }
 }

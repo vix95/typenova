@@ -16,6 +16,7 @@ import { syncGraphVisualModeUI } from "../graph-ui/visual-mode";
 import { translations } from "./translations";
 import { scheduleToolbarLayout } from "../layout/toolbar-layout";
 import { updateHeadingBreadcrumbs } from "../outline/breadcrumbs";
+import { relabelUnavailableImages } from "../preview/code-blocks";
 import { schedulePreview, syncPreviewForActiveDocument } from "../preview/preview-scheduler";
 import { previewState } from "../preview/preview-state";
 import { syncAllCustomSelectControls } from "../ui/custom-select";
@@ -111,6 +112,7 @@ function applyLanguage(choice: string) {
   updateHeadingBreadcrumbs();
   syncAllCustomSelectControls();
   syncGraphMotionButton(); syncGraphLabelsButton(); syncGraph3dButton(); syncGraphFilesButton(); syncGraphPreviewResizer(); syncGraphVisualModeUI(); syncGraphSearchClear();
+  relabelUnavailableImages();
   if (documentMode() === "notebook" && previewState.previewVisible) schedulePreview();
 }
 export function langText(plText: string, enText: string) { return document.documentElement.lang === "en" ? enText : plText; }

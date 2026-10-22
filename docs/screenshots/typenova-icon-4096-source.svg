@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#66c3f5"/><stop offset=".45" stop-color="#4c8cef"/><stop offset="1" stop-color="#3537ee"/></linearGradient>
+<radialGradient id="glow" cx=".5" cy=".1" r=".5"><stop offset="0" stop-color="#bfe9ff" stop-opacity=".4"/><stop offset="1" stop-color="#bfe9ff" stop-opacity="0"/></radialGradient>
+<linearGradient id="fold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#eef4ff"/></linearGradient>
+<filter id="sh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#14208f" flood-opacity=".38"/></filter>
+</defs>
+<rect x="18" y="18" width="988" height="988" rx="225" fill="url(#bg)"/>
+<rect x="18" y="18" width="988" height="988" rx="225" fill="url(#glow)"/>
+<g fill="url(#fold)" stroke="url(#fold)" stroke-width="10" stroke-linejoin="round" filter="url(#sh)">
+<path d="M320 220H715V412H490Z"/>
+<path d="M310 432H503L707 627H515V825L310 630Z"/>
+</g>
+</svg>
