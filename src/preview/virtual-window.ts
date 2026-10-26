@@ -61,7 +61,7 @@ export function renderVirtualWindow(force = false) {
     for (const element of Array.from(previewContent.children)) { observeMermaid(element as HTMLElement); if (resizeObserver) resizeObserver.observe(element as HTMLElement); }
     // Bound the HTML/DOM cache. The worker retains parsed tokens, so evicted blocks are cheap to request again.
     for (const key of Array.from(htmlCache.keys())) { const idx = blockIndex.get(key); if (idx !== undefined && (idx < start - 50 || idx > end + 50)) htmlCache.delete(key); }
-    for (const [key, element] of Array.from(blockElements.entries())) { const idx = blockIndex.get(key); if (idx === undefined || idx < start - 20 || idx > end + 20) { element.remove(); blockElements.delete(key); } }
+    for (const [key, element] of Array.from(blockElements.entries())) { const idx = blockIndex.get(key); if (idx === undefined || idx < start - 20 || idx > end + 20) { resizeObserver?.unobserve(element); element.remove(); blockElements.delete(key); } }
   }
   for (let i = start; i <= end; i++)if (!htmlCache.has(previewState.previewBlocks[i].key)) pendingRenderIndices.add(i);
   pumpWorker();

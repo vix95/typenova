@@ -7,7 +7,8 @@ import { initEditorView, view } from "./editor/editor-view";
 import { initTabs, renderTabs, configureLanguageForTab, persistOpenSession } from "./documents/tabs";
 import { initPreviewObservers } from "./preview/preview-observers";
 import { initPreviewContextMenu } from "./preview/preview-context-menu";
-import { initImageLightbox } from "./preview/image-lightbox";
+import { initMediaViewer } from "./preview/media-viewer";
+import { initViewPositionPersistence, rememberViewPosition } from "./documents/view-position";
 import { initOutline } from "./outline/outline";
 import { initExportPrint } from "./preview/export-print";
 import { initProjectBindings, initProjectRestore } from "./project/project-bindings";
@@ -85,7 +86,8 @@ initTabs();
 // Preview
 initPreviewObservers();
 initPreviewContextMenu();
-initImageLightbox();
+initMediaViewer();
+initViewPositionPersistence();
 initOutline();
 initExportPrint();
 
@@ -127,6 +129,8 @@ void (async () => {
   await offerRecovery();
 })();
 window.addEventListener("beforeunload", event => {
+  const active = documentState.tabs.find(tab => tab.id === documentState.activeTabId);
+  if (active && documentState.startupSessionReady) rememberViewPosition(active);
   persistOpenSession();
   const autoSave = localStorage.getItem("typenova.autoSave") === "true" && !!documentState.currentPath;
   if (documentState.dirty && !autoSave) event.preventDefault();

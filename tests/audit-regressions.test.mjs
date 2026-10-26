@@ -341,3 +341,17 @@ test("project-tree controller refuses to remove the project root or paths outsid
   await assert.rejects(controller.remove("/project", true), /cannot remove project root/);
   await assert.rejects(controller.remove("/outside/note.md", false), /outside project/);
 });
+
+test("saved view positions survive a session round trip and malformed ones are dropped", async () => {
+  const { serializeOpenSession, parseOpenSession, findViewPosition } = await import("../.test-build/documents/session.js");
+  const positions = { "c:/notes/a.md": { editorLine: 42, preview: { line: 40, fraction: 0.25 } } };
+  const parsed = parseOpenSession(serializeOpenSession(["C:/Notes/a.md"], "C:/Notes/a.md", positions));
+  assert.deepEqual(findViewPosition(parsed.positions, "C:/NOTES/A.md"), positions["c:/notes/a.md"]);
+  const dirty = parseOpenSession(JSON.stringify({ paths: ["a.md"], activePath: null, positions: {
+    "a.md": { editorLine: 0, preview: null }, "b.md": { editorLine: "7" }, "c.md": { editorLine: 5, preview: { line: 3, fraction: 9 } }
+  } }));
+  assert.equal(findViewPosition(dirty.positions, "a.md"), null);
+  assert.equal(findViewPosition(dirty.positions, "b.md"), null);
+  assert.deepEqual(findViewPosition(dirty.positions, "c.md"), { editorLine: 5, preview: { line: 3, fraction: 1 } });
+  assert.deepEqual(parseOpenSession(JSON.stringify({ paths: ["a.md"] })).positions, {});
+});

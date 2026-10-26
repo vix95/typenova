@@ -64,6 +64,9 @@ export function showAppTooltip(target: HTMLElement, delay = 420, preferredPlacem
   tooltipTimer = window.setTimeout(() => {
     if (token !== tooltipToken || !target.isConnected) return;
     hideAppTooltip();
+    // A modal dialog lives in the top layer, above everything in the page, so the tooltip must be inside it to be visible.
+    const host: HTMLElement = target.closest<HTMLElement>("dialog[open]") ?? document.body;
+    if (appTooltip.parentElement !== host) host.append(appTooltip);
     tooltipTarget = target;
     tooltipPreviousDescribedBy = target.getAttribute("aria-describedby");
     const describedBy = [tooltipPreviousDescribedBy, appTooltip.id].filter(Boolean).join(" ");

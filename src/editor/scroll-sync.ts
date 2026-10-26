@@ -4,6 +4,7 @@ import { view } from "./editor-view";
 import { updateMinimapViewport } from "./minimap";
 import { updateActiveOutline } from "../outline/outline";
 import { previewContentScrollTop, previewPaddingTop } from "../preview/preview-observers";
+import { cancelQueuedPreviewAnchor } from "../preview/preview-scroll-memory";
 import { previewState } from "../preview/preview-state";
 import { findBlockAtOffset, scheduleVirtualRefresh } from "../preview/virtual-window";
 
@@ -34,6 +35,7 @@ function armScrollSyncIdleTimer(source: ScrollPane) {
   }, SCROLL_SYNC_IDLE_MS);
 }
 function markScrollSyncIntent(source: ScrollPane) {
+  cancelQueuedPreviewAnchor();
   if (!scrollSyncState.syncScroll) return;
   scrollSyncState.scrollSyncOwner = source;
   // A real input gesture takes precedence over any pending programmatic target.

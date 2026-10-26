@@ -1,5 +1,6 @@
 /** Editor tabs: rendering, switching, creating, closing and the tab context menu. */
 import { deduplicateSessionPaths, serializeOpenSession } from "./session";
+import { rememberViewPosition, restoreViewPosition, viewPositionsForSession } from "./view-position";
 import { basename, isMarkdownPath } from "../filesystem/path-utils";
 import { languages } from "@codemirror/language-data";
 import { EditorState } from "@codemirror/state";
@@ -29,7 +30,7 @@ export function persistOpenSession(): void {
   try {
     const paths = deduplicateSessionPaths(documentState.tabs.flatMap(tab => tab.path ? [tab.path] : []));
     const selectedPath = activeTab()?.path || null;
-    localStorage.setItem(OPEN_SESSION_STORAGE_KEY, serializeOpenSession(paths, selectedPath));
+    localStorage.setItem(OPEN_SESSION_STORAGE_KEY, serializeOpenSession(paths, selectedPath, viewPositionsForSession()));
   } catch (error) {
     console.warn("Could not persist the open-document session", error);
   }
@@ -130,6 +131,7 @@ async function closeTabsInBatch(ids: string[], desiredActiveId: string | null = 
   const closeIds = new Set(ids.filter(id => documentState.tabs.some(tab => tab.id === id)));
   if (!closeIds.size) return;
   const current = activeTab();
+  if (current) rememberViewPosition(current);
   if (current) { current.state = view.state; current.path = documentState.currentPath; current.savedText = documentState.savedText; current.dirty = documentState.dirty; current.label = documentState.currentPath ? basename(documentState.currentPath) : documentState.untitledLabel; }
   const dirtyCount = documentState.tabs.filter(tab => closeIds.has(tab.id) && tab.dirty).length;
   if (dirtyCount > 0) {
@@ -166,6 +168,7 @@ export function switchToTab(id: string) {
   documentState.dirty = target.dirty;
   updateHeadingBreadcrumbs();
   view.setState(target.state);
+  restoreViewPosition(target.viewPosition);
   scheduleMinimapDraw();
   updateMinimapLayout();
   documentState.performanceMode = view.state.doc.length >= 1_000_000;
@@ -224,6 +227,7 @@ export function createNewTab(initialText = "", label = "Untitled.md") {
   const tab: DocumentTab = { id: `tab-${documentState.tabSequence++}`, path: null, label, state: newState, savedText: initialText, dirty: false };
   documentState.tabs.push(tab);
   const previous = activeTab();
+  if (previous) rememberViewPosition(previous);
   if (previous) { previous.state = view.state; previous.path = documentState.currentPath; previous.savedText = documentState.savedText; previous.dirty = documentState.dirty; previous.label = documentState.currentPath ? basename(documentState.currentPath) : documentState.untitledLabel; }
   const previousId = documentState.activeTabId;
   documentState.activeTabId = tab.id;
@@ -234,6 +238,7 @@ export function createNewTab(initialText = "", label = "Untitled.md") {
   documentState.dirty = false;
   updateHeadingBreadcrumbs();
   view.setState(newState);
+  restoreViewPosition(null);
   scheduleMinimapDraw();
   updateMinimapLayout();
   documentState.performanceMode = newState.doc.length >= 1_000_000;

@@ -1,7 +1,8 @@
 /** Startup session restore, crash-recovery prompt and version history. */
 import { listDocumentVersions, writeRecoverySnapshot as recoveryWrite, readRecoverySnapshot as recoveryRead } from "./recovery-store";
 import { basename } from "../filesystem/path-utils";
-import { parseOpenSession, deduplicateSessionPaths, sameSessionPath } from "./session";
+import { parseOpenSession, deduplicateSessionPaths, findViewPosition, sameSessionPath, type ViewPositions } from "./session";
+import { restoreViewPosition } from "./view-position";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import { $ } from "../app/dom";
 import { updateDirtyUi } from "./dirty-state";
@@ -25,7 +26,7 @@ export function scheduleRecovery() { clearTimeout(recoveryTimer); recoveryTimer 
 type SessionFileResult = { path: string; text: string; error: unknown };
 
 /** Paths to reopen and the tab to activate, derived from the saved session (or the most recent file on first run). */
-function resolveSessionCandidates(): { paths: string[]; activePath: string | null } {
+function resolveSessionCandidates(): { paths: string[]; activePath: string | null; positions: ViewPositions } {
   const rawSession = localStorage.getItem(OPEN_SESSION_STORAGE_KEY);
   const savedSession = parseOpenSession(rawSession);
   if (rawSession && !savedSession) localStorage.removeItem(OPEN_SESSION_STORAGE_KEY);
@@ -34,7 +35,7 @@ function resolveSessionCandidates(): { paths: string[]; activePath: string | nul
     ? savedSession.paths
     : sessionWasMissing ? recentFiles().slice(0, 1) : [];
   const activePath = savedSession?.activePath ?? (sessionWasMissing ? (recentFiles()[0] || null) : null);
-  return { paths: deduplicateSessionPaths(candidates), activePath };
+  return { paths: deduplicateSessionPaths(candidates), activePath, positions: savedSession?.positions ?? {} };
 }
 
 async function readSessionFiles(paths: readonly string[]): Promise<SessionFileResult[]> {
@@ -100,7 +101,7 @@ function polishFileNoun(count: number): string {
   return count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? "pliki" : "plików";
 }
 
-function restoreFileTabs(restored: readonly { path: string; text: string }[], activePath: string | null, failedCount: number): void {
+function restoreFileTabs(restored: readonly { path: string; text: string }[], activePath: string | null, positions: ViewPositions, failedCount: number): void {
   // Reuse the initial tab ID for the first restored document and replace the startup
   // placeholder so no extra Welcome.md / Untitled.md appears beside restored files.
   const starter = documentState.tabs[0];
@@ -112,7 +113,8 @@ function restoreFileTabs(restored: readonly { path: string; text: string }[], ac
       label: basename(entry.path),
       state: createEditorState(entry.text),
       savedText: entry.text,
-      dirty: false
+      dirty: false,
+      viewPosition: findViewPosition(positions, entry.path)
     };
   });
   documentState.tabs = restoredTabs;
@@ -121,6 +123,7 @@ function restoreFileTabs(restored: readonly { path: string; text: string }[], ac
   for (const tab of restoredTabs) {
     if (tab.path) rememberRecentFile(tab.path);
   }
+  restoreViewPosition(selected.viewPosition);
   refreshAfterSessionRestore(selected);
   if (failedCount) {
     const count = restoredTabs.length;
@@ -132,12 +135,12 @@ function restoreFileTabs(restored: readonly { path: string; text: string }[], ac
 }
 
 export async function restoreOpenSessionAtStartup(): Promise<void> {
-  const { paths, activePath } = resolveSessionCandidates();
+  const { paths, activePath, positions } = resolveSessionCandidates();
   const results = await readSessionFiles(paths);
   const restored = results.filter((item): item is SessionFileResult & { error: null } => item.error === null);
   const failedCount = results.length - restored.length;
   if (!restored.length) restoreStarterDocument(failedCount);
-  else restoreFileTabs(restored, activePath, failedCount);
+  else restoreFileTabs(restored, activePath, positions, failedCount);
 }
 export async function offerRecovery() {
   try {

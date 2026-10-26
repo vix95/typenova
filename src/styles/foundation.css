@@ -2235,17 +2235,29 @@ html[data-theme="contrast"] .outline-pane { box-shadow:none!important; }
 .markdown-body img.image-unavailable,.brain-preview-body img.image-unavailable{display:inline-block;min-width:2em;padding:6px 10px;border:1px dashed var(--ui-border);border-radius:5px;background:color-mix(in srgb,var(--ui-panel2) 85%,transparent);color:var(--ui-muted)}
 html[data-theme="contrast"] .markdown-body img.image-unavailable,html[data-theme="contrast"] .brain-preview-body img.image-unavailable{border:2px solid var(--ui-accent);color:var(--ui-text)}
 
-/* 0.5.113 preview image lightbox: images in the preview open enlarged in a centred modal dialog (native <dialog>, so Escape and focus handling come for free). */
-.markdown-body img:not(.image-unavailable){cursor:zoom-in}
-dialog.image-lightbox{padding:0;min-width:min(320px,calc(100vw - 32px));width:fit-content;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);overflow:hidden;display:none;flex-direction:column}
-dialog.image-lightbox[open]{display:flex}
-dialog.image-lightbox .image-lightbox-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 8px 8px 16px;border-bottom:1px solid var(--ui-border);min-height:48px;box-sizing:border-box}
-dialog.image-lightbox .image-lightbox-caption{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ui-muted);font-size:13px}
-dialog.image-lightbox .image-lightbox-close{flex:none;width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ui-muted);cursor:pointer;transition:background-color .12s,color .12s,border-color .12s}
-dialog.image-lightbox .image-lightbox-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-dialog.image-lightbox .image-lightbox-close:hover{background:var(--ui-hover);color:var(--ui-text);border-color:var(--ui-border)}
-dialog.image-lightbox .image-lightbox-close:active{background:var(--ui-active)}
-dialog.image-lightbox .image-lightbox-close:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
-dialog.image-lightbox .image-lightbox-image{display:block;margin:12px;max-width:calc(100vw - 58px);max-height:calc(100dvh - 48px - 24px - 32px);width:auto;height:auto;min-height:0;object-fit:contain;border-radius:6px;cursor:default}
-html[data-theme="contrast"] dialog.image-lightbox{border:2px solid var(--ui-accent)!important}
-@media (prefers-reduced-motion:reduce){dialog.image-lightbox[open]{animation:none}}
+/* 0.5.113 preview media viewer: images and Mermaid diagrams open in a modal dialog with zoom (wheel, buttons, keys) and pan (drag, arrows). Native <dialog>: Escape and focus handling come for free. */
+.markdown-body img:not(.image-unavailable),.markdown-body .mermaid-container{cursor:zoom-in}
+dialog.media-viewer{padding:0;min-width:0;width:fit-content;max-width:calc(100vw - 32px);max-height:calc(100dvh - 32px);overflow:hidden;display:none;flex-direction:column}
+dialog.media-viewer[open]{display:flex}
+dialog.media-viewer .media-viewer-header{display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;border-bottom:1px solid var(--ui-border);min-height:48px;box-sizing:border-box}
+dialog.media-viewer .media-viewer-caption{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ui-muted);font-size:13px}
+dialog.media-viewer .media-viewer-tools{display:flex;align-items:center;gap:2px;flex:none}
+dialog.media-viewer .media-viewer-level{min-width:48px;text-align:center;color:var(--ui-muted);font-size:12px;font-variant-numeric:tabular-nums}
+dialog.media-viewer .media-viewer-button{flex:none;width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ui-muted);cursor:pointer;transition:background-color .12s,color .12s,border-color .12s}
+dialog.media-viewer .media-viewer-button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+dialog.media-viewer .media-viewer-button:hover{background:var(--ui-hover);color:var(--ui-text);border-color:var(--ui-border)}
+dialog.media-viewer .media-viewer-button:active{background:var(--ui-active)}
+dialog.media-viewer .media-viewer-button.is-active{background:var(--ui-active);color:var(--ui-text);border-color:var(--ui-border)}
+dialog.media-viewer .media-viewer-button:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+dialog.media-viewer .media-viewer-stage{position:relative;overflow:hidden;touch-action:none;cursor:grab;background:color-mix(in srgb,var(--ui-bg) 55%,var(--ui-panel))}
+dialog.media-viewer .media-viewer-stage.is-panning{cursor:grabbing}
+dialog.media-viewer .media-viewer-stage:focus{outline:none}
+dialog.media-viewer .media-viewer-stage:focus-visible{outline:2px solid var(--ui-accent);outline-offset:-2px}
+dialog.media-viewer .media-viewer-content{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform;user-select:none}
+dialog.media-viewer .media-viewer-content>img{display:block;width:100%;height:100%;-webkit-user-drag:none;pointer-events:none}
+dialog.media-viewer .media-viewer-diagram>svg{display:block;max-width:none;pointer-events:none}
+dialog.media-viewer.is-maximized{width:100vw;height:100dvh;max-width:none;max-height:none;border-radius:0;border:0!important}
+dialog.media-viewer.is-maximized .media-viewer-stage{flex:1 1 auto;min-height:0}
+html[data-theme="contrast"] dialog.media-viewer{border:2px solid var(--ui-accent)!important}
+html[data-theme="contrast"] dialog.media-viewer .media-viewer-button.is-active{border:2px solid var(--ui-accent)}
+@media (prefers-reduced-motion:reduce){dialog.media-viewer[open]{animation:none}}

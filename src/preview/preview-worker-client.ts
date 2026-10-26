@@ -7,6 +7,7 @@ import { langText } from "../i18n/language";
 import { buildOutline } from "../outline/outline";
 import { activatePreviewFallback } from "./preview-fallback";
 import { markStartupReady } from "./preview-scheduler";
+import { applyQueuedPreviewAnchor } from "./preview-scroll-memory";
 import { blockIndex, forceRenderIndices, heightCache, htmlCache, pendingRenderIndices, previewState, type PreviewBlock } from "./preview-state";
 import { rebuildBlockOffsets, renderVirtualWindow } from "./virtual-window";
 
@@ -97,7 +98,7 @@ function onWorkerMessage(event: MessageEvent) {
     buildOutline(data.headings || []);
     updateStats(data.stats);
     previewState.lastRenderedRange = [-1, -1];
-    renderVirtualWindow(true); markStartupReady();
+    renderVirtualWindow(true); applyQueuedPreviewAnchor(); markStartupReady();
     const elapsed = Number(data.parseMs || 0) + Number(data.renderMs || 0);
     $("renderState").textContent = `${data.stats?.fastMode ? langText("Szybki tryb · ", "Fast mode · ") : ""}${previewState.previewBlocks.length.toLocaleString(document.documentElement.lang === "en" ? "en-US" : "pl-PL")} ${langText("bloków", "blocks")} · ${(elapsed / 1000).toFixed(2)} s`;
   } else if (request.action === "render") {

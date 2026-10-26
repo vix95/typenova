@@ -29,6 +29,9 @@ function setupPreviewObservers() {
     for (const entry of entries) {
       const el = entry.target as HTMLElement, key = el.dataset.key;
       if (!key || !blockIndex.has(key)) continue;
+      // A block that was just taken out of the DOM (virtual window moved) or is hidden reports a size of 0. Caching that
+      // as a height would shift every offset below it and make the preview jump when the block comes back.
+      if (!el.isConnected || (entry.contentRect.width === 0 && entry.contentRect.height === 0)) continue;
       const sizes = (entry as any).borderBoxSize as ResizeObserverSize[] | ResizeObserverSize | undefined;
       const measured = Array.isArray(sizes) ? sizes[0]?.blockSize : (sizes as ResizeObserverSize | undefined)?.blockSize;
       const height = Math.max(24, measured ?? entry.contentRect.height);
