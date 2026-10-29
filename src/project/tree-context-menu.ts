@@ -12,7 +12,8 @@ import { view } from "../editor/editor-view";
 import { buildGraph } from "../graph-ui/indexing";
 import { langText } from "../i18n/language";
 import { isFilesystemScopeError, markTreeClipboardState, performTreeMoveOrCopy, projectTreeController, projectTreeState, setTreeClipboard } from "./project-tree-ops";
-import { openProject, renderProjectTree } from "./project-tree-view";
+import { openProject, removeProjectFolder, renderProjectTree } from "./project-tree-view";
+import { isOpenProjectRoot, projectRootFor } from "./project-roots";
 import { appAlert, appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
 
@@ -26,7 +27,10 @@ export function treeContextMenuElement() {
 export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, isRoot = false) {
   event.preventDefault(); event.stopPropagation();
   const menu = treeContextMenuElement();
-  const path = isRoot ? (documentState.projectRoot || "") : (row?.dataset.filePath || "");
+  // A top-level folder of a multi-folder tree is a normal directory row flagged as a project root.
+  const rootRow = row?.dataset.projectRoot === "true";
+  isRoot = isRoot || rootRow;
+  const path = row?.dataset.filePath || (isRoot ? (documentState.projectRoot || "") : "");
   const isDirectory = isRoot || row?.dataset.entryType === "directory";
   if (!path) return;
   projectTreeState.contextTarget = { path, isDirectory, isRoot };
@@ -49,6 +53,7 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
   }
   add(langText("Wklej", "Paste"), "paste", { disabled: !projectTreeState.clipboard, shortcut: "Ctrl+V" });
   if (!isRoot) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń", "Delete"), "delete", { danger: true, shortcut: "Delete" }); }
+  if (rootRow) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń folder z drzewa", "Remove folder from tree"), "remove-root"); }
   menu.hidden = false; menu.style.visibility = "hidden"; menu.style.left = "0px"; menu.style.top = "0px";
   requestAnimationFrame(() => {
     const rect = menu!.getBoundingClientRect();
@@ -59,7 +64,7 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
   });
 }
 async function deleteProjectEntry(path: string, isDirectory: boolean) {
-  if (!documentState.projectRoot || !path || normalizedFsPath(path) === normalizedFsPath(documentState.projectRoot)) return;
+  if (!documentState.projectRoots.length || !path || isOpenProjectRoot(path)) return;
   const active = activeTab();
   if (active) { active.state = view.state; active.path = documentState.currentPath; active.savedText = documentState.savedText; active.dirty = documentState.dirty; active.label = documentState.currentPath ? basename(documentState.currentPath) : documentState.untitledLabel; }
   const affected = documentState.tabs.filter(tab => !!tab.path && (normalizedFsPath(tab.path) === normalizedFsPath(path) || (isDirectory && pathIsInside(path, tab.path))));
@@ -84,7 +89,7 @@ ${langText(`Zamknięte zostaną też otwarte dokumenty (${unsaved.length}) z nie
   showToast(`${langText("Usunięto", "Deleted")}: ${itemName}`);
 }
 async function promptAndCreateProjectFile(directoryPath: string): Promise<string | null> {
-  if (!documentState.projectRoot || !directoryPath || !pathIsInside(documentState.projectRoot, directoryPath)) {
+  if (!directoryPath || !projectRootFor(directoryPath)) {
     showToast(langText("Folder docelowy musi znajdować się w otwartym projekcie.", "The destination folder must be inside the open project."));
     return null;
   }
@@ -133,10 +138,10 @@ async function promptAndCreateProjectFile(directoryPath: string): Promise<string
       }
       busy = true; createButton.disabled = true; input.removeAttribute("aria-invalid"); errorMessage.hidden = true;
       try {
-        if (!documentState.projectRoot || !pathIsInside(documentState.projectRoot, directoryPath)) throw new Error(langText("Folder docelowy znajduje się poza projektem.", "The destination folder is outside the project."));
+        if (!projectRootFor(directoryPath)) throw new Error(langText("Folder docelowy znajduje się poza projektem.", "The destination folder is outside the project."));
         if (!await exists(directoryPath)) throw new Error(langText("Folder docelowy już nie istnieje.", "The destination folder no longer exists."));
         const candidate = await join(directoryPath, name);
-        if (!pathIsInside(documentState.projectRoot, candidate)) throw new Error(langText("Ścieżka pliku wychodzi poza projekt.", "The file path escapes the project folder."));
+        if (!projectRootFor(candidate)) throw new Error(langText("Ścieżka pliku wychodzi poza projekt.", "The file path escapes the project folder."));
         if (await exists(candidate)) {
           showValidation(langText("Plik o tej nazwie już istnieje. Wybierz inną nazwę.", "A file with that name already exists. Choose another name."));
           return;
@@ -195,7 +200,8 @@ export async function handleTreeContextAction(action: string) {
   const { path, isDirectory, isRoot } = target;
   const destinationFolder = isRoot ? path : (isDirectory ? path : parentPath(path));
   try {
-    if (action === "open" && !isRoot) await openProjectTreeEntry(path, isDirectory);
+    if (action === "remove-root") await removeProjectFolder(path);
+    else if (action === "open" && !isRoot) await openProjectTreeEntry(path, isDirectory);
     else if (action === "new-file") {
       const createdPath = await promptAndCreateProjectFile(destinationFolder);
       if (!createdPath) return;

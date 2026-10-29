@@ -10,7 +10,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "audit:dependencies": "npm audit --omit=dev",
-    "test": "tsc src/graph/section-model.ts src/graph/workspace-controller.ts src/graph/spatial-query.ts src/filesystem/path-utils.ts src/documents/session.ts src/documents/recovery-store.ts src/settings/storage.ts src/filesystem/project-tree-operations.ts src/filesystem/project-filter-tree.ts src/filesystem/project-tree-state.ts src/filesystem/project-tree-controller.ts --target ES2022 --module ES2022 --outDir .test-build --skipLibCheck && node --test tests/*.test.mjs",
+    "test": "tsc src/graph/section-model.ts src/graph/workspace-controller.ts src/graph/spatial-query.ts src/filesystem/path-utils.ts src/documents/session.ts src/documents/tab-order.ts src/filesystem/project-roots.ts src/documents/recovery-store.ts src/settings/storage.ts src/filesystem/project-tree-operations.ts src/filesystem/project-filter-tree.ts src/filesystem/project-tree-state.ts src/filesystem/project-tree-controller.ts --target ES2022 --module ES2022 --outDir .test-build --skipLibCheck && node --test tests/*.test.mjs",
     "benchmark:graph": "tsc src/graph/section-model.ts --target ES2022 --module ES2022 --outDir .benchmark-build --skipLibCheck && node benchmarks/graph-indexing.mjs",
     "benchmark:graph:small": "tsc src/graph/section-model.ts --target ES2022 --module ES2022 --outDir .benchmark-build --skipLibCheck && node benchmarks/graph-indexing.mjs 100 1000",
     "typecheck": "tsc --noEmit"

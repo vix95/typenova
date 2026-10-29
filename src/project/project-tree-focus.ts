@@ -12,8 +12,8 @@ function updateProjectTreeKeyboardTarget(target: EventTarget | null) {
   if (activeSidebarTab !== "files" || (!inProjectTree && !inProjectHeading)) { projectTreeState.keyboardActive = false; return; }
   projectTreeState.keyboardActive = true;
   const row = element?.closest<HTMLElement>("#projectFiles .tree-entry");
-  if (row?.dataset.filePath) { projectTreeState.lastTarget = { path: row.dataset.filePath, isDirectory: row.dataset.entryType === "directory", isRoot: false }; return; }
-  if (documentState.projectRoot) projectTreeState.lastTarget = { path: documentState.projectRoot, isDirectory: true, isRoot: true };
+  if (row?.dataset.filePath) { projectTreeState.lastTarget = { path: row.dataset.filePath, isDirectory: row.dataset.entryType === "directory", isRoot: row.dataset.projectRoot === "true" }; return; }
+  if (documentState.projectRoots.length === 1 && documentState.projectRoot) projectTreeState.lastTarget = { path: documentState.projectRoot, isDirectory: true, isRoot: true };
 }
 const filesProjectHeading = ($("filesView") as HTMLElement).querySelector<HTMLElement>(".sidebar-section-heading");
 

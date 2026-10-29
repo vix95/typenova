@@ -1,6 +1,7 @@
 /** Startup session restore, crash-recovery prompt and version history. */
 import { listDocumentVersions, writeRecoverySnapshot as recoveryWrite, readRecoverySnapshot as recoveryRead } from "./recovery-store";
 import { basename } from "../filesystem/path-utils";
+import { detachToken, isDetachedWindow, takeDetachedDocument } from "../app/detached-window";
 import { parseOpenSession, deduplicateSessionPaths, findViewPosition, sameSessionPath, type ViewPositions } from "./session";
 import { restoreViewPosition } from "./view-position";
 import { readTextFile } from "@tauri-apps/plugin-fs";
@@ -22,7 +23,7 @@ import { showToast } from "../ui/toast";
 
 export async function showVersionHistory() { const dialog = $("historyDialog") as HTMLDialogElement; const list = $("historyList"); list.replaceChildren(); const en = document.documentElement.lang === "en"; try { const items = await listDocumentVersions(); if (!items.length) { list.textContent = langText("Brak zapisanych wersji. Historia tworzy się przy zapisywaniu kolejnych wersji dokumentu.", "No saved versions yet. History is created as you save subsequent document versions."); } for (const item of items) { const row = document.createElement("div"); row.className = "history-row"; const label = document.createElement("span"); label.textContent = `${item.path ? basename(item.path) : langText("Dokument", "Document")} · ${new Date(item.updated).toLocaleString(en ? "en-US" : "pl-PL")} · ${(new TextEncoder().encode(item.text).length / 1024).toFixed(1)} KB`; const restore = document.createElement("button"); restore.textContent = langText("Przywróć", "Restore"); restore.addEventListener("click", async () => { if (documentState.dirty && !await appConfirm(langText("Zastąpić bieżącą treść wersją historyczną?", "Replace the current content with this historical version?"), { confirmLabel: langText("Zastąp", "Replace"), primaryAction: "cancel" })) return; const path = item.path || null; const recoveredLabel = path ? basename(path) : langText("Odzyskana wersja.md", "Recovered version.md"); createNewTab(item.text, recoveredLabel); documentState.currentPath = path; const tab = activeTab(); if (tab) { tab.path = path; tab.label = recoveredLabel; tab.savedText = ""; tab.dirty = true; } documentState.savedText = ""; documentState.dirty = true; updateDirtyUi(); schedulePreview(); dialog.close(); }); row.append(label, restore); list.append(row); } } catch (e) { list.textContent = `${langText("Nie udało się odczytać historii", "Could not read version history")}: ${String(e)}`; } dialog.showModal(); }
 let recoveryTimer = 0;
-export function scheduleRecovery() { clearTimeout(recoveryTimer); recoveryTimer = window.setTimeout(() => { if (!documentState.dirty) { localStorage.removeItem("typenova.recoveryHandled"); void recoveryWrite({ text: "", path: documentState.currentPath, updated: Date.now() }).catch(() => { }); return; } void recoveryWrite({ text: view.state.doc.toString(), path: documentState.currentPath, updated: Date.now() }).catch(() => { }); }, 1200); }
+export function scheduleRecovery() { if (isDetachedWindow) return; clearTimeout(recoveryTimer); recoveryTimer = window.setTimeout(() => { if (!documentState.dirty) { localStorage.removeItem("typenova.recoveryHandled"); void recoveryWrite({ text: "", path: documentState.currentPath, updated: Date.now() }).catch(() => { }); return; } void recoveryWrite({ text: view.state.doc.toString(), path: documentState.currentPath, updated: Date.now() }).catch(() => { }); }, 1200); }
 type SessionFileResult = { path: string; text: string; error: unknown };
 
 /** Paths to reopen and the tab to activate, derived from the saved session (or the most recent file on first run). */
@@ -134,7 +135,30 @@ function restoreFileTabs(restored: readonly { path: string; text: string }[], ac
   }
 }
 
+/** Startup of a window created for a torn-off document: it shows just that document and leaves the saved session alone. */
+function openDetachedDocument(): void {
+  const doc = detachToken ? takeDetachedDocument(detachToken) : null;
+  if (!doc) { restoreStarterDocument(0); return; }
+  const starter = documentState.tabs[0];
+  const tab: DocumentTab = {
+    id: starter?.id || `tab-${documentState.tabSequence++}`,
+    path: doc.path,
+    label: doc.label,
+    state: createEditorState(doc.text),
+    savedText: doc.savedText,
+    dirty: doc.dirty,
+    viewPosition: doc.position,
+  };
+  documentState.tabs = [tab];
+  activateRestoredTab(tab);
+  documentState.dirty = doc.dirty;
+  if (doc.path) rememberRecentFile(doc.path);
+  restoreViewPosition(doc.position);
+  refreshAfterSessionRestore(tab);
+}
+
 export async function restoreOpenSessionAtStartup(): Promise<void> {
+  if (isDetachedWindow) { openDetachedDocument(); return; }
   const { paths, activePath, positions } = resolveSessionCandidates();
   const results = await readSessionFiles(paths);
   const restored = results.filter((item): item is SessionFileResult & { error: null } => item.error === null);
@@ -143,6 +167,7 @@ export async function restoreOpenSessionAtStartup(): Promise<void> {
   else restoreFileTabs(restored, activePath, positions, failedCount);
 }
 export async function offerRecovery() {
+  if (isDetachedWindow) return;
   try {
     const recovery = await recoveryRead();
     if (!recovery?.text || recovery.text === documentState.savedText) return;

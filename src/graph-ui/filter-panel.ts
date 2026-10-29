@@ -8,6 +8,7 @@ import { graphUi } from "./graph-state";
 import { restoreGraphPreviewRenderer } from "./preview-host";
 import { updateGraphRelatedPanel } from "./related-panel";
 import { langText } from "../i18n/language";
+import { projectRootFor, projectRootsKey } from "../project/project-roots";
 
 export function syncGraphFilesButton() {
   const button = $("brainFilesButton") as HTMLButtonElement;
@@ -45,20 +46,35 @@ export function syncGraphFilesButton() {
 }
 export function persistGraphFileSelection() {
   try {
-    localStorage.setItem("typenova.brain.selectedProjectRoot", documentState.projectRoot || "");
+    localStorage.setItem("typenova.brain.selectedProjectRoot", projectRootsKey());
     if (graphUi.graphSelectedFiles === null) localStorage.removeItem("typenova.brain.selectedFiles");
     else localStorage.setItem("typenova.brain.selectedFiles", JSON.stringify([...graphUi.graphSelectedFiles]));
   } catch { }
 }
 type GraphFilterTreeNode = ProjectFilterTreeNode;
 const graphFilterCollapsedFolders = new Set<string>();
+/** Gives every folder of a sub-tree a path that is unique across the open root folders (file nodes keep their absolute path). */
+function prefixFolderPaths(node: GraphFilterTreeNode, prefix: string): void {
+  if (node.kind === "folder") node.path = node.path ? `${prefix}/${node.path}` : prefix;
+  for (const child of node.children) prefixFolderPaths(child, prefix);
+}
 function createGraphFilterTree(): GraphFilterTreeNode {
-  return buildProjectFilterTree(
-    graphUi.graphAvailableFiles,
-    documentState.projectRoot || "",
-    documentState.projectRoot ? basename(documentState.projectRoot) : langText("Projekt", "Project"),
-    document.documentElement.lang === "en" ? "en" : "pl",
-  );
+  const locale = document.documentElement.lang === "en" ? "en" : "pl";
+  const roots = documentState.projectRoots;
+  if (roots.length <= 1) {
+    return buildProjectFilterTree(graphUi.graphAvailableFiles, roots[0] || "", roots[0] ? basename(roots[0]) : langText("Projekt", "Project"), locale);
+  }
+  // Several folders: one top node, one sub-tree per open folder.
+  const top: GraphFilterTreeNode = { kind: "folder", name: langText("Foldery", "Folders"), path: "", children: [], filePaths: [] };
+  roots.forEach((root, index) => {
+    const own = graphUi.graphAvailableFiles.filter(file => projectRootFor(file.path) === root);
+    if (!own.length) return;
+    const subTree = buildProjectFilterTree(own, root, basename(root), locale);
+    prefixFolderPaths(subTree, `${index}:${basename(root)}`);
+    top.children.push(subTree);
+    top.filePaths.push(...subTree.filePaths);
+  });
+  return top;
 }
 export function renderGraphFilterTree() {
   const list = $("brainFilesList"); list.replaceChildren();

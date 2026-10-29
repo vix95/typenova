@@ -37,7 +37,8 @@ function applyLanguage(choice: string) {
   for (const [id, pair] of Object.entries(ids)) { const el = $(id); if (el) { el.textContent = pair[lang === "en" ? 1 : 0]; } }
   // Re-attach hints after translated labels update textContent on some menu items.
   renderMenuShortcutHints();
-  const openProjectButton = $("openProject"); if (openProjectButton) { const projectLabel = lang === "en" ? "Open project folder" : "Otwórz folder projektu"; openProjectButton.title = projectLabel; openProjectButton.setAttribute("aria-label", projectLabel); }
+  const openProjectButton = $("openProject"); if (openProjectButton) { const projectLabel = lang === "en" ? "Open folder (replaces the current tree)" : "Otwórz folder (zastąpi obecne drzewo)"; openProjectButton.title = projectLabel; openProjectButton.setAttribute("aria-label", projectLabel); }
+  const addProjectButton = $("addProjectFolder"); if (addProjectButton) { const addLabel = lang === "en" ? "Add folder to the tree" : "Dodaj folder do drzewa"; addProjectButton.title = addLabel; addProjectButton.setAttribute("aria-label", addLabel); }
   const insertImageButton = $("insertImage"); if (insertImageButton) { insertImageButton.title = lang === "en" ? "Insert image" : "Wstaw grafikę"; insertImageButton.setAttribute("aria-label", insertImageButton.title); }
 
   const en = lang === "en";

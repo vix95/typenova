@@ -9,6 +9,7 @@ import {
   removeTreeEntry,
   type ProjectTreeFileSystem,
 } from "./project-tree-operations.js";
+import { isProjectRoot, rootContaining } from "./project-roots.js";
 import type { ProjectTreeState, TreeClipboard, ProjectTreeTarget } from "./project-tree-state.js";
 
 export interface ProjectTreeControllerFileSystem extends ProjectTreeFileSystem {
@@ -19,6 +20,8 @@ export interface ProjectTreeControllerOptions {
   state: ProjectTreeState;
   fs: ProjectTreeControllerFileSystem;
   getProjectRoot(): string | null;
+  /** All folders shown in the tree; when omitted the single project root is used. */
+  getProjectRoots?(): readonly string[];
   getCopyLabel(): string;
   getAlreadyExistsMessage(): string;
   getProjectRequiredMessage(): string;
@@ -50,6 +53,13 @@ export class ProjectTreeController {
 
   get state(): ProjectTreeState {
     return this.options.state;
+  }
+
+  private roots(): readonly string[] {
+    const roots = this.options.getProjectRoots?.();
+    if (roots) return roots;
+    const root = this.options.getProjectRoot();
+    return root ? [root] : [];
   }
 
   setClipboard(path: string, operation: TreeClipboard["operation"], isDirectory: boolean): void {
@@ -99,9 +109,10 @@ export class ProjectTreeController {
     isDirectory: boolean,
     forceDuplicate = false,
   ): Promise<ProjectTreeOperationResult> {
-    const projectRoot = this.options.getProjectRoot();
-    if (!projectRoot) throw new Error(this.options.getProjectRequiredMessage());
-    if (!pathIsInside(projectRoot, source) || !pathIsInside(projectRoot, destinationFolder)) {
+    const roots = this.roots();
+    if (!roots.length) throw new Error(this.options.getProjectRequiredMessage());
+    // Both ends must be inside open folders; with several folders open an item may move from one to another.
+    if (!rootContaining(roots, source) || !rootContaining(roots, destinationFolder)) {
       throw new Error(this.options.getOutsideProjectMessage());
     }
     if (isDirectory && pathIsInside(source, destinationFolder)) {
@@ -164,12 +175,12 @@ export class ProjectTreeController {
 
   /** Delete an entry first, then clear transient references only when deletion succeeds. */
   async remove(path: string, isDirectory: boolean): Promise<void> {
-    const projectRoot = this.options.getProjectRoot();
-    if (!projectRoot) throw new Error(this.options.getProjectRequiredMessage());
-    if (normalizedFsPath(path) === normalizedFsPath(projectRoot)) {
+    const roots = this.roots();
+    if (!roots.length) throw new Error(this.options.getProjectRequiredMessage());
+    if (isProjectRoot(roots, path)) {
       throw new Error(this.options.getProjectRootMutationMessage());
     }
-    if (!pathIsInside(projectRoot, path)) throw new Error(this.options.getOutsideProjectMessage());
+    if (!rootContaining(roots, path)) throw new Error(this.options.getOutsideProjectMessage());
     await removeTreeEntry(path, isDirectory, this.options.fs);
     this.forgetRemovedPath(path, isDirectory);
   }

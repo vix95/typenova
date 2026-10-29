@@ -6,6 +6,7 @@ import { langText } from "../i18n/language";
 import { performTreeMoveOrCopy, projectTreeState, setTreeClipboard } from "./project-tree-ops";
 import { handleTreeContextAction, showTreeContextMenu, treeContextMenuElement } from "./tree-context-menu";
 import { showToast } from "../ui/toast";
+import { hasSingleProjectRoot, projectRootFor } from "./project-roots";
 
 type PointerDragState = {
   pointerId: number; path: string; isDirectory: boolean; row: HTMLElement;
@@ -24,7 +25,8 @@ const clearPointerDragVisuals = () => {
 function resolveDropTarget(head: HTMLElement | null, clientX: number, clientY: number, sourcePath: string, isDirectory: boolean): TreeDropTarget {
   const target = document.elementFromPoint(clientX, clientY);
   if (!target) return { path: "", row: null, container: null, valid: false, insideProject: false };
-  if (head && head.contains(target)) return { path: documentState.projectRoot || "", row: null, container: null, valid: !!documentState.projectRoot, insideProject: true };
+  // The header and the blank area name "the project" only when exactly one folder is open.
+  if (head && head.contains(target)) return { path: documentState.projectRoot || "", row: null, container: null, valid: hasSingleProjectRoot(), insideProject: true };
   if (!target.closest("#projectFiles")) return { path: "", row: null, container: null, valid: false, insideProject: false };
 
   const row = target.closest<HTMLElement>("#projectFiles .tree-entry");
@@ -43,10 +45,10 @@ function resolveDropTarget(head: HTMLElement | null, clientX: number, clientY: n
       destination = folderContainer.dataset.path;
       container = folderContainer;
     } else {
-      destination = documentState.projectRoot || "";
+      destination = hasSingleProjectRoot() ? (documentState.projectRoot || "") : "";
     }
   }
-  const withinProject = !!documentState.projectRoot && !!destination && pathIsInside(documentState.projectRoot, destination);
+  const withinProject = !!destination && !!projectRootFor(destination);
   const wouldNestFolder = isDirectory && !!sourcePath && pathIsInside(sourcePath, destination);
   return { path: destination, row: targetRow, container, valid: withinProject && !wouldNestFolder, insideProject: true };
 }
@@ -64,7 +66,7 @@ function installTreeContextMenuTriggers(files: HTMLElement, head: HTMLElement | 
   files.addEventListener("contextmenu", event => {
     const row = (event.target as Element | null)?.closest<HTMLElement>(".tree-entry");
     if (row) showTreeContextMenu(event as MouseEvent, row);
-    else if (documentState.projectRoot) showTreeContextMenu(event as MouseEvent, null, true);
+    else if (hasSingleProjectRoot()) showTreeContextMenu(event as MouseEvent, null, true);
   });
 }
 

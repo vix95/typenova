@@ -48,7 +48,7 @@ export function initGlobalBindings(): void {
     // leaves CodeMirror as document.activeElement. A pointer press outside Project
     // clears this flag before another editor shortcut can be captured.
     if (activeSidebarTab === "files" && projectTreeState.keyboardActive && !editingTarget) {
-      const key = event.key.toLowerCase(); const target = projectTreeState.lastTarget || (documentState.projectRoot ? { path: documentState.projectRoot, isDirectory: true, isRoot: true } : null);
+      const key = event.key.toLowerCase(); const target = projectTreeState.lastTarget || (documentState.projectRoots.length === 1 && documentState.projectRoot ? { path: documentState.projectRoot, isDirectory: true, isRoot: true } : null);
       if (projectShortcutModifier && !event.altKey && target) {
         if ((key === "c" || key === "x") && !target.isRoot) { event.preventDefault(); event.stopImmediatePropagation(); setTreeClipboard(target.path, key === "c" ? "copy" : "cut", target.isDirectory); return; }
         if (key === "v" && projectTreeState.clipboard) { event.preventDefault(); event.stopImmediatePropagation(); projectTreeState.contextTarget = target; void handleTreeContextAction("paste"); return; }

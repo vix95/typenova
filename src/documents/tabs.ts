@@ -1,5 +1,7 @@
 /** Editor tabs: rendering, switching, creating, closing and the tab context menu. */
-import { deduplicateSessionPaths, serializeOpenSession } from "./session";
+import { isDetachedWindow, type DetachedDocument } from "../app/detached-window";
+import { moveItem } from "./tab-order";
+import { deduplicateSessionPaths, sameSessionPath, serializeOpenSession } from "./session";
 import { rememberViewPosition, restoreViewPosition, viewPositionsForSession } from "./view-position";
 import { basename, isMarkdownPath } from "../filesystem/path-utils";
 import { languages } from "@codemirror/language-data";
@@ -26,7 +28,8 @@ import { appConfirm } from "../ui/dialogs";
 let languageLoadSequence = 0;
 export function activeTab(): DocumentTab | undefined { return documentState.tabs.find(tab => tab.id === documentState.activeTabId); }
 export function persistOpenSession(): void {
-  if (!documentState.startupSessionReady) return;
+  // A torn-off document window must not overwrite the session saved by the main window.
+  if (isDetachedWindow || !documentState.startupSessionReady) return;
   try {
     const paths = deduplicateSessionPaths(documentState.tabs.flatMap(tab => tab.path ? [tab.path] : []));
     const selectedPath = activeTab()?.path || null;
@@ -254,6 +257,31 @@ export function createNewTab(initialText = "", label = "Untitled.md") {
   view.focus();
   if (previousId) requestAnimationFrame(() => view.requestMeasure());
   return tab;
+}
+/** Opens a document that arrived from another window as a new tab here, keeping its unsaved edits and scroll position. */
+export function adoptDocumentTab(doc: DetachedDocument, index?: number): void {
+  const existing = doc.path ? documentState.tabs.find(tab => sameSessionPath(tab.path, doc.path)) : undefined;
+  // The same file is already open here and the incoming copy has no unsaved edits: just show that tab.
+  if (existing && !doc.dirty) { switchToTab(existing.id); return; }
+  const tab = createNewTab(doc.text, doc.label);
+  tab.path = doc.path; tab.savedText = doc.savedText; tab.dirty = doc.dirty; tab.viewPosition = doc.position;
+  documentState.currentPath = doc.path; documentState.savedText = doc.savedText; documentState.dirty = doc.dirty;
+  // Dropped on the strip: open at the drop position instead of at the end.
+  if (index !== undefined) documentState.tabs = moveItem(documentState.tabs, item => item.id === tab.id, index);
+  updateDirtyUi(); renderTabs(); updateStats();
+  void configureLanguageForTab(tab);
+  restoreViewPosition(doc.position);
+}
+/** Takes a tab out of the strip without asking, for a document that now lives elsewhere (another window). */
+export function removeTabWithoutPrompt(id: string): void {
+  const index = documentState.tabs.findIndex(item => item.id === id);
+  if (index < 0) return;
+  const wasActive = id === documentState.activeTabId;
+  documentState.tabs = documentState.tabs.filter(item => item.id !== id);
+  if (wasActive) {
+    if (documentState.tabs.length) switchToTab(documentState.tabs[Math.min(index, documentState.tabs.length - 1)].id);
+    else createNewTab("", "Untitled.md");
+  } else renderTabs();
 }
 async function closeTab(id: string) {
   const tab = documentState.tabs.find(item => item.id === id);

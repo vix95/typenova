@@ -13,7 +13,10 @@ export const documentState = {
   startupSessionReady: false as boolean,
   performanceMode: false as boolean,
   currentPath: null as string | null,
+  /** First open folder, or null. Kept for code that works with one folder; see `projectRoots` for the whole tree. */
   projectRoot: null as string | null,
+  /** Every folder shown in the project tree, in order. */
+  projectRoots: [] as string[],
   untitledLabel: (showWelcomeWhenNoSession ? "Welcome.md" : "Untitled.md") as string,
   savedText: "" as string,
   dirty: false as boolean,

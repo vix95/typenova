@@ -3,6 +3,7 @@ import { type SectionNode, type SectionGraphModel } from "../graph/section-model
 import { createGraphWorkspaceController } from "../graph/workspace-controller";
 import { readPreferenceFlag } from "../settings/preferences";
 import type { GraphVisualMode } from "../graph/renderers";
+import { projectRootsKey, rememberedProjectRoots } from "../project/project-roots";
 
 export type GraphSection = SectionNode;
 export const graphWorkspaceController = createGraphWorkspaceController();
@@ -45,6 +46,6 @@ export function initGraphState(): void {
   try {
     const savedProject = localStorage.getItem("typenova.brain.selectedProjectRoot");
     const savedFiles = localStorage.getItem("typenova.brain.selectedFiles");
-    if (savedProject && savedProject === localStorage.getItem("typenova.projectRoot") && savedFiles !== null) { const parsed = JSON.parse(savedFiles); if (Array.isArray(parsed)) graphUi.graphSelectedFiles = new Set(parsed.filter((item): item is string => typeof item === "string")); }
+    if (savedProject && savedProject === projectRootsKey(rememberedProjectRoots()) && savedFiles !== null) { const parsed = JSON.parse(savedFiles); if (Array.isArray(parsed)) graphUi.graphSelectedFiles = new Set(parsed.filter((item): item is string => typeof item === "string")); }
   } catch { graphUi.graphSelectedFiles = null; }
 }

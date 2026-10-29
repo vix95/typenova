@@ -6,6 +6,8 @@ import { selectGraphSection } from "./selection";
 import { GRAPH_TREE_CANVAS_PADDING, graphTreeCollapsed, graphTreeZoom, clearGraphTreeMinimap, panGraphTreeNodeIntoView, renderGraphTreeMinimap, syncGraphTreeZoomControls } from "./tree-navigation";
 import { langText } from "../i18n/language";
 import { hideAppTooltip, showAppTooltip } from "../ui/tooltip";
+import { basename } from "../filesystem/path-utils";
+import { projectRootFor } from "../project/project-roots";
 
 type TreeLayoutNode = { section: GraphSection; depth: number; parentId: string | null; children: TreeLayoutNode[]; hasChildren: boolean; expanded: boolean; siblingIndex: number; siblingCount: number; x: number; y: number; subtreeHeight: number };
 
@@ -240,8 +242,13 @@ export function renderGraphTree() {
   const layer = document.createElement("div"); layer.className = "brain-tree-layer"; layer.style.width = `${canvasWidth}px`; layer.style.height = `${canvasHeight}px`; layer.style.transform = `translate(${graphUi.graphTreePanX}px, ${graphUi.graphTreePanY}px) scale(${graphTreeZoom})`;
   const connectors = buildTreeConnectors(positionedNodes, canvasWidth, canvasHeight);
   layer.append(connectors);
-  const activeProjectRoot = documentState.projectRoot;
-  const relativePath = (path: string) => activeProjectRoot && path.startsWith(activeProjectRoot) ? path.slice(activeProjectRoot.length).replace(/^[\\/]+/, "") : path;
+  const multipleRoots = documentState.projectRoots.length > 1;
+  const relativePath = (path: string) => {
+    const owner = projectRootFor(path);
+    if (!owner) return path;
+    const relative = path.slice(owner.length).replace(/^[\\/]+/, "");
+    return multipleRoots ? `${basename(owner)}/${relative}` : relative;
+  };
   for (const node of positionedNodes) layer.append(createTreeNodeElement(node, tree, connectors, relativePath));
   canvas.append(layer);
   tree.replaceChildren(canvas);

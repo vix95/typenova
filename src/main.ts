@@ -4,6 +4,8 @@ import "katex/dist/katex.min.css";
 import "highlight.js/styles/github-dark.css";
 import { initWorkspaceDom } from "./app/workspace-dom";
 import { initEditorView, view } from "./editor/editor-view";
+import { initTabInteractions } from "./documents/tab-interactions";
+import { initTabDropTarget } from "./documents/tab-drop-target";
 import { initTabs, renderTabs, configureLanguageForTab, persistOpenSession } from "./documents/tabs";
 import { initPreviewObservers } from "./preview/preview-observers";
 import { initPreviewContextMenu } from "./preview/preview-context-menu";
@@ -82,6 +84,8 @@ window.setTimeout(() => {
 
 // Document tabs
 initTabs();
+initTabInteractions();
+initTabDropTarget();
 
 // Preview
 initPreviewObservers();

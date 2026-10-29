@@ -8,6 +8,7 @@ import { EditorView } from "@codemirror/view";
 import { documentState } from "../documents/document-state";
 import { encodeMarkdownImagePath, parentDirectoryPath } from "./image-insert";
 import { langText } from "../i18n/language";
+import { rootContaining } from "../filesystem/project-roots";
 
 type ImagePathCompletionContext = {
   from: number;
@@ -65,17 +66,26 @@ function normalizeCompletionDirectory(path: string): string {
   if (root.endsWith("/")) return `${root}${joined}`;
   return root ? `${root}${joined ? `/${joined}` : ""}` : joined;
 }
+/** Folder listings are reused for a moment: the list is rebuilt on every typed character, so a quick burst of typing must not read the disk each time. */
+const DIRECTORY_CACHE_MS = 1500;
+let directoryCache: { path: string; at: number; entries: { name: string; isDirectory?: boolean }[] } | null = null;
+async function readCompletionDirectory(path: string): Promise<{ name: string; isDirectory?: boolean }[] | null> {
+  if (directoryCache && directoryCache.path === path && Date.now() - directoryCache.at < DIRECTORY_CACHE_MS) return directoryCache.entries;
+  try {
+    const entries = await readDir(path);
+    directoryCache = { path, at: Date.now(), entries };
+    return entries;
+  } catch { return null; }
+}
 async function completeImagePath(context: CompletionContext, pathContext: ImagePathCompletionContext) {
   if (!documentState.currentPath || !isMarkdownPath(documentState.currentPath)) return null;
   const currentDirectory = parentDirectoryPath(documentState.currentPath);
-  const scopeRoot = documentState.projectRoot && pathIsInside(documentState.projectRoot, documentState.currentPath) ? documentState.projectRoot : currentDirectory;
+  const scopeRoot = rootContaining(documentState.projectRoots, documentState.currentPath) ?? currentDirectory;
   const relativeDirectory = pathContext.directoryPrefix.replace(/\/$/, "").split("/").filter(Boolean).map(decodeCompletionPathPart).join("/");
   const targetDirectory = normalizeCompletionDirectory(relativeDirectory ? `${currentDirectory}/${relativeDirectory}` : currentDirectory);
   if (!pathIsInside(scopeRoot, targetDirectory)) return null;
-  let entries: { name: string; isDirectory?: boolean }[];
-  try { entries = await readDir(targetDirectory); }
-  catch { return null; }
-  if (context.aborted) return null;
+  const entries = await readCompletionDirectory(targetDirectory);
+  if (!entries || context.aborted) return null;
   const locale = document.documentElement.lang || "pl";
   const query = decodeCompletionPathPart(pathContext.query).toLocaleLowerCase(locale);
   const collator = new Intl.Collator(locale, { sensitivity: "base", numeric: true });
@@ -98,7 +108,9 @@ async function completeImagePath(context: CompletionContext, pathContext: ImageP
       }
     };
   });
-  return { from: pathContext.from, options, filter: false, validFor: /^[^/\\]*$/ };
+  // No `validFor`: with it CodeMirror keeps showing the first list while the user types more characters, so the list is
+  // rebuilt on every typed character and only names that start with what was typed are kept (`filter: false`).
+  return { from: pathContext.from, options, filter: false };
 }
 export const completions = (context: CompletionContext) => {
   const imagePath = imagePathCompletionContext(context);

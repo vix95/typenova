@@ -141,8 +141,12 @@ export async function buildGraph() {
   graph.replaceChildren(); tree.replaceChildren();
   setGraphIndexProgress(0, langText("Skanowanie plików Markdown…", "Scanning Markdown files…"), true);
   if (graphUi.graphVisualMode === "tree") showTreeIndexingPlaceholder(tree);
-  const files = await scanProjectForIndexing(documentState.projectRoot, token, status);
-  if (!files) return;
+  const files: MarkdownSourceFile[] = [];
+  for (const projectRoot of documentState.projectRoots) {
+    const scanned = await scanProjectForIndexing(projectRoot, token, status);
+    if (!scanned) return;
+    files.push(...scanned);
+  }
   let indexWorker: Worker;
   try { indexWorker = new Worker(new URL("../graph/section-index.worker.ts", import.meta.url), { type: "module" }); }
   catch (error) {

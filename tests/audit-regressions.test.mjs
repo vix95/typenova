@@ -355,3 +355,58 @@ test("saved view positions survive a session round trip and malformed ones are d
   assert.deepEqual(findViewPosition(dirty.positions, "c.md"), { editorLine: 5, preview: { line: 3, fraction: 1 } });
   assert.deepEqual(parseOpenSession(JSON.stringify({ paths: ["a.md"] })).positions, {});
 });
+
+test("tab reordering keeps the other tabs in order and clamps the slot", async () => {
+  const { moveItem, insertionIndex } = await import("../.test-build/documents/tab-order.js");
+  const tabs = ["a", "b", "c", "d"];
+  assert.deepEqual(moveItem(tabs, (t) => t === "a", 2), ["b", "c", "a", "d"]);
+  assert.deepEqual(moveItem(tabs, (t) => t === "d", 0), ["d", "a", "b", "c"]);
+  assert.deepEqual(moveItem(tabs, (t) => t === "b", 1), tabs);
+  assert.deepEqual(moveItem(tabs, (t) => t === "a", 99), ["b", "c", "d", "a"]);
+  assert.deepEqual(moveItem(tabs, (t) => t === "zzz", 1), tabs);
+  assert.notEqual(moveItem(tabs, (t) => t === "a", 0), tabs);
+  assert.equal(insertionIndex([50, 150, 250], 160), 2);
+  assert.equal(insertionIndex([50, 150, 250], 10), 0);
+  assert.equal(insertionIndex([], 100), 0);
+});
+
+test("project roots: adding refuses duplicates and overlapping folders, lookups pick the owning root", async () => {
+  const { addProjectRoot, removeProjectRoot, rootContaining, isProjectRoot, parseStoredProjectRoots } = await import("../.test-build/filesystem/project-roots.js");
+  const roots = ["C:/work/docs", "C:/work/code"];
+  assert.equal(addProjectRoot(roots, "c:/WORK/docs/").status, "duplicate");
+  assert.deepEqual(addProjectRoot(roots, "C:/work/docs/sub"), { status: "inside", roots, existing: "C:/work/docs" });
+  assert.equal(addProjectRoot(["C:/work/docs/sub"], "C:/work/docs").status, "contains");
+  assert.deepEqual(addProjectRoot(roots, "D:/notes"), { status: "added", roots: [...roots, "D:/notes"] });
+  assert.equal(rootContaining(roots, "C:/work/code/src/a.ts"), "C:/work/code");
+  assert.equal(rootContaining(roots, "C:/work/other/a.ts"), null);
+  assert.equal(rootContaining(roots, "C:/work/docs-old/a.md"), null);
+  assert.equal(isProjectRoot(roots, "C:/WORK/CODE"), true);
+  assert.deepEqual(removeProjectRoot(roots, "c:/work/docs"), ["C:/work/code"]);
+  assert.deepEqual(parseStoredProjectRoots(JSON.stringify(["a", "a", "b", 3]), "legacy"), ["a", "b"]);
+  assert.deepEqual(parseStoredProjectRoots(null, "legacy"), ["legacy"]);
+  assert.deepEqual(parseStoredProjectRoots("not json", null), []);
+});
+
+test("project tree controller allows moving between open folders but not outside them, and never removes a root", async () => {
+  const { createProjectTreeController } = await import("../.test-build/filesystem/project-tree-controller.js");
+  const { createProjectTreeState } = await import("../.test-build/filesystem/project-tree-state.js");
+  const calls = [];
+  const fs = {
+    join: async (...p) => p.join("/"), exists: async () => false, readDir: async () => [], mkdir: async () => {},
+    copyFile: async () => {}, remove: async (p) => { calls.push(["remove", p]); }, rename: async (a, b) => { calls.push(["rename", a, b]); },
+  };
+  const roots = ["C:/a", "C:/b"];
+  const controller = createProjectTreeController({
+    state: createProjectTreeState(), fs, getProjectRoot: () => roots[0], getProjectRoots: () => roots,
+    getCopyLabel: () => "copy", getAlreadyExistsMessage: () => "exists", getProjectRequiredMessage: () => "required",
+    getOutsideProjectMessage: () => "outside", getProjectRootMutationMessage: () => "root", getDescendantMoveMessage: () => "descendant",
+  });
+  const moved = await controller.moveOrCopy("C:/a/x.md", "C:/b/sub", "cut", false);
+  assert.equal(moved.status, "moved");
+  assert.deepEqual(calls[0], ["rename", "C:/a/x.md", "C:/b/sub/x.md"]);
+  await assert.rejects(controller.moveOrCopy("C:/a/x.md", "C:/elsewhere", "cut", false), /outside/);
+  await assert.rejects(controller.remove("C:/b", true), /root/);
+  await assert.rejects(controller.remove("C:/elsewhere/y.md", false), /outside/);
+  await controller.remove("C:/b/y.md", false);
+  assert.deepEqual(calls.at(-1), ["remove", "C:/b/y.md"]);
+});

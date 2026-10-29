@@ -1,21 +1,26 @@
-/** Project open/close bindings and restoration of the last project. */
+/** Project open/add/close bindings and restoration of the folders open last time. */
 import { $ } from "../app/dom";
-import { activeSidebarTab } from "../app/sidebar";
-import { documentState } from "../documents/document-state";
-import { persistGraphFileSelection, renderGraphFilterTree, setGraphFilesPanelOpen } from "../graph-ui/filter-panel";
-import { graphWorkspaceController, graphUi } from "../graph-ui/graph-state";
-import { buildGraph } from "../graph-ui/indexing";
-import { markTreeClipboardState, projectTreeController } from "./project-tree-ops";
-import { openProject, renderProjectTree } from "./project-tree-view";
+import { isDetachedWindow } from "../app/detached-window";
+import { rememberedProjectRoots, setProjectRoots } from "./project-roots";
+import { projectTreeState } from "./project-tree-ops";
+import { addProjectFolder, closeProject, openProject, renderProjectTree } from "./project-tree-view";
 
-const rememberedProject = localStorage.getItem("typenova.projectRoot");
+const rememberedRoots = rememberedProjectRoots();
 
 export function initProjectBindings(): void {
   $("openProject").addEventListener("click", () => void openProject());
   $("openProjectPrompt").addEventListener("click", () => void openProject());
-  $("closeProject").addEventListener("click", () => { graphWorkspaceController.cancel(); documentState.projectRoot = null; projectTreeController.resetTransientState(); markTreeClipboardState(); graphUi.graphSections = []; graphUi.graphSectionGraphModel = null; graphUi.graphAvailableFiles = []; graphUi.graphSelectedFiles = null; graphUi.selectedGraphSection = null; ($("brainPreview") as HTMLElement).hidden = true; ($("brainPreviewResizer") as HTMLElement).hidden = true; $("brainView").classList.remove("has-preview"); setGraphFilesPanelOpen(false, false); renderGraphFilterTree(); persistGraphFileSelection(); localStorage.removeItem("typenova.projectRoot"); void renderProjectTree(); if (activeSidebarTab === "brain") void buildGraph(); });
+  $("addProjectFolder").addEventListener("click", () => void addProjectFolder());
+  $("closeProject").addEventListener("click", () => void closeProject());
 }
 
 export function initProjectRestore(): void {
-  if (rememberedProject) { documentState.projectRoot = rememberedProject; void renderProjectTree(); }
+  // A torn-off document window shows only its document; it neither opens nor changes the saved folders.
+  if (isDetachedWindow) return;
+  if (rememberedRoots.length) {
+    setProjectRoots(rememberedRoots);
+    // Top-level folders of a multi-folder tree start expanded.
+    if (rememberedRoots.length > 1) for (const folder of rememberedRoots) projectTreeState.expandedFolders.add(folder);
+    void renderProjectTree();
+  }
 }
