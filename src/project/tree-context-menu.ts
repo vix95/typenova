@@ -14,6 +14,7 @@ import { langText } from "../i18n/language";
 import { isFilesystemScopeError, markTreeClipboardState, performTreeMoveOrCopy, projectTreeController, projectTreeState, setTreeClipboard } from "./project-tree-ops";
 import { openProject, removeProjectFolder, renderProjectTree } from "./project-tree-view";
 import { isOpenProjectRoot, projectRootFor } from "./project-roots";
+import { refreshProjectTree } from "./project-tree-sync";
 import { appAlert, appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
 
@@ -30,30 +31,35 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
   // A top-level folder of a multi-folder tree is a normal directory row flagged as a project root.
   const rootRow = row?.dataset.projectRoot === "true";
   isRoot = isRoot || rootRow;
-  const path = row?.dataset.filePath || (isRoot ? (documentState.projectRoot || "") : "");
+  // Blank area of a tree with several folders: no single folder is meant, so the menu only offers the refresh.
+  const refreshOnly = !row && isRoot && documentState.projectRoots.length > 1;
+  const path = refreshOnly ? "" : (row?.dataset.filePath || (isRoot ? (documentState.projectRoot || "") : ""));
   const isDirectory = isRoot || row?.dataset.entryType === "directory";
-  if (!path) return;
-  projectTreeState.contextTarget = { path, isDirectory, isRoot };
+  if (!path && !refreshOnly) return;
+  projectTreeState.contextTarget = path ? { path, isDirectory, isRoot } : null;
   menu.replaceChildren();
   const add = (label: string, action: string, opts: { disabled?: boolean; danger?: boolean; shortcut?: string } = {}) => {
     const b = document.createElement("button"); b.type = "button"; b.role = "menuitem"; b.dataset.treeContext = action; b.textContent = label; b.disabled = !!opts.disabled; if (opts.danger) b.classList.add("danger-action"); if (action === "delete") b.dataset.tooltipDisabled = "true";
     if (opts.shortcut) { const k = document.createElement("kbd"); k.textContent = opts.shortcut; b.append(k); }
     menu.append(b); return b;
   };
-  if (!isRoot) add(langText("Otwórz", "Open"), "open");
-  add(langText("Nowy plik…", "New file…"), "new-file");
-  {
-    const hr = document.createElement("hr"); menu.append(hr);
+  if (!refreshOnly) {
+    if (!isRoot) add(langText("Otwórz", "Open"), "open");
+    add(langText("Nowy plik…", "New file…"), "new-file");
+    {
+      const hr = document.createElement("hr"); menu.append(hr);
+    }
+    if (!isRoot) {
+      add(langText("Kopiuj", "Copy"), "copy", { shortcut: "Ctrl+C" });
+      add(langText("Wytnij", "Cut"), "cut", { shortcut: "Ctrl+X" });
+      add(langText("Duplikuj", "Duplicate"), "duplicate");
+      const hr = document.createElement("hr"); menu.append(hr);
+    }
+    add(langText("Wklej", "Paste"), "paste", { disabled: !projectTreeState.clipboard, shortcut: "Ctrl+V" });
+    if (!isRoot) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń", "Delete"), "delete", { danger: true, shortcut: "Delete" }); }
+    if (rootRow) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń folder z drzewa", "Remove folder from tree"), "remove-root"); }
   }
-  if (!isRoot) {
-    add(langText("Kopiuj", "Copy"), "copy", { shortcut: "Ctrl+C" });
-    add(langText("Wytnij", "Cut"), "cut", { shortcut: "Ctrl+X" });
-    add(langText("Duplikuj", "Duplicate"), "duplicate");
-    const hr = document.createElement("hr"); menu.append(hr);
-  }
-  add(langText("Wklej", "Paste"), "paste", { disabled: !projectTreeState.clipboard, shortcut: "Ctrl+V" });
-  if (!isRoot) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń", "Delete"), "delete", { danger: true, shortcut: "Delete" }); }
-  if (rootRow) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń folder z drzewa", "Remove folder from tree"), "remove-root"); }
+  { if (!refreshOnly) { const hr = document.createElement("hr"); menu.append(hr); } add(langText("Odśwież drzewo", "Refresh tree"), "refresh", { shortcut: "F5" }); }
   menu.hidden = false; menu.style.visibility = "hidden"; menu.style.left = "0px"; menu.style.top = "0px";
   requestAnimationFrame(() => {
     const rect = menu!.getBoundingClientRect();
@@ -196,6 +202,7 @@ export async function openProjectTreeEntry(path: string, isDirectory: boolean) {
 export async function handleTreeContextAction(action: string) {
   const target = projectTreeState.contextTarget;
   const menu = treeContextMenuElement(); menu.hidden = true;
+  if (action === "refresh") { await refreshProjectTree(); return; }
   if (!target) return;
   const { path, isDirectory, isRoot } = target;
   const destinationFolder = isRoot ? path : (isDirectory ? path : parentPath(path));

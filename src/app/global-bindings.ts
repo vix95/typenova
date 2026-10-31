@@ -11,6 +11,7 @@ import { setFocusMode, toggleFocus } from "../layout/focus-mode";
 import { exportHtml, printDocument } from "../preview/export-print";
 import { projectTreeState, setTreeClipboard } from "../project/project-tree-ops";
 import { handleTreeContextAction } from "../project/tree-context-menu";
+import { refreshProjectTree } from "../project/project-tree-sync";
 
 // Menus behave like desktop application menus: one open at a time, dismissed
 // after an action, after changing a setting, or when clicking outside.
@@ -48,6 +49,7 @@ export function initGlobalBindings(): void {
     // leaves CodeMirror as document.activeElement. A pointer press outside Project
     // clears this flag before another editor shortcut can be captured.
     if (activeSidebarTab === "files" && projectTreeState.keyboardActive && !editingTarget) {
+      if (event.key === "F5" && !event.ctrlKey && !event.metaKey && !event.altKey) { event.preventDefault(); event.stopImmediatePropagation(); void refreshProjectTree(); return; }
       const key = event.key.toLowerCase(); const target = projectTreeState.lastTarget || (documentState.projectRoots.length === 1 && documentState.projectRoot ? { path: documentState.projectRoot, isDirectory: true, isRoot: true } : null);
       if (projectShortcutModifier && !event.altKey && target) {
         if ((key === "c" || key === "x") && !target.isRoot) { event.preventDefault(); event.stopImmediatePropagation(); setTreeClipboard(target.path, key === "c" ? "copy" : "cut", target.isDirectory); return; }

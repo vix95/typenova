@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title></title>
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; font-family: "Segoe UI", system-ui, sans-serif; }
+  #ghost {
+    box-sizing: border-box; margin: 6px; padding: 9px 13px; border: 1px solid var(--accent); border-radius: 9px;
+    background: var(--panel); color: var(--text); font-size: 12px; line-height: 1.35; user-select: none;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+  }
+  #title { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #hint { display: block; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="ghost"><strong id="title"></strong><span id="hint"></span></div>
+<script>
+  // The desktop app passes {title, hint, colors} in the URL fragment and later updates through window.setGhost.
+  window.setGhost = function (data) {
+    var root = document.documentElement.style, colors = data.colors || {};
+    root.setProperty("--panel", colors.panel || "#1a2434");
+    root.setProperty("--text", colors.text || "#e4e7ef");
+    root.setProperty("--muted", colors.muted || "#9fb0c8");
+    root.setProperty("--accent", colors.accent || "#4f8cff");
+    document.getElementById("title").textContent = data.title || "";
+    document.getElementById("hint").textContent = data.hint || "";
+  };
+  try { window.setGhost(JSON.parse(decodeURIComponent(location.hash.slice(1)))); } catch (e) { window.setGhost({}); }
+</script>
+</body>
+</html>

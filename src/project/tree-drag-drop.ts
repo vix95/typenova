@@ -66,7 +66,7 @@ function installTreeContextMenuTriggers(files: HTMLElement, head: HTMLElement | 
   files.addEventListener("contextmenu", event => {
     const row = (event.target as Element | null)?.closest<HTMLElement>(".tree-entry");
     if (row) showTreeContextMenu(event as MouseEvent, row);
-    else if (hasSingleProjectRoot()) showTreeContextMenu(event as MouseEvent, null, true);
+    else if (documentState.projectRoots.length) showTreeContextMenu(event as MouseEvent, null, true);
   });
 }
 

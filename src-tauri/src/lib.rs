@@ -283,6 +283,17 @@ pub fn run() {
     // Persist filesystem grants created when users choose files or folders in native dialogs.
     .plugin(tauri_plugin_persisted_scope::init())
     .plugin(tauri_plugin_opener::init())
+    // The hidden drag-ghost window must not keep the process alive: when the last editor window is gone the app ends.
+    // Otherwise an invisible instance would remain and the single-instance guard would swallow the next launch.
+    .on_window_event(|window, event| {
+      if let tauri::WindowEvent::Destroyed = event {
+        let app = window.app_handle();
+        let another_editor_left = app.webview_windows().keys().any(|label| label != window.label() && is_editor_window_label(label));
+        if is_editor_window_label(window.label()) && !another_editor_left {
+          app.exit(0);
+        }
+      }
+    })
     .invoke_handler(tauri::generate_handler![allow_preview_image, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
     .run(tauri::generate_context!())
     .expect("error while running TypeNova");

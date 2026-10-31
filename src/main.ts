@@ -14,6 +14,8 @@ import { initViewPositionPersistence, rememberViewPosition } from "./documents/v
 import { initOutline } from "./outline/outline";
 import { initExportPrint } from "./preview/export-print";
 import { initProjectBindings, initProjectRestore } from "./project/project-bindings";
+import { initProjectTreeSync } from "./project/project-tree-sync";
+import { initExternalDrop } from "./app/external-drop";
 import { initEditMenuBindings, initSaveFindBindings, initFileMenuBindings } from "./app/menu-bindings";
 import { initProjectTreeFocus } from "./project/project-tree-focus";
 import { initGraphState } from "./graph-ui/graph-state";
@@ -97,6 +99,8 @@ initExportPrint();
 
 // Project tree and menu bindings
 initProjectBindings();
+initProjectTreeSync();
+initExternalDrop();
 initEditMenuBindings();
 initProjectRestore();
 initSaveFindBindings();

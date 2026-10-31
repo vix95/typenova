@@ -14,6 +14,7 @@ import { langText } from "../i18n/language";
 import { addProjectRoot, removeProjectRoot } from "../filesystem/project-roots";
 import { isFilesystemScopeError, markTreeClipboardState, projectTreeController, projectTreeState } from "./project-tree-ops";
 import { setProjectRoots } from "./project-roots";
+import { captureTreeBaseline } from "./project-tree-sync";
 import { openProjectTreeEntry, showTreeContextMenu } from "./tree-context-menu";
 import { installTreeDragDrop } from "./tree-drag-drop";
 import { appAlert, appConfirm } from "../ui/dialogs";
@@ -58,11 +59,17 @@ export async function openProject() {
   } catch (error) { await reportOpenError(error); }
 }
 
-/** Adds a folder to the tree next to the ones already open. */
+/** Adds a folder to the tree next to the ones already open: asks which one with the folder dialog. */
 export async function addProjectFolder() {
   try {
     const chosen = await open({ directory: true, multiple: false, recursive: true });
-    if (typeof chosen !== "string") return;
+    if (typeof chosen === "string") await addProjectFolderPath(chosen);
+  } catch (error) { await reportOpenError(error); }
+}
+
+/** Adds a known folder (chosen in the dialog or dropped from the file explorer) to the tree. */
+export async function addProjectFolderPath(chosen: string) {
+  try {
     const previous = documentState.projectRoots;
     const result = addProjectRoot(previous, chosen);
     if (result.status === "duplicate") { showToast(langText("Ten folder jest już w drzewie.", "This folder is already in the tree.")); return; }
@@ -238,4 +245,5 @@ export async function renderProjectTree() {
 
   if (multiple) for (const folder of roots) await addDirectory(root, basename(folder), folder, 0, true);
   else await walk(roots[0], 0, root);
+  void captureTreeBaseline();
 }

@@ -2292,3 +2292,17 @@ html[data-theme="contrast"] .editor-tab-list .editor-tab.tab-skeleton{border-wid
 @media (prefers-reduced-motion:no-preference){.editor-tab-list .editor-tab.tab-skeleton{animation:typenova-skeleton-in .12s ease-out}}
 @keyframes typenova-skeleton-in{from{opacity:0;transform:translateY(3px)}to{opacity:.75;transform:none}}
 
+
+/* 0.5.113 project tree scrolling: the header stays put and the file list scrolls (the tree used to size itself to its content and was clipped by the sidebar, so long trees or several folders could not be scrolled). */
+.project-tree{flex:1 1 auto;min-height:0;overflow:hidden}
+.project-tree-head{flex:0 0 auto}
+#projectFiles{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-bottom:12px}
+#projectFiles::-webkit-scrollbar{width:12px}
+#projectFiles::-webkit-scrollbar-track{background:var(--ui-panel)}
+#projectFiles::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--ui-muted) 52%,var(--ui-panel));border:3px solid var(--ui-panel);border-radius:8px}
+#projectFiles::-webkit-scrollbar-thumb:hover{background:var(--ui-accent)}
+
+/* 0.5.113 drop from the file explorer: while files are dragged over the window a dashed overlay says what will happen. */
+.file-drop-overlay{position:fixed;inset:8px;z-index:9000;display:grid;place-items:center;padding:24px;box-sizing:border-box;border:2px dashed var(--ui-accent);border-radius:12px;background:color-mix(in srgb,var(--ui-bg) 78%,transparent);color:var(--ui-text);font-size:16px;font-weight:600;text-align:center;pointer-events:none;backdrop-filter:blur(2px)}
+.file-drop-overlay[hidden]{display:none}
+

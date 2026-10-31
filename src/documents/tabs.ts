@@ -309,6 +309,14 @@ export function initTabs(): void {
     editorTabList.scrollBy({ left: Math.max(150, editorTabList.clientWidth * .7), behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   });
   editorTabList.addEventListener("contextmenu", showEditorTabContextMenu);
+  // The tab context menu closes like the other menus: on a press anywhere outside it, on Escape, and when the window
+  // loses focus or changes size (pressing inside it is handled by its own click handler below).
+  document.addEventListener("pointerdown", event => {
+    if (!editorTabContextMenu.hidden && !(event.target instanceof Element && event.target.closest("#editorTabContextMenu"))) hideEditorTabContextMenu();
+  }, true);
+  document.addEventListener("keydown", event => { if (event.key === "Escape" && !editorTabContextMenu.hidden) { event.preventDefault(); hideEditorTabContextMenu(); } }, true);
+  window.addEventListener("blur", hideEditorTabContextMenu);
+  window.addEventListener("resize", hideEditorTabContextMenu);
   editorTabContextMenu.addEventListener("click", event => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-tab-action]");
     const targetId = editorTabContextTargetId;
