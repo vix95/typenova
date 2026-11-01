@@ -26,7 +26,7 @@ function parseLocalPath(path: string): ParsedLocalPath {
   if (normalized.startsWith("/")) return { root: "/", parts: normalized.slice(1).split("/").filter(Boolean), caseInsensitive: false };
   return { root: "", parts: normalized.split("/").filter(Boolean), caseInsensitive: false };
 }
-function relativeImagePath(documentPath: string, imagePath: string): string {
+export function relativeImagePath(documentPath: string, imagePath: string): string {
   const from = parseLocalPath(parentDirectoryPath(documentPath));
   const to = parseLocalPath(imagePath);
   if (from.root !== to.root) return imagePath.replace(/\\/g, "/");

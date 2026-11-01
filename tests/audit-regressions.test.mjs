@@ -410,3 +410,24 @@ test("project tree controller allows moving between open folders but not outside
   await controller.remove("C:/b/y.md", false);
   assert.deepEqual(calls.at(-1), ["remove", "C:/b/y.md"]);
 });
+
+test("hidden sections: ranges cover the section and its sub-sections, nested ones are merged", async () => {
+  const { hiddenRangesFor, keysInsideRanges, removeHiddenLines, parseSectionConfig, serializeSectionConfig, sectionConfigPath, sectionKey } = await import("../.test-build/documents/section-ranges.js");
+  const h = (level, text, line, occurrence = 0) => ({ level, text, line, key: sectionKey(level, text, occurrence) });
+  const headings = [h(1, "Doc", 1), h(2, "A", 3), h(3, "A1", 5), h(2, "B", 9), h(3, "B1", 11), h(1, "End", 14)];
+  assert.deepEqual(hiddenRangesFor(headings, new Set(["2:A:0"]), 20), [{ key: "2:A:0", title: "A", startLine: 3, endLine: 8 }]);
+  assert.deepEqual(hiddenRangesFor(headings, new Set(["2:B:0"]), 20), [{ key: "2:B:0", title: "B", startLine: 9, endLine: 13 }]);
+  assert.deepEqual(hiddenRangesFor(headings, new Set(["1:End:0"]), 20), [{ key: "1:End:0", title: "End", startLine: 14, endLine: 20 }]);
+  const nested = hiddenRangesFor(headings, new Set(["2:A:0", "3:A1:0"]), 20);
+  assert.equal(nested.length, 1);
+  assert.equal(hiddenRangesFor(headings, new Set(["9:none:0"]), 20).length, 0);
+  assert.deepEqual([...keysInsideRanges(headings, nested)].sort(), ["2:A:0", "3:A1:0"]);
+  const text = Array.from({ length: 16 }, (_, i) => "L" + (i + 1)).join("\n");
+  assert.deepEqual(removeHiddenLines(text, hiddenRangesFor(headings, new Set(["2:A:0"]), 16)).split("\n").slice(0, 4), ["L1", "L2", "L9", "L10"]);
+  assert.equal(removeHiddenLines(text, []), text);
+  const config = serializeSectionConfig("Notes.md", ["2:A: b:c:0", "3:A1:1"]);
+  assert.deepEqual(parseSectionConfig(config).sort(), ["2:A: b:c:0", "3:A1:1"].sort());
+  assert.deepEqual(parseSectionConfig("not json"), []);
+  assert.deepEqual(parseSectionConfig(JSON.stringify({ hiddenSections: [{ level: "x", title: 3 }, { level: 2, title: "ok", occurrence: 0 }] })), ["2:ok:0"]);
+  assert.equal(sectionConfigPath("C:/p/Notes.md"), "C:/p/Notes.md.config.json");
+});

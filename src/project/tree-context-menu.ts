@@ -59,7 +59,7 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
     if (!isRoot) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń", "Delete"), "delete", { danger: true, shortcut: "Delete" }); }
     if (rootRow) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń folder z drzewa", "Remove folder from tree"), "remove-root"); }
   }
-  { if (!refreshOnly) { const hr = document.createElement("hr"); menu.append(hr); } add(langText("Odśwież drzewo", "Refresh tree"), "refresh", { shortcut: "F5" }); }
+  { if (!refreshOnly) { const hr = document.createElement("hr"); menu.append(hr); } add(langText("Odśwież", "Refresh"), "refresh", { shortcut: "F5" }); }
   menu.hidden = false; menu.style.visibility = "hidden"; menu.style.left = "0px"; menu.style.top = "0px";
   requestAnimationFrame(() => {
     const rect = menu!.getBoundingClientRect();

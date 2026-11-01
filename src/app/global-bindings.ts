@@ -68,7 +68,9 @@ export function initGlobalBindings(): void {
     if (mod && key === "o") { event.preventDefault(); event.stopPropagation(); void openDocument(); return; }
     if (mod && key === "n") { event.preventDefault(); event.stopPropagation(); ($("menuNew") as HTMLButtonElement).click(); return; }
     if (mod && key === "f") { event.preventDefault(); event.stopPropagation(); openSearchPanel(view); return; }
-    if (mod && key === "p") { event.preventDefault(); event.stopPropagation(); void printDocument(); return; }
+    // Ctrl+P is intentionally unassigned. It is still swallowed so the webview does not open its own print dialog;
+    // printing stays available from the File menu and the command palette.
+    if (mod && !event.shiftKey && key === "p") { event.preventDefault(); event.stopPropagation(); return; }
   }, true);
   $("menuSettingsOpen").addEventListener("click", () => ($("settingsDialog") as HTMLDialogElement).showModal());
   $("settingsClose").addEventListener("click", () => ($("settingsDialog") as HTMLDialogElement).close());
@@ -96,6 +98,28 @@ export function initDismissBindings(): void {
   document.querySelectorAll<HTMLButtonElement>("button").forEach(button => { if (!button.title) { const label = (button.getAttribute("aria-label") || button.textContent || "").trim().replace(/\s+/g, " "); if (label) button.title = label; } });
 }
 
+/** Keys of the browser that the desktop application does not want: developer tools, reload, view source, zoom and so on. */
+function isBrowserShortcut(event: KeyboardEvent): boolean {
+  const key = event.key.toLowerCase();
+  const mod = event.ctrlKey || event.metaKey;
+  if (["F12", "F7", "F11"].includes(event.key)) return true;
+  if (event.key === "F5") return true;
+  if (mod && event.shiftKey && ["i", "j", "c", "r"].includes(key)) return true;
+  if (mod && !event.shiftKey && !event.altKey && ["u", "r", "h", "j"].includes(key)) return true;
+  if (mod && ["+", "=", "-", "_", "0"].includes(event.key)) return true;
+  return false;
+}
+
+/**
+ * Disables the shortcuts and gestures of the embedded browser (the desktop webview also has them turned off natively
+ * where the platform allows). This only prevents the browser's default action; the application's own handlers still run.
+ */
+export function initBrowserShortcutGuard(): void {
+  document.addEventListener("keydown", event => { if (isBrowserShortcut(event)) event.preventDefault(); }, true);
+  // Ctrl + wheel zooms the page in a browser.
+  document.addEventListener("wheel", event => { if (event.ctrlKey) event.preventDefault(); }, { capture: true, passive: false });
+}
+
 export function initNativeContextMenuGuard(): void {
   // Disable the WebView's native browser context menu everywhere except the CodeMirror editor.
   // CodeMirror owns the one intentional context menu in TypeNova (formatting/editing actions).
@@ -105,7 +129,8 @@ export function initNativeContextMenuGuard(): void {
     const isProjectTree = target instanceof Element && (target.closest("#projectFiles .tree-entry") !== null || target.closest(".project-tree-head") !== null || target.closest("#projectFiles") !== null);
     const isPreviewSurface = target instanceof Element && target.closest("#preview") !== null;
     const isEditorTabStrip = target instanceof Element && target.closest("#editorTabList") !== null;
-    if (isEditorSurface || isProjectTree || isPreviewSurface || isEditorTabStrip) return;
+    const isOutline = target instanceof Element && target.closest("#outline") !== null;
+    if (isEditorSurface || isProjectTree || isPreviewSurface || isEditorTabStrip || isOutline) return;
     event.preventDefault();
     event.stopPropagation();
   }, true);

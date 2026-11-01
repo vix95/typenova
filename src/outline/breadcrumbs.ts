@@ -6,6 +6,19 @@ import { view } from "../editor/editor-view";
 import { langText } from "../i18n/language";
 import { navigateToHeadingLine, outlineHeadings, outlineParentIndexes, outlineState } from "./outline";
 
+/** The mouse wheel scrolls the section path sideways when it is wider than the bar. */
+export function initHeadingBreadcrumbs(): void {
+  const trail = document.getElementById("headingBreadcrumbTrail");
+  trail?.addEventListener("wheel", event => {
+    if (trail.scrollWidth <= trail.clientWidth || event.ctrlKey) return;
+    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? trail.clientWidth : 1;
+    const delta = (Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY) * unit;
+    if (!delta) return;
+    event.preventDefault();
+    trail.scrollLeft += delta;
+  }, { passive: false });
+}
+
 export function updateHeadingBreadcrumbs() {
   const nav = document.getElementById("headingBreadcrumbs");
   const trailRoot = document.getElementById("headingBreadcrumbTrail");

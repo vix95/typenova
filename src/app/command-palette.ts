@@ -10,6 +10,7 @@ import { langText } from "../i18n/language";
 import { applyTheme, setWrapping } from "../layout/appearance";
 import { toggleFocus } from "../layout/focus-mode";
 import { exportHtml, printDocument } from "../preview/export-print";
+import { toggleShowHiddenSections } from "../documents/section-visibility";
 
 type CommandItem = { labelPl: string; labelEn: string; shortcut?: string; run: () => void };
 const commandItems: CommandItem[] = [
@@ -19,7 +20,8 @@ const commandItems: CommandItem[] = [
   { labelPl: "Plik: zapisz jako", labelEn: "File: save as", shortcut: "Ctrl+Shift+S", run: () => void saveDocumentAs() },
   { labelPl: "Eksportuj HTML", labelEn: "Export HTML", run: exportHtml },
   { labelPl: "Historia wersji", labelEn: "Version history", run: () => void showVersionHistory() },
-  { labelPl: "Drukuj / eksportuj PDF", labelEn: "Print / export PDF", shortcut: "Ctrl+P", run: () => void printDocument() },
+  { labelPl: "Pokaż / ukryj ukryte sekcje", labelEn: "Show / hide hidden sections", run: () => toggleShowHiddenSections() },
+  { labelPl: "Drukuj / eksportuj PDF", labelEn: "Print / export PDF", run: () => void printDocument() },
   { labelPl: "Szukaj w dokumencie", labelEn: "Find in document", shortcut: "Ctrl+F", run: () => openSearchPanel(view) },
   { labelPl: "Cofnij", labelEn: "Undo", shortcut: "Ctrl+Z", run: () => undo(view) },
   { labelPl: "Ponów", labelEn: "Redo", shortcut: "Ctrl+Y", run: () => redo(view) },

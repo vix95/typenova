@@ -6,6 +6,8 @@ import { $ } from "../app/dom";
 import { printArea } from "../app/workspace-dom";
 import { documentState } from "../documents/document-state";
 import { documentMode } from "../documents/document-stats";
+import { removeHiddenLines } from "../documents/section-ranges";
+import { sectionVisibility } from "../documents/section-visibility";
 import { view } from "../editor/editor-view";
 import { langText } from "../i18n/language";
 import { resolveLocalImages } from "./code-blocks";
@@ -14,7 +16,8 @@ import { showToast } from "../ui/toast";
 
 async function renderFullDocument(): Promise<string> {
   const worker = new Worker(new URL("../preview.worker.ts", import.meta.url), { type: "module" });
-  const text = view.state.doc.toString();
+  // Hidden sections are left out of print and export, whether or not they are currently shown in the editor.
+  const text = removeHiddenLines(view.state.doc.toString(), sectionVisibility.ranges);
   return await new Promise((resolve, reject) => {
     const timer = window.setTimeout(() => { worker.terminate(); reject(new Error("Przekroczono czas renderowania dokumentu.")); }, 120000);
     worker.addEventListener("message", (event: MessageEvent) => { if (event.data.action !== "all") return; clearTimeout(timer); worker.terminate(); if (event.data.error) reject(new Error(event.data.error)); else resolve(event.data.html as string); }, { once: true });

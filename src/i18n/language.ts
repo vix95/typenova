@@ -26,7 +26,7 @@ const languageSelect = $("languageSelect") as HTMLSelectElement;
 const baseTextNodes = new WeakMap<Text, string>();
 const translatableTextNodes: Text[] = [];
 // Show shortcut badges only where the corresponding keyboard action is implemented.
-const menuShortcutHints: Record<string, string> = { menuNew: "Ctrl+N", menuOpen: "Ctrl+O", menuSave: "Ctrl+S", menuSaveAs: "Ctrl+Shift+S", menuPrint: "Ctrl+P", menuUndo: "Ctrl+Z", menuRedo: "Ctrl+Y", menuFind: "Ctrl+F", menuSelectAll: "Ctrl+A", menuBold: "Ctrl+B", menuItalic: "Ctrl+I", menuStrike: "Ctrl+Shift+X" };
+const menuShortcutHints: Record<string, string> = { menuNew: "Ctrl+N", menuOpen: "Ctrl+O", menuSave: "Ctrl+S", menuSaveAs: "Ctrl+Shift+S", menuUndo: "Ctrl+Z", menuRedo: "Ctrl+Y", menuFind: "Ctrl+F", menuSelectAll: "Ctrl+A", menuBold: "Ctrl+B", menuItalic: "Ctrl+I", menuStrike: "Ctrl+Shift+X" };
 function renderMenuShortcutHints() { for (const [id, shortcut] of Object.entries(menuShortcutHints)) { const button = document.getElementById(id); if (!(button instanceof HTMLButtonElement)) continue; let badge = button.querySelector("kbd"); if (!badge) { badge = document.createElement("kbd"); badge.className = "menu-shortcut-badge"; button.append(badge); } badge.textContent = shortcut; } }
 function effectiveLanguage(choice: string) { return choice === "auto" ? ((navigator.language || "en").toLowerCase().startsWith("pl") ? "pl" : "en") : choice; }
 function applyLanguage(choice: string) {
@@ -34,10 +34,12 @@ function applyLanguage(choice: string) {
   // Explicitly localized labels use data-pl/data-en; this avoids destructive textContent rewrites.
   document.querySelectorAll<HTMLElement>("[data-pl][data-en]").forEach(el => { el.textContent = el.dataset[lang] || el.dataset.pl || ""; });
   const ids: Record<string, [string, string]> = { outlineTitle: ["Spis treści", "Table of contents"], focusButton: ["Skupienie", "Focus"], findButton: ["Szukaj", "Find"], collapseAll: ["Zwiń wszystko", "Collapse all"], expandAll: ["Rozwiń wszystko", "Expand all"], menuNew: ["Nowy dokument", "New document"], menuOpen: ["Otwórz…", "Open…"], menuSave: ["Zapisz", "Save"], menuSaveAs: ["Zapisz jako…", "Save as…"], menuExportHtml: ["Eksportuj HTML…", "Export HTML…"], menuPrint: ["Drukuj / PDF…", "Print / PDF…"], menuHistory: ["Historia wersji…", "Version history…"], insertImageSnippet: ["Obraz (snippet)", "Image snippet"], insertSnippet: ["Snippet", "Snippet"], insertMermaid: ["Mermaid", "Mermaid"], helpOpen: ["Pomoc", "Help"], cheatsheetOpen: ["LaTeX, Snippet i Mermaid", "LaTeX, snippets and Mermaid"], shortcutsOpen: ["Skróty klawiszowe", "Keyboard shortcuts"], aboutOpen: ["O programie", "About"], resetLayout: ["Przywróć szerokości paneli", "Reset panel widths"] };
-  for (const [id, pair] of Object.entries(ids)) { const el = $(id); if (el) { el.textContent = pair[lang === "en" ? 1 : 0]; } }
+  for (const [id, pair] of Object.entries(ids)) { const el = $(id); if (el) { (el.querySelector(".outline-tool-label") ?? el).textContent = pair[lang === "en" ? 1 : 0]; } }
   // Re-attach hints after translated labels update textContent on some menu items.
   renderMenuShortcutHints();
   const openProjectButton = $("openProject"); if (openProjectButton) { const projectLabel = lang === "en" ? "Open folder (replaces the current tree)" : "Otwórz folder (zastąpi obecne drzewo)"; openProjectButton.title = projectLabel; openProjectButton.setAttribute("aria-label", projectLabel); }
+  const hiddenSectionsButton = $("toggleHiddenSections"); if (hiddenSectionsButton) { const hiddenLabel = lang === "en" ? "Show hidden sections" : "Pokaż ukryte sekcje"; hiddenSectionsButton.title = hiddenLabel; hiddenSectionsButton.setAttribute("aria-label", hiddenLabel); }
+  const refreshProjectButton = $("refreshProject"); if (refreshProjectButton) { const refreshLabel = lang === "en" ? "Refresh" : "Odśwież"; refreshProjectButton.title = refreshLabel; refreshProjectButton.setAttribute("aria-label", refreshLabel); }
   const addProjectButton = $("addProjectFolder"); if (addProjectButton) { const addLabel = lang === "en" ? "Add folder to the tree" : "Dodaj folder do drzewa"; addProjectButton.title = addLabel; addProjectButton.setAttribute("aria-label", addLabel); }
   const insertImageButton = $("insertImage"); if (insertImageButton) { insertImageButton.title = lang === "en" ? "Insert image" : "Wstaw grafikę"; insertImageButton.setAttribute("aria-label", insertImageButton.title); }
 

@@ -7,6 +7,7 @@ import { langText } from "../i18n/language";
 import { buildOutline } from "../outline/outline";
 import { activatePreviewFallback } from "./preview-fallback";
 import { markStartupReady } from "./preview-scheduler";
+import { markHiddenBlocks } from "./preview-hidden";
 import { applyQueuedPreviewAnchor } from "./preview-scroll-memory";
 import { blockIndex, forceRenderIndices, heightCache, htmlCache, pendingRenderIndices, previewState, type PreviewBlock } from "./preview-state";
 import { rebuildBlockOffsets, renderVirtualWindow } from "./virtual-window";
@@ -94,6 +95,7 @@ function onWorkerMessage(event: MessageEvent) {
     for (const key of Array.from(heightCache.keys())) if (!validKeys.has(key)) heightCache.delete(key);
     for (const key of Array.from(htmlCache.keys())) if (!validKeys.has(key)) htmlCache.delete(key);
     for (const item of data.rendered || []) htmlCache.set(item.key, item.html);
+    markHiddenBlocks();
     rebuildBlockOffsets();
     buildOutline(data.headings || []);
     updateStats(data.stats);

@@ -12,7 +12,7 @@ export function rebuildBlockOffsets() {
   previewState.blockOffsets[0] = 0;
   for (let i = 0; i < previewState.previewBlocks.length; i++) {
     const b = previewState.previewBlocks[i];
-    previewState.blockOffsets[i + 1] = previewState.blockOffsets[i] + Math.max(24, heightCache.get(b.key) ?? b.estimatedHeight);
+    previewState.blockOffsets[i + 1] = previewState.blockOffsets[i] + (b.hidden ? 0 : Math.max(24, heightCache.get(b.key) ?? b.estimatedHeight));
   }
   previewState.totalPreviewHeight = previewState.blockOffsets[previewState.previewBlocks.length] || 0;
 }
@@ -42,6 +42,7 @@ export function renderVirtualWindow(force = false) {
     const fragment = document.createDocumentFragment();
     for (let i = start; i <= end; i++) {
       const block = previewState.previewBlocks[i];
+      if (block.hidden) continue;
       let element = blockElements.get(block.key);
       if (!element) { element = document.createElement("section"); element.className = "preview-block"; element.dataset.key = block.key; blockElements.set(block.key, element); }
       element.dataset.index = String(i); element.dataset.startLine = String(block.startLine); element.dataset.endLine = String(block.endLine);
@@ -63,6 +64,6 @@ export function renderVirtualWindow(force = false) {
     for (const key of Array.from(htmlCache.keys())) { const idx = blockIndex.get(key); if (idx !== undefined && (idx < start - 50 || idx > end + 50)) htmlCache.delete(key); }
     for (const [key, element] of Array.from(blockElements.entries())) { const idx = blockIndex.get(key); if (idx === undefined || idx < start - 20 || idx > end + 20) { resizeObserver?.unobserve(element); element.remove(); blockElements.delete(key); } }
   }
-  for (let i = start; i <= end; i++)if (!htmlCache.has(previewState.previewBlocks[i].key)) pendingRenderIndices.add(i);
+  for (let i = start; i <= end; i++)if (!previewState.previewBlocks[i].hidden && !htmlCache.has(previewState.previewBlocks[i].key)) pendingRenderIndices.add(i);
   pumpWorker();
 }

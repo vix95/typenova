@@ -6,6 +6,7 @@ import { initWorkspaceDom } from "./app/workspace-dom";
 import { initEditorView, view } from "./editor/editor-view";
 import { initTabInteractions } from "./documents/tab-interactions";
 import { initTabDropTarget } from "./documents/tab-drop-target";
+import { initSectionVisibility } from "./documents/section-visibility";
 import { initTabs, renderTabs, configureLanguageForTab, persistOpenSession } from "./documents/tabs";
 import { initPreviewObservers } from "./preview/preview-observers";
 import { initPreviewContextMenu } from "./preview/preview-context-menu";
@@ -29,9 +30,11 @@ import { initToolbarBindings } from "./app/toolbar-bindings";
 import { initToolbarLayout } from "./layout/toolbar-layout";
 import { initSettingsBindings } from "./app/settings-bindings";
 import { initImageInsert } from "./editor/image-insert";
+import { initImagePaste } from "./editor/image-paste";
+import { initHeadingBreadcrumbs } from "./outline/breadcrumbs";
 import { initPaneResize } from "./layout/pane-resize";
 import { initScrollSync } from "./editor/scroll-sync";
-import { initGlobalBindings, initDismissBindings, initNativeContextMenuGuard } from "./app/global-bindings";
+import { initGlobalBindings, initDismissBindings, initNativeContextMenuGuard, initBrowserShortcutGuard } from "./app/global-bindings";
 import { initExternalLinks } from "./app/external-links";
 import { initTranslatableText, initLanguage, langText } from "./i18n/language";
 import { initTooltips } from "./ui/tooltip";
@@ -95,6 +98,7 @@ initPreviewContextMenu();
 initMediaViewer();
 initViewPositionPersistence();
 initOutline();
+initSectionVisibility();
 initExportPrint();
 
 // Project tree and menu bindings
@@ -123,6 +127,8 @@ initToolbarLayout();
 initFileMenuBindings();
 initSettingsBindings();
 initImageInsert();
+initImagePaste();
+initHeadingBreadcrumbs();
 
 // Panes and scrolling
 initPaneResize();
@@ -151,6 +157,7 @@ initTranslatableText();
 initLanguage();
 initTooltips();
 initNativeContextMenuGuard();
+initBrowserShortcutGuard();
 initEditorContextMenu();
 initDialogLabels();
 

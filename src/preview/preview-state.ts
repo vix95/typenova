@@ -1,10 +1,11 @@
 /** Shared state of the preview pipeline: worker bookkeeping, block metrics and caches. */
 import { readPreferenceFlag } from "../settings/preferences";
 import MarkdownIt from "markdown-it";
+import type { HiddenRange } from "../documents/section-ranges";
 
 export let pendingRenderIndices = new Set<number>();
 export let forceRenderIndices = new Set<number>();
-export type PreviewBlock = { key: string; hash: string; type: string; startLine: number; endLine: number; estimatedHeight: number; sourceLength: number; isHeavy: boolean };
+export type PreviewBlock = { key: string; hash: string; type: string; startLine: number; endLine: number; estimatedHeight: number; sourceLength: number; isHeavy: boolean; hidden?: boolean };
 export const htmlCache = new Map<string, string>();
 export const heightCache = new Map<string, number>();
 export const blockElements = new Map<string, HTMLElement>();
@@ -14,6 +15,8 @@ export const previewState = {
   updatePending: false as boolean,
   activeWorkerRequest: null as { id: number; action: "update" | "render"; revision: number } | null,
   previewBlocks: [] as PreviewBlock[],
+  /** Line ranges of hidden sections; blocks inside them take no space and are not rendered. */
+  hiddenLineRanges: [] as HiddenRange[],
   blockOffsets: [0] as number[],
   totalPreviewHeight: 0 as number,
   lastRenderedRange: [-1, -1] as [number, number],

@@ -3,6 +3,7 @@ import { $ } from "../app/dom";
 import { isDetachedWindow } from "../app/detached-window";
 import { rememberedProjectRoots, setProjectRoots } from "./project-roots";
 import { projectTreeState } from "./project-tree-ops";
+import { refreshProjectTree } from "./project-tree-sync";
 import { addProjectFolder, closeProject, openProject, renderProjectTree } from "./project-tree-view";
 
 const rememberedRoots = rememberedProjectRoots();
@@ -11,6 +12,7 @@ export function initProjectBindings(): void {
   $("openProject").addEventListener("click", () => void openProject());
   $("openProjectPrompt").addEventListener("click", () => void openProject());
   $("addProjectFolder").addEventListener("click", () => void addProjectFolder());
+  $("refreshProject").addEventListener("click", () => void refreshProjectTree());
   $("closeProject").addEventListener("click", () => void closeProject());
 }
 

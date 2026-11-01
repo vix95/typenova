@@ -69,9 +69,53 @@ async fn open_document_window(app: AppHandle, token: String) -> Result<(), Strin
     .inner_size(1200.0, 800.0)
     .min_inner_size(900.0, 500.0)
     .build()
-    .map(|_| ())
+    .map(|window| harden_webview(&window))
     .map_err(|error| error.to_string())
 }
+
+/// Turns off the browser features of the webview that make no sense in a desktop application: developer tools (F12,
+/// Ctrl+Shift+I), the browser accelerator keys (reload, view source, print, find, zoom, history navigation ...), the
+/// link status bar, zoom and swipe navigation, and form autofill. Editing keys (copy, paste, undo) are not affected.
+#[cfg(windows)]
+fn harden_webview(window: &tauri::WebviewWindow) {
+  let _ = window.with_webview(|webview| unsafe {
+    use webview2_com::Microsoft::Web::WebView2::Win32::{ICoreWebView2Settings3, ICoreWebView2Settings4, ICoreWebView2Settings5, ICoreWebView2Settings6};
+    use windows_core::Interface;
+    let Ok(core) = webview.controller().CoreWebView2() else { return };
+    let Ok(settings) = core.Settings() else { return };
+    let _ = settings.SetAreDevToolsEnabled(false);
+    let _ = settings.SetIsStatusBarEnabled(false);
+    let _ = settings.SetIsZoomControlEnabled(false);
+    if let Ok(settings3) = settings.cast::<ICoreWebView2Settings3>() {
+      let _ = settings3.SetAreBrowserAcceleratorKeysEnabled(false);
+    }
+    if let Ok(settings4) = settings.cast::<ICoreWebView2Settings4>() {
+      let _ = settings4.SetIsGeneralAutofillEnabled(false);
+      let _ = settings4.SetIsPasswordAutosaveEnabled(false);
+    }
+    if let Ok(settings5) = settings.cast::<ICoreWebView2Settings5>() {
+      let _ = settings5.SetIsPinchZoomEnabled(false);
+    }
+    if let Ok(settings6) = settings.cast::<ICoreWebView2Settings6>() {
+      let _ = settings6.SetIsSwipeNavigationEnabled(false);
+    }
+    #[cfg(debug_assertions)]
+    {
+      let mut devtools = windows_core::BOOL(0);
+      let mut accelerators = windows_core::BOOL(0);
+      let devtools_read = settings.AreDevToolsEnabled(&mut devtools).is_ok();
+      let accelerators_read = settings.cast::<ICoreWebView2Settings3>().map(|value| value.AreBrowserAcceleratorKeysEnabled(&mut accelerators).is_ok()).unwrap_or(false);
+      eprintln!(
+        "webview hardened: devtools enabled = {} (read: {devtools_read}), browser accelerator keys enabled = {} (read: {accelerators_read})",
+        devtools.as_bool(),
+        accelerators.as_bool()
+      );
+    }
+  });
+}
+
+#[cfg(not(windows))]
+fn harden_webview(_window: &tauri::WebviewWindow) {}
 
 /// Editor windows are the main window and the document windows; helper windows (the drag ghost) never take drops.
 fn is_editor_window_label(label: &str) -> bool {
@@ -120,6 +164,7 @@ async fn drag_ghost_show(app: AppHandle, payload: String) -> Result<(), String> 
     .visible(false)
     .build()
     .map_err(|error| error.to_string())?;
+  harden_webview(&ghost);
   let _ = ghost.set_ignore_cursor_events(true);
   drag_ghost_follow(&app);
   let _ = ghost.show();
@@ -283,6 +328,12 @@ pub fn run() {
     // Persist filesystem grants created when users choose files or folders in native dialogs.
     .plugin(tauri_plugin_persisted_scope::init())
     .plugin(tauri_plugin_opener::init())
+    .setup(|app| {
+      if let Some(window) = app.get_webview_window("main") {
+        harden_webview(&window);
+      }
+      Ok(())
+    })
     // The hidden drag-ghost window must not keep the process alive: when the last editor window is gone the app ends.
     // Otherwise an invisible instance would remain and the single-instance guard would swallow the next launch.
     .on_window_event(|window, event| {

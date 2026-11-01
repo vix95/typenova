@@ -8,6 +8,7 @@ import { view } from "../editor/editor-view";
 import { scrollSyncState, syncPreviewToEditor } from "../editor/scroll-sync";
 import { langText } from "../i18n/language";
 import { updateHeadingBreadcrumbs } from "./breadcrumbs";
+import { refreshSectionVisibility, isSectionHidden, sectionVisibility, setSectionHidden } from "../documents/section-visibility";
 
 export let outlineHeadings: { level: number; text: string; line: number; key: string }[] = [];
 export let outlineParentIndexes: number[] = [];
@@ -45,7 +46,11 @@ export function buildOutline(headings: { level: number; text: string; line: numb
   $("headingCount").textContent = outlineHeadings.length.toLocaleString(document.documentElement.lang === "en" ? "en-US" : "pl-PL");
   headingIndexByKey = new Map(outlineHeadings.map((h, i) => [h.key, i]));
   lastOutlineActive = ""; recomputeVisibleOutline(); lastOutlineRange = [-1, -1]; renderOutlineWindow(true); updateActiveOutline(); updateHeadingBreadcrumbs();
+  void refreshSectionVisibility();
 }
+
+/** Re-renders the outline rows so hidden sections show as dimmed. */
+export function refreshOutlineHiddenMarks() { lastOutlineRange = [-1, -1]; renderOutlineWindow(true); }
 export function navigateToHeadingLine(line: number) {
   const safeLine = Math.max(1, Math.min(view.state.doc.lines, Math.trunc(line) || 1));
   const pos = view.state.doc.line(safeLine).from;
@@ -80,7 +85,7 @@ export function renderOutlineWindow(force = false) {
   for (let index = first; index <= last; index++) {
     const h = visibleOutlineHeadings[index]; const fullIndex = headingIndexByKey.get(h.key) ?? -1;
     const hasChildren = fullIndex >= 0 && fullIndex + 1 < outlineHeadings.length && outlineHeadings[fullIndex + 1].level > h.level;
-    const row = document.createElement("div"); row.className = "outline-row"; row.dataset.key = h.key; row.style.height = `${OUTLINE_ROW_HEIGHT}px`; row.style.setProperty("--outline-depth", String(Math.max(0, h.level - 1)));
+    const row = document.createElement("div"); row.className = `outline-row${sectionVisibility.insideKeys.has(h.key) ? " is-hidden-section" : ""}${isSectionHidden(h.key) ? " is-hidden-root" : ""}`; row.dataset.key = h.key; row.style.height = `${OUTLINE_ROW_HEIGHT}px`; row.style.setProperty("--outline-depth", String(Math.max(0, h.level - 1)));
     const toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = `outline-fold${hasChildren && !collapsedHeadings.has(h.key) ? " expanded" : ""}`;
@@ -97,6 +102,7 @@ export function renderOutlineWindow(force = false) {
     toggle.addEventListener("click", e => { e.stopPropagation(); if (collapsedHeadings.has(h.key)) collapsedHeadings.delete(h.key); else collapsedHeadings.add(h.key); localStorage.setItem("typenova.collapsed", JSON.stringify([...collapsedHeadings])); recomputeVisibleOutline(); lastOutlineRange = [-1, -1]; renderOutlineWindow(true); updateActiveOutline(); });
     const button = document.createElement("button"); button.className = `outline-item level-${h.level}${h.key === lastOutlineActive ? " active" : ""}`; button.textContent = h.text; button.title = `${langText("Linia", "Line")} ${h.line}`;
     button.addEventListener("click", () => { const line = Math.min(h.line, view.state.doc.lines), pos = view.state.doc.line(line).from; view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: "center" }) }); view.focus(); if (scrollSyncState.syncScroll) syncPreviewToEditor(); });
+    row.addEventListener("contextmenu", event => showOutlineContextMenu(event, h.key));
     row.append(toggle, button); fragment.append(row); outlineButtons.set(h.key, button);
   }
   outlineContent.replaceChildren(fragment); lastOutlineRange = [first, last];
@@ -119,6 +125,30 @@ export function updateActiveOutline() {
     if (index !== undefined) { const top = index * OUTLINE_ROW_HEIGHT, bottom = top + OUTLINE_ROW_HEIGHT; if (top < outlineRoot.scrollTop || bottom > outlineRoot.scrollTop + outlineRoot.clientHeight) { outlineRoot.scrollTop = Math.max(0, top - outlineRoot.clientHeight / 2); lastOutlineRange = [-1, -1]; renderOutlineWindow(true); } button = outlineButtons.get(active.key); }
   }
   button?.classList.add("active");
+}
+
+let outlineMenu: HTMLDivElement | null = null;
+function hideOutlineMenu() { if (outlineMenu) outlineMenu.hidden = true; }
+/** Right-click on a heading of the outline: hide or show its section. */
+function showOutlineContextMenu(event: MouseEvent, key: string) {
+  event.preventDefault(); event.stopPropagation();
+  if (!outlineMenu) {
+    outlineMenu = document.createElement("div"); outlineMenu.className = "context-menu outline-context-menu"; outlineMenu.setAttribute("role", "menu"); outlineMenu.hidden = true;
+    document.body.append(outlineMenu);
+    document.addEventListener("pointerdown", pointer => { if (outlineMenu && !outlineMenu.hidden && !(pointer.target instanceof Element && pointer.target.closest(".outline-context-menu"))) hideOutlineMenu(); }, true);
+    document.addEventListener("keydown", keyboard => { if (keyboard.key === "Escape") hideOutlineMenu(); }, true);
+    window.addEventListener("blur", hideOutlineMenu);
+  }
+  const hidden = isSectionHidden(key);
+  const item = document.createElement("button"); item.type = "button"; item.role = "menuitem";
+  item.textContent = hidden ? langText("Pokaż sekcję", "Show section") : langText("Ukryj sekcję", "Hide section");
+  item.addEventListener("click", () => { hideOutlineMenu(); void setSectionHidden(key, !hidden); });
+  outlineMenu.replaceChildren(item);
+  outlineMenu.hidden = false; outlineMenu.style.visibility = "hidden";
+  const rect = outlineMenu.getBoundingClientRect();
+  outlineMenu.style.left = `${Math.max(8, Math.min(event.clientX, window.innerWidth - rect.width - 8))}px`;
+  outlineMenu.style.top = `${Math.max(8, Math.min(event.clientY, window.innerHeight - rect.height - 8))}px`;
+  outlineMenu.style.visibility = "visible"; item.focus({ preventScroll: true });
 }
 
 export function initOutline(): void {

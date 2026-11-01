@@ -2306,3 +2306,52 @@ html[data-theme="contrast"] .editor-tab-list .editor-tab.tab-skeleton{border-wid
 .file-drop-overlay{position:fixed;inset:8px;z-index:9000;display:grid;place-items:center;padding:24px;box-sizing:border-box;border:2px dashed var(--ui-accent);border-radius:12px;background:color-mix(in srgb,var(--ui-bg) 78%,transparent);color:var(--ui-text);font-size:16px;font-weight:600;text-align:center;pointer-events:none;backdrop-filter:blur(2px)}
 .file-drop-overlay[hidden]{display:none}
 
+/* 0.5.113 paste an image from the clipboard: description, file name and a folder picker limited to the open project folders. */
+dialog.image-paste-dialog{width:min(760px,calc(100vw - 32px))}
+.image-paste-content{gap:14px}
+.image-paste-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;min-height:0}
+.image-paste-treebox{display:flex;flex-direction:column;gap:6px;min-width:0}
+.image-paste-sub{font-size:12px;color:var(--ui-muted)}
+.image-paste-tree{height:320px;overflow:auto;padding:4px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-input-bg);overscroll-behavior:contain}
+.image-paste-row{display:flex;align-items:center;gap:6px;width:100%;min-height:26px;padding:0 8px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--ui-text);font-size:13px;text-align:left;cursor:pointer}
+.image-paste-row:hover{background:var(--ui-hover)}
+.image-paste-row[aria-selected="true"]{background:var(--ui-active);border-color:var(--ui-accent)}
+.image-paste-row:focus-visible{outline:2px solid var(--ui-accent);outline-offset:-2px}
+.image-paste-disclosure{display:grid;place-items:center;width:14px;height:14px;flex:none;color:var(--ui-muted)}
+.image-paste-disclosure svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:transform .12s}
+.image-paste-row[aria-expanded="true"] .image-paste-disclosure svg{transform:rotate(90deg)}
+.image-paste-icon{display:grid;place-items:center;width:16px;height:16px;flex:none;color:var(--ui-accent)}
+.image-paste-icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linejoin:round}
+.image-paste-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.image-paste-file,.image-paste-note{padding:2px 8px;font-size:12px;color:var(--ui-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.image-paste-side{display:flex;flex-direction:column;gap:10px;min-width:0}
+.image-paste-preview{display:block;max-width:100%;max-height:150px;margin:0 auto;object-fit:contain;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-input-bg)}
+.image-paste-field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ui-muted)}
+.image-paste-input{padding:8px 10px;border-radius:6px;font-size:13px}
+.image-paste-target{min-height:18px;font-size:12px;color:var(--ui-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.image-paste-error{padding:6px 10px;border:1px solid var(--ui-accent);border-radius:6px;font-size:12px;color:var(--ui-text)}
+html[data-theme="contrast"] .image-paste-row[aria-selected="true"]{border-width:2px}
+@media (max-width:640px){.image-paste-columns{grid-template-columns:1fr}}
+
+/* 0.5.113 hidden sections: nothing left in the editor, dimmed rows in the outline, the "show hidden" toggle. */
+.cm-hidden-section{height:0;overflow:hidden}
+.outline-row.is-hidden-section .outline-item{opacity:.45}
+.outline-row.is-hidden-root .outline-item::after{content:"";display:inline-block;width:13px;height:13px;margin-left:7px;vertical-align:-2px;background-color:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3l18 18'/%3E%3Cpath d='M10.6 5.2A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.1 6.1C3.6 7.8 2 12 2 12s3.6 7 10 7c1.5 0 2.8-.3 4-.9'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3l18 18'/%3E%3Cpath d='M10.6 5.2A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.1 6.1C3.6 7.8 2 12 2 12s3.6 7 10 7c1.5 0 2.8-.3 4-.9'/%3E%3C/svg%3E") center/contain no-repeat}
+.outline-tools .outline-toggle-hidden{flex:0 0 auto;display:inline-grid;place-items:center;width:30px;padding:0}
+.outline-tools .outline-toggle-hidden svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.outline-tools .outline-toggle-hidden[aria-pressed="true"]{background:var(--ui-active);border-color:var(--ui-accent);color:var(--ui-text)}
+.outline-tools .outline-toggle-hidden:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+html[data-theme="contrast"] .outline-tools .outline-toggle-hidden[aria-pressed="true"]{border-width:2px}
+
+/* 0.5.113 outline tools: real buttons with an icon, no bar background behind them. The id selector is needed to win over the older rules. */
+#outlineView .outline-tools{display:flex;align-items:center;gap:4px!important;padding:2px 8px 10px!important;background:transparent!important;border-bottom:0!important}
+#outlineView .outline-tools .outline-tool{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:30px;padding:0 6px!important;border:1px solid var(--ui-border)!important;border-radius:7px!important;background:var(--ui-panel2)!important;color:var(--ui-text)!important;font-size:11px!important;font-weight:500;white-space:nowrap;cursor:pointer;transition:background-color .12s,border-color .12s}
+#outlineView .outline-tools .outline-tool .button-icon{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#outlineView .outline-tools .outline-tool-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#outlineView .outline-tools .outline-tool:hover{background:var(--ui-hover)!important;border-color:var(--ui-accent)!important}
+#outlineView .outline-tools .outline-tool:active{background:var(--ui-active)!important}
+#outlineView .outline-tools .outline-tool:focus-visible{outline:2px solid var(--ui-accent)!important;outline-offset:1px}
+#outlineView .outline-tools .outline-toggle-hidden{flex:0 0 32px;padding:0!important}
+#outlineView .outline-tools .outline-toggle-hidden[aria-pressed="true"]{background:var(--ui-active)!important;border-color:var(--ui-accent)!important}
+html[data-theme="contrast"] #outlineView .outline-tools .outline-tool{border-width:2px!important}
+

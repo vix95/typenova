@@ -29,6 +29,7 @@ import { updateHeadingBreadcrumbs } from "../outline/breadcrumbs";
 import { updateActiveOutline } from "../outline/outline";
 import { printDocument } from "../preview/export-print";
 import { schedulePreview } from "../preview/preview-scheduler";
+import { hiddenSectionsExtension } from "./hidden-sections";
 
 // Preserve Markdown styling in large files, but avoid activating nested parsers
 // for fenced programming languages once the document reaches 2 MB. CodeMirror's
@@ -71,6 +72,7 @@ export function performanceExtensions(docLength: number) {
   return docLength >= 1_000_000 ? [markdownFoldGutter] : [highlightActiveLine(), markdownFoldGutter];
 }
 export const editorExtensions = [
+  hiddenSectionsExtension,
   performanceCompartment.of(performanceExtensions(initialDocumentText.length)),
   lineNumbersCompartment.of(lineNumbersEnabled ? lineNumbers() : []), drawSelection(), history(),
   wrapping.of(localStorage.getItem("typenova.wrap") === "true" ? EditorView.lineWrapping : []),
