@@ -7,6 +7,7 @@ import { initEditorView, view } from "./editor/editor-view";
 import { initTabInteractions } from "./documents/tab-interactions";
 import { initTabDropTarget } from "./documents/tab-drop-target";
 import { initSectionVisibility } from "./documents/section-visibility";
+import { initAppVersion } from "./app/app-version";
 import { initTabs, renderTabs, configureLanguageForTab, persistOpenSession } from "./documents/tabs";
 import { initPreviewObservers } from "./preview/preview-observers";
 import { initPreviewContextMenu } from "./preview/preview-context-menu";
@@ -99,6 +100,7 @@ initMediaViewer();
 initViewPositionPersistence();
 initOutline();
 initSectionVisibility();
+initAppVersion();
 initExportPrint();
 
 // Project tree and menu bindings
