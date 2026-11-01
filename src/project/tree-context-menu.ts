@@ -1,7 +1,11 @@
 /** Project tree context menu and its file operations (open, new file, delete, copy, cut, paste). */
 import { normalizedFsPath, pathIsInside, parentPath } from "../filesystem/project-tree-operations";
-import { basename, isEditableTextFile } from "../filesystem/path-utils";
-import { exists, writeTextFile, readTextFile } from "@tauri-apps/plugin-fs";
+import { basename, isEditableTextFile, isViewableImageFile } from "../filesystem/path-utils";
+import { openImageFile } from "../preview/media-viewer";
+import { exists, mkdir, rename, writeTextFile, readTextFile } from "@tauri-apps/plugin-fs";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { askForName } from "../ui/name-dialog";
+import { fileNameProblem } from "../editor/image-paste-dialog";
 import { join } from "@tauri-apps/api/path";
 import { $ } from "../app/dom";
 import { activeSidebarTab } from "../app/sidebar";
@@ -11,7 +15,7 @@ import { activeTab, createNewTab, renderTabs, switchToTab } from "../documents/t
 import { view } from "../editor/editor-view";
 import { buildGraph } from "../graph-ui/indexing";
 import { langText } from "../i18n/language";
-import { isFilesystemScopeError, markTreeClipboardState, performTreeMoveOrCopy, projectTreeController, projectTreeState, setTreeClipboard } from "./project-tree-ops";
+import { isFilesystemScopeError, markTreeClipboardState, performTreeMoveOrCopy, performTreeRename, projectTreeController, projectTreeState, setTreeClipboard } from "./project-tree-ops";
 import { openProject, removeProjectFolder, renderProjectTree } from "./project-tree-view";
 import { isOpenProjectRoot, projectRootFor } from "./project-roots";
 import { refreshProjectTree } from "./project-tree-sync";
@@ -46,6 +50,7 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
   if (!refreshOnly) {
     if (!isRoot) add(langText("Otwórz", "Open"), "open");
     add(langText("Nowy plik…", "New file…"), "new-file");
+  add(langText("Nowy folder…", "New folder…"), "new-folder");
     {
       const hr = document.createElement("hr"); menu.append(hr);
     }
@@ -53,11 +58,13 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
       add(langText("Kopiuj", "Copy"), "copy", { shortcut: "Ctrl+C" });
       add(langText("Wytnij", "Cut"), "cut", { shortcut: "Ctrl+X" });
       add(langText("Duplikuj", "Duplicate"), "duplicate");
+      add(langText("Zmień nazwę…", "Rename…"), "rename", { shortcut: "F2" });
       const hr = document.createElement("hr"); menu.append(hr);
     }
     add(langText("Wklej", "Paste"), "paste", { disabled: !projectTreeState.clipboard, shortcut: "Ctrl+V" });
     if (!isRoot) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń", "Delete"), "delete", { danger: true, shortcut: "Delete" }); }
     if (rootRow) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń folder z drzewa", "Remove folder from tree"), "remove-root"); }
+    { const hr = document.createElement("hr"); menu.append(hr); add(langText("Pokaż w eksploratorze", "Show in file explorer"), "reveal"); }
   }
   { if (!refreshOnly) { const hr = document.createElement("hr"); menu.append(hr); } add(langText("Odśwież", "Refresh"), "refresh", { shortcut: "F5" }); }
   menu.hidden = false; menu.style.visibility = "hidden"; menu.style.left = "0px"; menu.style.top = "0px";
@@ -93,6 +100,49 @@ ${langText(`Zamknięte zostaną też otwarte dokumenty (${unsaved.length}) z nie
   await renderProjectTree(); markTreeClipboardState();
   if (activeSidebarTab === "brain") void buildGraph();
   showToast(`${langText("Usunięto", "Deleted")}: ${itemName}`);
+}
+/** Asks for a name and creates a folder inside `directoryPath` (which must be inside an open project folder). */
+/** Asks for a new name and renames the entry; a Markdown file takes its hidden-sections config file along. */
+async function promptAndRenameProjectEntry(path: string, isDirectory: boolean): Promise<void> {
+  const current = basename(path);
+  const name = await askForName({
+    title: langText("Zmień nazwę", "Rename"),
+    label: langText(`Nowa nazwa dla „${current}”`, `New name for “${current}”`),
+    initialValue: current,
+    confirmLabel: langText("Zmień", "Rename"),
+    validate: async candidate => {
+      const problem = fileNameProblem(candidate);
+      if (problem) return problem;
+      if (candidate === current) return null;
+      const target = await join(parentPath(path), candidate);
+      const caseOnly = candidate.toLowerCase() === current.toLowerCase();
+      return !caseOnly && await exists(target) ? langText("Element o tej nazwie już istnieje.", "An item with this name already exists.") : null;
+    },
+  });
+  if (!name || name === current) return;
+  const oldConfig = `${path}.config.json`;
+  const hadConfig = !isDirectory && await exists(oldConfig);
+  const renamed = await performTreeRename(path, name);
+  if (hadConfig) { try { await rename(oldConfig, `${renamed}.config.json`); } catch { /* the sidecar stays under the old name */ } }
+}
+
+async function promptAndCreateProjectFolder(directoryPath: string): Promise<void> {
+  if (!directoryPath || !projectRootFor(directoryPath)) {
+    showToast(langText("Folder docelowy musi znajdować się w otwartym projekcie.", "The destination folder must be inside the open project."));
+    return;
+  }
+  const name = await askForName({
+    title: langText("Nowy folder", "New folder"),
+    label: langText(`Nazwa folderu w „${basename(directoryPath)}”`, `Folder name in “${basename(directoryPath)}”`),
+    validate: async candidate => fileNameProblem(candidate) ?? (await exists(await join(directoryPath, candidate)) ? langText("Element o tej nazwie już istnieje.", "An item with this name already exists.") : null),
+  });
+  if (!name) return;
+  const created = await join(directoryPath, name);
+  if (!projectRootFor(created)) throw new Error(langText("Ścieżka folderu wychodzi poza projekt.", "The folder path escapes the project folder."));
+  await mkdir(created);
+  projectTreeState.expandedFolders.add(directoryPath);
+  await refreshProjectTree();
+  showToast(`${langText("Utworzono folder", "Created folder")}: ${name}`);
 }
 async function promptAndCreateProjectFile(directoryPath: string): Promise<string | null> {
   if (!directoryPath || !projectRootFor(directoryPath)) {
@@ -183,6 +233,7 @@ export async function openProjectTreeEntry(path: string, isDirectory: boolean) {
     row.focus({ preventScroll: true });
     return;
   }
+  if (isViewableImageFile(basename(path))) { await openImageFile(path); return; }
   if (!isEditableTextFile(basename(path))) {
     showToast(langText("TypeNova nie może otworzyć tego pliku.", "TypeNova cannot open this file."));
     return;
@@ -219,9 +270,12 @@ export async function handleTreeContextAction(action: string) {
       if (activeSidebarTab === "brain") void buildGraph();
       showToast(`${langText("Utworzono plik", "Created file")}: ${basename(createdPath)}`);
     }
+    else if (action === "new-folder") await promptAndCreateProjectFolder(destinationFolder);
     else if (action === "copy" || action === "cut") setTreeClipboard(path, action, isDirectory);
     else if (action === "duplicate") await performTreeMoveOrCopy(path, parentPath(path), "copy", isDirectory, true);
     else if (action === "delete" && !isRoot) await deleteProjectEntry(path, isDirectory);
+    else if (action === "rename" && !isRoot) await promptAndRenameProjectEntry(path, isDirectory);
+    else if (action === "reveal") await revealItemInDir(path);
     else if (action === "paste" && projectTreeState.clipboard) {
       const clipboard = { ...projectTreeState.clipboard };
       await performTreeMoveOrCopy(clipboard.path, destinationFolder, clipboard.operation, clipboard.isDirectory, false);

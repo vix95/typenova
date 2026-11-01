@@ -5,6 +5,7 @@ import { translations } from "../i18n/translations";
 const appTooltip = document.createElement("div");
 const appTooltipLabel = document.createElement("span");
 const appTooltipShortcut = document.createElement("kbd");
+const appTooltipImage = document.createElement("img");
 let tooltipTarget: HTMLElement | null = null;
 let tooltipTimer: number | undefined;
 let tooltipToken = 0;
@@ -61,9 +62,10 @@ export function showAppTooltip(target: HTMLElement, delay = 420, preferredPlacem
   if (window.matchMedia("(pointer: coarse)").matches && document.activeElement !== target) return;
   if (tooltipTimer !== undefined) window.clearTimeout(tooltipTimer);
   const token = ++tooltipToken;
-  tooltipTimer = window.setTimeout(() => {
-    if (token !== tooltipToken || !target.isConnected) return;
+  const present = (withThumbnail: boolean) => {
     hideAppTooltip();
+    appTooltipImage.hidden = !withThumbnail;
+    appTooltip.classList.toggle("has-thumbnail", withThumbnail);
     // A modal dialog lives in the top layer, above everything in the page, so the tooltip must be inside it to be visible.
     const host: HTMLElement = target.closest<HTMLElement>("dialog[open]") ?? document.body;
     if (appTooltip.parentElement !== host) host.append(appTooltip);
@@ -105,7 +107,24 @@ export function showAppTooltip(target: HTMLElement, delay = 420, preferredPlacem
     void appTooltip.offsetWidth;
     appTooltip.classList.add("visible");
     tooltipTimer = undefined;
+  };
+  tooltipTimer = window.setTimeout(() => {
+    if (token !== tooltipToken || !target.isConnected) return;
+    const thumbnail = target.dataset.tooltipImage;
+    if (!thumbnail) { present(false); return; }
+    // The picture is loaded first so the tooltip is measured and placed with its final size.
+    void loadTooltipThumbnail(thumbnail).then(loaded => { if (token === tooltipToken && target.isConnected) present(loaded); });
   }, delay);
+}
+
+/** Loads a local image into the tooltip's thumbnail; false when it cannot be shown. */
+async function loadTooltipThumbnail(path: string): Promise<boolean> {
+  try {
+    const { localImageUrl } = await import("../preview/code-blocks");
+    appTooltipImage.src = await localImageUrl(path);
+    await appTooltipImage.decode();
+    return true;
+  } catch { return false; }
 }
 function tooltipTargetFromEvent(target: EventTarget | null) {
   if (!(target instanceof Element)) return null;
@@ -127,7 +146,8 @@ export function initTooltips(): void {
   appTooltip.hidden = true;
   appTooltipLabel.className = "typenova-tooltip-label";
   appTooltipShortcut.className = "typenova-tooltip-shortcut";
-  appTooltip.append(appTooltipLabel, appTooltipShortcut);
+  appTooltipImage.className = "typenova-tooltip-thumb"; appTooltipImage.alt = ""; appTooltipImage.hidden = true; appTooltipImage.decoding = "async";
+  appTooltip.append(appTooltipLabel, appTooltipShortcut, appTooltipImage);
   document.body.append(appTooltip);
   document.addEventListener("pointerover", event => {
     if (!(event instanceof PointerEvent) || event.pointerType === "touch") return;

@@ -19,6 +19,7 @@
     "fs:scope-appdata-recursive",
     "fs:allow-read-dir",
     "opener:allow-default-urls",
+    "opener:allow-reveal-item-in-dir",
     "fs:allow-exists",
     "fs:allow-rename",
     "fs:allow-remove"

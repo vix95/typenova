@@ -2,7 +2,8 @@
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { readDir, readTextFile } from "@tauri-apps/plugin-fs";
 import { openTextInTab } from "../documents/file-actions";
-import { basename, isEditableTextFile } from "../filesystem/path-utils";
+import { basename, isEditableTextFile, isViewableImageFile } from "../filesystem/path-utils";
+import { openImageFile } from "../preview/media-viewer";
 import { langText } from "../i18n/language";
 import { addProjectFolderPath } from "../project/project-tree-view";
 import { showToast } from "../ui/toast";
@@ -36,6 +37,7 @@ export async function openDroppedPaths(paths: readonly string[]): Promise<void> 
   let opened = 0, unsupported = 0, failed = 0, folders = 0;
   for (const path of paths) {
     if (await isDirectory(path)) { await addProjectFolderPath(path); folders++; continue; }
+    if (isViewableImageFile(basename(path))) { await openImageFile(path); opened++; continue; }
     if (!isEditableTextFile(basename(path))) { unsupported++; continue; }
     try { openTextInTab(path, await readTextFileAfterGrant(path)); opened++; }
     catch { failed++; }

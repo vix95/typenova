@@ -1,10 +1,12 @@
 /** Dialog for a pasted image: description, file name and a small explorer limited to the open project folders. */
-import { exists, readDir } from "@tauri-apps/plugin-fs";
+import { exists, mkdir, readDir } from "@tauri-apps/plugin-fs";
 import { join } from "@tauri-apps/api/path";
+import { slugifyForFileName } from "../filesystem/file-names";
 import { basename } from "../filesystem/path-utils";
 import { isProjectRoot, rootContaining } from "../filesystem/project-roots";
 import { normalizedFsPath, pathIsInside } from "../filesystem/project-tree-operations";
 import { langText } from "../i18n/language";
+import { appConfirm } from "../ui/dialogs";
 
 export interface ImagePasteRequest {
   image: Blob;
@@ -31,7 +33,7 @@ export function fileNameProblem(name: string): string | null {
   return null;
 }
 
-type Tree = { host: HTMLElement; select(path: string): void; reveal(path: string): Promise<void> };
+type Tree = { host: HTMLElement; select(path: string): void; reveal(path: string): Promise<void>; reload(path: string): Promise<void> };
 
 function folderRow(name: string, path: string, depth: number): { row: HTMLButtonElement; disclosure: HTMLElement } {
   const row = document.createElement("button");
@@ -118,6 +120,13 @@ function createFolderTree(roots: readonly string[], onSelect: (path: string) => 
 
   return {
     host,
+    async reload(path) {
+      const row = Array.from(host.querySelectorAll<HTMLElement>(".image-paste-row")).find(candidate => normalizedFsPath(candidate.dataset.path || "") === normalizedFsPath(path));
+      if (!row) return;
+      loaded.delete(row.dataset.path || "");
+      children(row).replaceChildren();
+      await expand(row, Number(row.dataset.depth || 0));
+    },
     select: path => { const row = Array.from(host.querySelectorAll<HTMLElement>(".image-paste-row")).find(candidate => normalizedFsPath(candidate.dataset.path || "") === normalizedFsPath(path)); if (row) select(row); },
     async reveal(target) {
       // Open every folder on the way from the project folder down to the target, then select it.
@@ -140,6 +149,18 @@ function field(label: string, control: HTMLElement): HTMLElement {
   wrapper.append(text, control); return wrapper;
 }
 
+/** Keeps the file name in step with the description until the name is edited by hand. */
+function followDescription(alt: HTMLInputElement, name: HTMLInputElement, request: ImagePasteRequest, onChange: () => void): void {
+  let manual = false;
+  name.addEventListener("input", () => { manual = true; });
+  alt.addEventListener("input", () => {
+    if (manual) return;
+    const stem = slugifyForFileName(alt.value);
+    name.value = stem ? `${stem}.${request.extension}` : request.suggestedName;
+    onChange();
+  });
+}
+
 /** Shows the dialog and resolves with the user's choice, or null when it is cancelled. */
 export function askImagePasteDestination(request: ImagePasteRequest): Promise<ImagePasteChoice | null> {
   return new Promise(resolve => {
@@ -156,11 +177,22 @@ export function askImagePasteDestination(request: ImagePasteRequest): Promise<Im
     const target = document.createElement("div"); target.className = "image-paste-target";
     const error = document.createElement("div"); error.className = "image-paste-error"; error.setAttribute("role", "alert"); error.hidden = true;
 
+    followDescription(alt, name, request, () => { error.hidden = true; });
+
     let folder = request.startFolder;
     const tree = createFolderTree(request.roots, path => { folder = path; target.textContent = path; target.title = path; });
     const treeBox = document.createElement("div"); treeBox.className = "image-paste-treebox";
     const treeLabel = document.createElement("div"); treeLabel.className = "image-paste-sub"; treeLabel.textContent = langText("Folder docelowy w projekcie", "Destination folder in the project");
-    treeBox.append(treeLabel, tree.host);
+    const newFolderButton = document.createElement("button"); newFolderButton.type = "button"; newFolderButton.className = "image-paste-newfolder";
+    newFolderButton.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.75 4.25a1.25 1.25 0 0 1 1.25-1.25h3l1.5 1.5h5a1.25 1.25 0 0 1 1.25 1.25v5.75A1.25 1.25 0 0 1 12.5 12.75h-9.5a1.25 1.25 0 0 1-1.25-1.25z"/><path d="M8 6.5v4M6 8.5h4"/></svg>';
+    const newFolderLabel = document.createElement("span"); newFolderLabel.textContent = langText("Nowy folder", "New folder"); newFolderButton.append(newFolderLabel);
+    const header = document.createElement("div"); header.className = "image-paste-treehead"; header.append(treeLabel, newFolderButton);
+    const folderForm = document.createElement("div"); folderForm.className = "image-paste-folderform"; folderForm.hidden = true;
+    const folderName = document.createElement("input"); folderName.type = "text"; folderName.className = "image-paste-input"; folderName.spellcheck = false;
+    folderName.placeholder = langText("Nazwa nowego folderu", "New folder name"); folderName.setAttribute("aria-label", folderName.placeholder);
+    const folderCreate = document.createElement("button"); folderCreate.type = "button"; folderCreate.textContent = langText("Utwórz", "Create");
+    folderForm.append(folderName, folderCreate);
+    treeBox.append(header, folderForm, tree.host);
     const side = document.createElement("div"); side.className = "image-paste-side";
     side.append(preview, field(langText("Opis (tekst alternatywny)", "Description (alt text)"), alt), field(langText("Nazwa pliku", "File name"), name), target, error);
     const columns = document.createElement("div"); columns.className = "image-paste-columns"; columns.append(treeBox, side);
@@ -170,6 +202,34 @@ export function askImagePasteDestination(request: ImagePasteRequest): Promise<Im
     const insert = document.createElement("button"); insert.type = "button"; insert.className = "primary"; insert.textContent = langText("Wstaw", "Insert");
     actions.append(cancel, insert);
     content.append(title, columns, actions); dialog.append(content); document.body.append(dialog);
+
+    const closeFolderForm = () => { folderForm.hidden = true; folderName.value = ""; newFolderButton.setAttribute("aria-expanded", "false"); };
+    const createFolder = async () => {
+      error.hidden = true;
+      const name = folderName.value.trim();
+      const problem = fileNameProblem(name);
+      if (problem) { showError(problem); folderName.focus(); return; }
+      if (!rootContaining(request.roots, folder)) { showError(langText("Wybierz folder w otwartym projekcie.", "Choose a folder inside the open project.")); return; }
+      try {
+        const created = await join(folder, name);
+        if (await exists(created)) { showError(langText("Folder o tej nazwie już istnieje.", "A folder with this name already exists.")); folderName.focus(); return; }
+        await mkdir(created);
+        await tree.reload(folder);
+        tree.select(created);
+        closeFolderForm();
+      } catch (cause) { showError(`${langText("Nie udało się utworzyć folderu", "Could not create the folder")}: ${String(cause)}`); }
+    };
+    newFolderButton.setAttribute("aria-expanded", "false");
+    newFolderButton.addEventListener("click", () => {
+      const opening = folderForm.hidden;
+      if (!opening) { closeFolderForm(); return; }
+      folderForm.hidden = false; newFolderButton.setAttribute("aria-expanded", "true"); folderName.focus();
+    });
+    folderCreate.addEventListener("click", () => void createFolder());
+    folderName.addEventListener("keydown", event => {
+      if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); void createFolder(); }
+      else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeFolderForm(); newFolderButton.focus(); }
+    });
 
     let settled = false;
     const finish = (choice: ImagePasteChoice | null) => {
@@ -184,13 +244,16 @@ export function askImagePasteDestination(request: ImagePasteRequest): Promise<Im
       const problem = fileNameProblem(fileName);
       if (problem) { showError(problem); name.focus(); return; }
       if (!rootContaining(request.roots, folder)) { showError(langText("Wybierz folder w otwartym projekcie.", "Choose a folder inside the open project.")); return; }
-      if (await exists(await join(folder, fileName))) { showError(langText("Plik o tej nazwie już istnieje w tym folderze.", "A file with this name already exists in that folder.")); name.focus(); return; }
+      if (await exists(await join(folder, fileName))) {
+        const replace = await appConfirm(langText(`Plik „${fileName}” już istnieje w tym folderze. Zastąpić go?`, `A file named “${fileName}” already exists in this folder. Replace it?`), { confirmLabel: langText("Zastąp", "Replace"), primaryAction: "cancel" });
+        if (!replace) { name.focus(); name.select(); return; }
+      }
       finish({ folder, fileName, alt: alt.value.replace(/[\[\]\\\r\n]/g, " ").trim() });
     };
     cancel.addEventListener("click", () => finish(null));
     insert.addEventListener("click", () => void confirm());
     dialog.addEventListener("cancel", event => { event.preventDefault(); finish(null); });
-    dialog.addEventListener("keydown", event => { if (event.key === "Enter" && event.target instanceof HTMLInputElement) { event.preventDefault(); void confirm(); } });
+    dialog.addEventListener("keydown", event => { if (event.key === "Enter" && event.target instanceof HTMLInputElement && event.target !== folderName) { event.preventDefault(); void confirm(); } });
 
     dialog.showModal();
     void tree.reveal(request.startFolder).then(() => alt.focus());

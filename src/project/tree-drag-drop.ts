@@ -152,6 +152,7 @@ function installTreeKeyboardShortcuts(files: HTMLElement): void {
       if (e.key.toLowerCase() === "x") { e.preventDefault(); setTreeClipboard(path, "cut", type === "directory"); return; }
       if (e.key.toLowerCase() === "v" && projectTreeState.clipboard) { e.preventDefault(); projectTreeState.contextTarget = { path, isDirectory: type === "directory", isRoot: false }; void handleTreeContextAction("paste"); return; }
     }
+    if (e.key === "F2" && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); projectTreeState.contextTarget = { path, isDirectory: type === "directory", isRoot: false }; void handleTreeContextAction("rename"); return; }
     if (e.key === "Delete" && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); projectTreeState.contextTarget = { path, isDirectory: type === "directory", isRoot: false }; void handleTreeContextAction("delete"); }
   });
   document.addEventListener("keydown", event => { if (event.key === "Escape") { const menu = document.getElementById("treeContextMenu"); if (menu) menu.hidden = true; } });
@@ -166,6 +167,7 @@ function installTreeContextMenuInteractions(): void {
     if (projectTreeState.contextTarget) {
       const shortcut = (e.ctrlKey || e.metaKey) && !e.altKey ? ({ c: "copy", x: "cut", v: "paste" } as Record<string, string>)[e.key.toLowerCase()] : undefined;
       if (shortcut && (shortcut === "paste" || !projectTreeState.contextTarget.isRoot)) { e.preventDefault(); e.stopPropagation(); void handleTreeContextAction(shortcut); return; }
+      if (e.key === "F2" && !e.ctrlKey && !e.metaKey && !e.altKey && !projectTreeState.contextTarget.isRoot) { e.preventDefault(); e.stopPropagation(); void handleTreeContextAction("rename"); return; }
       if (e.key === "Delete" && !e.ctrlKey && !e.metaKey && !e.altKey && !projectTreeState.contextTarget.isRoot) { e.preventDefault(); e.stopPropagation(); void handleTreeContextAction("delete"); return; }
     }
     const items = Array.from(menu.querySelectorAll<HTMLButtonElement>('button[data-tree-context]:not(:disabled)')); if (!items.length) return;

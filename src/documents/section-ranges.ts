@@ -30,6 +30,27 @@ export function hiddenRangesFor(headings: readonly SectionHeading[], hiddenKeys:
   return ranges;
 }
 
+/**
+ * Ranges to hide so that only one section stays visible: everything before and after the focused heading's section,
+ * plus the explicitly hidden sections that lie inside it. Null when no heading has that key. A hidden section that
+ * contains the focused heading is ignored, since the user asked to see this one.
+ */
+export function focusRangesFor(headings: readonly SectionHeading[], focusKey: string, hidden: readonly HiddenRange[], totalLines: number): HiddenRange[] | null {
+  const index = headings.findIndex(heading => heading.key === focusKey);
+  if (index < 0 || headings[index].line > totalLines) return null;
+  const focus = headings[index];
+  let end = totalLines;
+  for (let next = index + 1; next < headings.length; next++) {
+    if (headings[next].level <= focus.level) { end = Math.min(totalLines, headings[next].line - 1); break; }
+  }
+  if (end < focus.line) end = focus.line;
+  const ranges: HiddenRange[] = [];
+  if (focus.line > 1) ranges.push({ key: "focus:before", title: "", startLine: 1, endLine: focus.line - 1 });
+  for (const range of hidden) if (range.startLine > focus.line && range.endLine <= end) ranges.push(range);
+  if (end < totalLines) ranges.push({ key: "focus:after", title: "", startLine: end + 1, endLine: totalLines });
+  return ranges;
+}
+
 /** Keys of the headings that are hidden themselves or lie inside a hidden section. */
 export function keysInsideRanges(headings: readonly SectionHeading[], ranges: readonly HiddenRange[]): Set<string> {
   const keys = new Set<string>();
@@ -74,12 +95,24 @@ export function parseSectionConfig(raw: string | null | undefined): string[] {
   } catch { return []; }
 }
 
-/** The config file's text for the given hidden keys (`level:title:occurrence`). */
-export function serializeSectionConfig(documentName: string, keys: Iterable<string>): string {
+function storedFromKey(key: string): StoredSection | null {
+  const match = /^(\d+):([\s\S]*):(\d+)$/.exec(key);
+  return match ? { level: Number(match[1]), title: match[2], occurrence: Number(match[3]) } : null;
+}
+
+/** The section kept as the only visible one, as stored in a config file's text; null when there is none. */
+export function parseFocusedSection(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  try {
+    const item = (JSON.parse(raw) as { focusedSection?: Partial<StoredSection> } | null)?.focusedSection;
+    return item && Number.isInteger(item.level) && typeof item.title === "string" && Number.isInteger(item.occurrence) ? sectionKey(item.level as number, item.title, item.occurrence as number) : null;
+  } catch { return null; }
+}
+
+/** The config file's text for the given hidden keys (`level:title:occurrence`) and the optional "show only this section" key. */
+export function serializeSectionConfig(documentName: string, keys: Iterable<string>, focusKey: string | null = null): string {
   const sections: StoredSection[] = [];
-  for (const key of keys) {
-    const match = /^(\d+):([\s\S]*):(\d+)$/.exec(key);
-    if (match) sections.push({ level: Number(match[1]), title: match[2], occurrence: Number(match[3]) });
-  }
-  return JSON.stringify({ version: 1, document: documentName, hiddenSections: sections }, null, 2) + "\n";
+  for (const key of keys) { const stored = storedFromKey(key); if (stored) sections.push(stored); }
+  const focused = focusKey ? storedFromKey(focusKey) : null;
+  return JSON.stringify({ version: 1, document: documentName, hiddenSections: sections, ...(focused ? { focusedSection: focused } : {}) }, null, 2) + "\n";
 }

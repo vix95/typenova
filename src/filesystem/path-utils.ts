@@ -53,6 +53,14 @@ const EDITABLE_TEXT_EXTENSIONS = new Set((
 ).split(/\s+/));
 const EDITABLE_TEXT_NAMES = new Set([".gitignore", ".editorconfig", ".env", "dockerfile", "makefile", "readme", "license"]);
 
+const VIEWABLE_IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico", "avif", "apng"]);
+
+/** Image formats the webview can display; these open in the image viewer instead of the editor. */
+export function isViewableImageFile(name: string): boolean {
+  const base = basename(name).toLowerCase();
+  return base.includes(".") && VIEWABLE_IMAGE_EXTENSIONS.has(base.split(".").pop() || "");
+}
+
 export function isEditableTextFile(name: string): boolean {
   const base = basename(name).toLowerCase();
   const extension = base.includes(".") ? (base.split(".").pop() || "") : "";

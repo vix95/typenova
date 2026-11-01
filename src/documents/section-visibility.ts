@@ -11,13 +11,15 @@ import { previewState } from "../preview/preview-state";
 import { readPreferenceFlag } from "../settings/preferences";
 import { showToast } from "../ui/toast";
 import { documentState } from "./document-state";
-import { type HiddenRange, hiddenRangesFor, keysInsideRanges, parseSectionConfig, sectionConfigPath, serializeSectionConfig } from "./section-ranges";
+import { type HiddenRange, focusRangesFor, hiddenRangesFor, keysInsideRanges, parseFocusedSection, parseSectionConfig, sectionConfigPath, serializeSectionConfig } from "./section-ranges";
 
 const SHOW_ALL_KEY = "typenova.showHiddenSections";
 
 export const sectionVisibility = {
   /** Hidden sections of the current document (heading keys). */
   hiddenKeys: new Set<string>(),
+  /** The one section shown while the rest is hidden ("show only this section"), or null. */
+  focusKey: null as string | null,
   /** Ranges of the hidden sections in the current text, whether or not they are currently shown. */
   ranges: [] as HiddenRange[],
   /** Keys of the headings that are hidden or lie inside a hidden section. */
@@ -26,18 +28,21 @@ export const sectionVisibility = {
   showAll: readPreferenceFlag(SHOW_ALL_KEY, false) as boolean,
 };
 
-const loaded = new Map<string, Set<string>>();
+interface StoredVisibility { keys: Set<string>; focusKey: string | null }
+const loaded = new Map<string, StoredVisibility>();
 
-async function readConfig(path: string): Promise<Set<string>> {
-  const configPath = sectionConfigPath(path);
-  try { return new Set(parseSectionConfig(await exists(configPath) ? await readTextFile(configPath) : null)); }
-  catch { return new Set(); }
-}
-
-async function writeConfig(path: string, keys: ReadonlySet<string>): Promise<void> {
+async function readConfig(path: string): Promise<StoredVisibility> {
   const configPath = sectionConfigPath(path);
   try {
-    if (keys.size) await writeTextFile(configPath, serializeSectionConfig(basename(path), keys));
+    const raw = await exists(configPath) ? await readTextFile(configPath) : null;
+    return { keys: new Set(parseSectionConfig(raw)), focusKey: parseFocusedSection(raw) };
+  } catch { return { keys: new Set(), focusKey: null }; }
+}
+
+async function writeConfig(path: string, keys: ReadonlySet<string>, focusKey: string | null): Promise<void> {
+  const configPath = sectionConfigPath(path);
+  try {
+    if (keys.size || focusKey) await writeTextFile(configPath, serializeSectionConfig(basename(path), keys, focusKey));
     else if (await exists(configPath)) await remove(configPath);
   } catch (error) {
     showToast(`${langText("Nie udało się zapisać pliku konfiguracji ukrytych sekcji", "Could not save the hidden sections config file")}: ${String(error)}`);
@@ -46,11 +51,12 @@ async function writeConfig(path: string, keys: ReadonlySet<string>): Promise<voi
 
 /** Makes the hidden sections of the current document known (read from its config file the first time). */
 async function ensureLoaded(path: string | null): Promise<void> {
-  if (!path) { sectionVisibility.hiddenKeys = new Set(); return; }
+  if (!path) { sectionVisibility.hiddenKeys = new Set(); sectionVisibility.focusKey = null; return; }
   const key = normalizedFsPath(path);
-  let keys = loaded.get(key);
-  if (!keys) { keys = await readConfig(path); loaded.set(key, keys); }
-  sectionVisibility.hiddenKeys = keys;
+  let stored = loaded.get(key);
+  if (!stored) { stored = await readConfig(path); loaded.set(key, stored); }
+  sectionVisibility.hiddenKeys = stored.keys;
+  sectionVisibility.focusKey = stored.focusKey;
 }
 
 /** Recomputes the hidden ranges from the current headings and applies them; called whenever the outline was rebuilt. */
@@ -58,7 +64,10 @@ export async function refreshSectionVisibility(): Promise<void> {
   const path = documentState.currentPath;
   await ensureLoaded(path);
   if (documentState.currentPath !== path) return; // another document became current meanwhile; its own outline build will follow
-  const ranges = hiddenRangesFor(outlineHeadings, sectionVisibility.hiddenKeys, view.state.doc.lines);
+  const totalLines = view.state.doc.lines;
+  const hidden = hiddenRangesFor(outlineHeadings, sectionVisibility.hiddenKeys, totalLines);
+  // "Show only this section" hides everything around the chosen one (and what is hidden inside it); it ends by itself when that heading is gone.
+  const ranges = (sectionVisibility.focusKey && focusRangesFor(outlineHeadings, sectionVisibility.focusKey, hidden, totalLines)) || hidden;
   sectionVisibility.ranges = ranges;
   sectionVisibility.insideKeys = keysInsideRanges(outlineHeadings, ranges);
   const effective = sectionVisibility.showAll ? [] : ranges;
@@ -78,7 +87,19 @@ export async function setSectionHidden(key: string, hidden: boolean): Promise<vo
   const keys = sectionVisibility.hiddenKeys;
   if (hidden) keys.add(key); else keys.delete(key);
   await refreshSectionVisibility();
-  await writeConfig(path, keys);
+  await writeConfig(path, keys, sectionVisibility.focusKey);
+}
+
+/** Shows only the given section (null returns to the whole document) and saves the choice to the config file. */
+export async function setFocusedSection(key: string | null): Promise<void> {
+  const path = documentState.currentPath;
+  if (!path) { showToast(langText("Najpierw zapisz dokument, aby pokazać tylko jedną sekcję.", "Save the document first to show only one section.")); return; }
+  await ensureLoaded(path);
+  const stored = loaded.get(normalizedFsPath(path));
+  if (!stored) return;
+  stored.focusKey = key; sectionVisibility.focusKey = key;
+  await refreshSectionVisibility();
+  await writeConfig(path, stored.keys, key);
 }
 
 export function isSectionHidden(key: string): boolean { return sectionVisibility.hiddenKeys.has(key); }

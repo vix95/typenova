@@ -157,6 +157,7 @@ export const translations: Record<string, string> = {
   "Dodaj folder do drzewa": "Add folder to the tree",
   "Usuń folder z drzewa": "Remove folder from tree",
   "Odśwież": "Refresh",
+  "Nowy folder…": "New folder…",
   "Pokaż ukryte sekcje": "Show hidden sections",
   "Przeciągnij, aby zmienić szerokość panelu bocznego": "Drag to resize sidebar",
   "Lista punktowana": "Bulleted list",

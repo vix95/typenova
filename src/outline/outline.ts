@@ -8,7 +8,7 @@ import { view } from "../editor/editor-view";
 import { scrollSyncState, syncPreviewToEditor } from "../editor/scroll-sync";
 import { langText } from "../i18n/language";
 import { updateHeadingBreadcrumbs } from "./breadcrumbs";
-import { refreshSectionVisibility, isSectionHidden, sectionVisibility, setSectionHidden } from "../documents/section-visibility";
+import { refreshSectionVisibility, isSectionHidden, sectionVisibility, setFocusedSection, setSectionHidden } from "../documents/section-visibility";
 
 export let outlineHeadings: { level: number; text: string; line: number; key: string }[] = [];
 export let outlineParentIndexes: number[] = [];
@@ -143,7 +143,11 @@ function showOutlineContextMenu(event: MouseEvent, key: string) {
   const item = document.createElement("button"); item.type = "button"; item.role = "menuitem";
   item.textContent = hidden ? langText("Pokaż sekcję", "Show section") : langText("Ukryj sekcję", "Hide section");
   item.addEventListener("click", () => { hideOutlineMenu(); void setSectionHidden(key, !hidden); });
-  outlineMenu.replaceChildren(item);
+  const focused = sectionVisibility.focusKey === key;
+  const only = document.createElement("button"); only.type = "button"; only.role = "menuitem";
+  only.textContent = focused ? langText("Pokaż cały dokument", "Show the whole document") : langText("Pokaż tylko tę sekcję", "Show only this section");
+  only.addEventListener("click", () => { hideOutlineMenu(); void setFocusedSection(focused ? null : key); });
+  outlineMenu.replaceChildren(item, only);
   outlineMenu.hidden = false; outlineMenu.style.visibility = "hidden";
   const rect = outlineMenu.getBoundingClientRect();
   outlineMenu.style.left = `${Math.max(8, Math.min(event.clientX, window.innerWidth - rect.width - 8))}px`;

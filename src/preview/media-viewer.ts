@@ -1,6 +1,9 @@
 /** Preview media viewer: images and Mermaid diagrams open in a modal dialog with zoom and pan. */
 import { preview } from "../app/workspace-dom";
+import { basename } from "../filesystem/path-utils";
 import { langText } from "../i18n/language";
+import { showToast } from "../ui/toast";
+import { localImageUrl } from "./code-blocks";
 
 const MIN_SCALE_FACTOR = 0.25;   // relative to the fitted scale
 const MAX_SCALE = 16;
@@ -219,6 +222,20 @@ function openDiagram(container: HTMLElement) {
   svg.setAttribute("focusable", "false");
   const holder = document.createElement("div"); holder.className = "media-viewer-diagram"; holder.append(svg);
   openViewer(holder, size.width, size.height, langText("Diagram Mermaid", "Mermaid diagram"), 2);
+}
+
+/** Opens an image file from disk (for example from the project tree) in the viewer. */
+export async function openImageFile(path: string): Promise<void> {
+  const name = basename(path);
+  try {
+    const image = new Image();
+    image.decoding = "async"; image.draggable = false; image.alt = name;
+    image.src = await localImageUrl(path);
+    await image.decode();
+    openViewer(image, image.naturalWidth || 1, image.naturalHeight || 1, name, 1);
+  } catch {
+    showToast(`${langText("Nie udało się otworzyć obrazu", "Could not open the image")}: ${name}`);
+  }
 }
 
 export function initMediaViewer(): void {

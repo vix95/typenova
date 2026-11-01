@@ -431,3 +431,31 @@ test("hidden sections: ranges cover the section and its sub-sections, nested one
   assert.deepEqual(parseSectionConfig(JSON.stringify({ hiddenSections: [{ level: "x", title: 3 }, { level: 2, title: "ok", occurrence: 0 }] })), ["2:ok:0"]);
   assert.equal(sectionConfigPath("C:/p/Notes.md"), "C:/p/Notes.md.config.json");
 });
+
+test("file names made from a description replace spaces and special characters with hyphens", async () => {
+  const { slugifyForFileName } = await import("../.test-build/filesystem/file-names.js");
+  assert.equal(slugifyForFileName("Pasek nawigacji"), "pasek-nawigacji");
+  assert.equal(slugifyForFileName("Zażółć gęślą jaźń!"), "zazolc-gesla-jazn");
+  assert.equal(slugifyForFileName("  A / B: C?? (v2) -- final  "), "a-b-c-v2-final");
+  assert.equal(slugifyForFileName("Ünïcödé & Straße"), "unicode-strasse");
+  assert.equal(slugifyForFileName("***"), "");
+  assert.equal(slugifyForFileName(""), "");
+  assert.ok(slugifyForFileName("x".repeat(200)).length <= 80);
+  assert.ok(!slugifyForFileName("a".repeat(79) + " b").endsWith("-"));
+});
+
+test("showing only one section hides everything around it and keeps the choice in the config file", async () => {
+  const { focusRangesFor, hiddenRangesFor, parseFocusedSection, serializeSectionConfig } = await import("../.test-build/documents/section-ranges.js");
+  const headings = [
+    { level: 1, text: "A", line: 1, key: "1:A:0" }, { level: 2, text: "A1", line: 3, key: "2:A1:0" },
+    { level: 2, text: "A2", line: 6, key: "2:A2:0" }, { level: 3, text: "A2x", line: 8, key: "3:A2x:0" }, { level: 1, text: "B", line: 10, key: "1:B:0" },
+  ];
+  const hidden = hiddenRangesFor(headings, new Set(["3:A2x:0", "2:A1:0"]), 12);
+  assert.deepEqual(focusRangesFor(headings, "2:A2:0", hidden, 12).map(r => [r.startLine, r.endLine]), [[1, 5], [8, 9], [10, 12]]);
+  assert.deepEqual(focusRangesFor(headings, "1:A:0", hidden, 12).map(r => [r.startLine, r.endLine]), [[3, 5], [8, 9], [10, 12]]);
+  assert.deepEqual(focusRangesFor(headings, "2:A1:0", hidden, 12).map(r => [r.startLine, r.endLine]), [[1, 2], [6, 12]]);
+  assert.equal(focusRangesFor(headings, "2:Gone:0", hidden, 12), null);
+  const text = serializeSectionConfig("a.md", ["3:A2x:0"], "2:A2:0");
+  assert.equal(parseFocusedSection(text), "2:A2:0");
+  assert.equal(parseFocusedSection(serializeSectionConfig("a.md", [])), null);
+});

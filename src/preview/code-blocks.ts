@@ -135,12 +135,35 @@ async function ensureImageAccess(path: string): Promise<void> {
   } catch { /* Missing file or not an image: the load below fails and the placeholder names the path. */ }
 }
 
+/** Bumped when a file is overwritten, so the webview does not keep showing the old picture it cached under the same URL. */
+const imageVersions = new Map<string, number>();
+const imageKey = (path: string) => path.replace(/\\/g, "/").toLowerCase();
+function imageUrl(path: string): string {
+  const version = imageVersions.get(imageKey(path));
+  return version ? `${convertFileSrc(path)}?v=${version}` : convertFileSrc(path);
+}
+
+/** Reloads every displayed copy of a local image that was just overwritten on disk. */
+export function refreshLocalImage(path: string): void {
+  const key = imageKey(path);
+  imageVersions.set(key, Date.now());
+  for (const img of document.querySelectorAll<HTMLImageElement>("img[data-local-path]")) {
+    if (imageKey(img.dataset.localPath || "") === key) img.src = imageUrl(path);
+  }
+}
+
+/** URL the webview can load a local image from, after the host allowed the asset protocol to serve that one file. */
+export async function localImageUrl(path: string): Promise<string> {
+  await ensureImageAccess(path);
+  return imageUrl(path);
+}
+
 /** Starts loading a resolved local image, first making sure the asset protocol may serve it. */
 function loadLocalImage(img: HTMLImageElement, absolutePath: string): void {
   img.dataset.localPath = absolutePath;
   img.addEventListener("error", () => markLocalImageUnavailable(img));
   img.addEventListener("load", () => markLocalImageAvailable(img));
-  const assign = () => { img.src = convertFileSrc(absolutePath); };
+  const assign = () => { img.src = imageUrl(absolutePath); };
   if (grantedImagePaths.has(absolutePath)) assign();
   else void ensureImageAccess(absolutePath).then(assign);
 }

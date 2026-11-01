@@ -51,6 +51,17 @@ export function setTreeClipboard(path: string, operation: "copy" | "cut", isDire
     ? `${langText("Skopiowano do schowka TypeNova", "Copied to TypeNova's file clipboard")}: ${label}. ${langText("Kliknij prawym przyciskiem folder docelowy i wybierz Wklej.", "Right-click a destination folder and choose Paste.")}`
     : `${langText("Wycięto", "Cut")}: ${label}. ${langText("Kliknij prawym przyciskiem folder docelowy i wybierz Wklej.", "Right-click a destination folder and choose Paste.")}`);
 }
+/** Renames an entry in place, refreshes the tree and keeps open tabs pointing at the new path. */
+export async function performTreeRename(path: string, newName: string): Promise<string> {
+  const destination = await projectTreeController.renameEntry(path, newName);
+  await renderProjectTree();
+  markTreeClipboardState();
+  markProjectTreeSelection(documentState.currentPath);
+  if (activeSidebarTab === "brain") void buildGraph();
+  showToast(`${langText("Zmieniono nazwę", "Renamed")}: ${basename(destination)}`);
+  return destination;
+}
+
 export async function performTreeMoveOrCopy(source: string, destinationFolder: string, operation: "copy" | "cut", isDirectory: boolean, forceDuplicate = false) {
   const result = await projectTreeController.moveOrCopy(source, destinationFolder, operation, isDirectory, forceDuplicate);
   if (result.status === "same-folder") {

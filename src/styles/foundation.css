@@ -2355,3 +2355,27 @@ html[data-theme="contrast"] .outline-tools .outline-toggle-hidden[aria-pressed="
 #outlineView .outline-tools .outline-toggle-hidden[aria-pressed="true"]{background:var(--ui-active)!important;border-color:var(--ui-accent)!important}
 html[data-theme="contrast"] #outlineView .outline-tools .outline-tool{border-width:2px!important}
 
+/* 0.5.113 paste image dialog: creating a folder from the explorer. */
+.image-paste-treehead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.image-paste-newfolder{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:0 8px;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-panel2);color:var(--ui-text);font-size:12px;cursor:pointer}
+.image-paste-newfolder svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.image-paste-newfolder:hover{background:var(--ui-hover);border-color:var(--ui-accent)}
+.image-paste-newfolder[aria-expanded="true"]{background:var(--ui-active);border-color:var(--ui-accent)}
+.image-paste-newfolder:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+.image-paste-folderform{display:flex;gap:6px}
+.image-paste-folderform[hidden]{display:none}
+.image-paste-folderform .image-paste-input{flex:1;min-width:0}
+html[data-theme="contrast"] .image-paste-newfolder[aria-expanded="true"]{border-width:2px}
+
+/* 0.5.113 generic "ask for a name" dialog (new folder in the project tree). */
+dialog.name-dialog{width:min(420px,calc(100vw - 32px))}
+.name-dialog-field{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ui-muted)}
+.name-dialog-input{padding:9px 10px;border-radius:6px;font-size:13px}
+.name-dialog-error{padding:6px 10px;border:1px solid var(--ui-accent);border-radius:6px;font-size:12px;color:var(--ui-text)}
+
+/* 0.5.113 tooltip with a thumbnail (images in the Project tree): the picture sits below the text. */
+.typenova-tooltip.has-thumbnail{flex-direction:column;align-items:stretch}
+.typenova-tooltip-thumb{display:block;max-width:240px;max-height:180px;margin:2px auto 0;object-fit:contain;border-radius:6px;background:var(--ui-input-bg)}
+.typenova-tooltip-thumb[hidden]{display:none}
+.typenova-tooltip.has-thumbnail .typenova-tooltip-label{text-align:left}
+

@@ -1,5 +1,6 @@
 /** Ctrl+V with an image on the clipboard: choose a description and a file inside the open project, save the image and insert its Markdown reference at the caret. */
 import { writeFile } from "@tauri-apps/plugin-fs";
+import { refreshLocalImage } from "../preview/code-blocks";
 import { join } from "@tauri-apps/api/path";
 import { documentState } from "../documents/document-state";
 import { rootContaining } from "../filesystem/project-roots";
@@ -48,6 +49,7 @@ async function handlePastedImage(file: File): Promise<void> {
   try {
     const savedPath = await join(choice.folder, choice.fileName);
     await writeFile(savedPath, new Uint8Array(await file.arrayBuffer()));
+    refreshLocalImage(savedPath);
     const alt = choice.alt || choice.fileName.replace(/\.[^.]+$/, "");
     const markdown = `![${alt}](<${encodeMarkdownImagePath(relativeImagePath(documentPath, savedPath))}>)`;
     const position = Math.min(from, view.state.doc.length), end = Math.min(to, view.state.doc.length);

@@ -173,6 +173,21 @@ export class ProjectTreeController {
     return { status: "copied", source, destination };
   }
 
+  /** Renames an entry inside its own folder; the name must not be taken (a change of letter case only is allowed). */
+  async renameEntry(path: string, newName: string): Promise<string> {
+    const roots = this.roots();
+    if (!roots.length) throw new Error(this.options.getProjectRequiredMessage());
+    if (isProjectRoot(roots, path)) throw new Error(this.options.getProjectRootMutationMessage());
+    if (!rootContaining(roots, path)) throw new Error(this.options.getOutsideProjectMessage());
+    const destination = await this.options.fs.join(parentPath(path), newName);
+    const onlyCaseChanged = normalizedFsPath(destination).toLowerCase() === normalizedFsPath(path).toLowerCase();
+    if (!onlyCaseChanged && await this.options.fs.exists(destination)) throw new Error(this.options.getAlreadyExistsMessage());
+    await this.options.fs.rename(path, destination);
+    this.remapStatePaths(path, destination);
+    this.options.onPathMoved?.(path, destination);
+    return destination;
+  }
+
   /** Delete an entry first, then clear transient references only when deletion succeeds. */
   async remove(path: string, isDirectory: boolean): Promise<void> {
     const roots = this.roots();
