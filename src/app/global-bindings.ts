@@ -130,7 +130,8 @@ export function initNativeContextMenuGuard(): void {
     const isPreviewSurface = target instanceof Element && target.closest("#preview") !== null;
     const isEditorTabStrip = target instanceof Element && target.closest("#editorTabList") !== null;
     const isOutline = target instanceof Element && target.closest("#outline") !== null;
-    if (isEditorSurface || isProjectTree || isPreviewSurface || isEditorTabStrip || isOutline) return;
+    const isMediaViewer = target instanceof Element && target.closest("#mediaViewer") !== null;
+    if (isEditorSurface || isProjectTree || isPreviewSurface || isEditorTabStrip || isOutline || isMediaViewer) return;
     event.preventDefault();
     event.stopPropagation();
   }, true);

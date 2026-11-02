@@ -4,6 +4,7 @@ import { basename } from "../filesystem/path-utils";
 import { langText } from "../i18n/language";
 import { showToast } from "../ui/toast";
 import { localImageUrl } from "./code-blocks";
+import { attachMediaContextMenu } from "./media-context-menu";
 
 const MIN_SCALE_FACTOR = 0.25;   // relative to the fitted scale
 const MAX_SCALE = 16;
@@ -52,6 +53,7 @@ function createViewer(): Viewer {
   document.body.append(dialog);
   const created = { dialog, stage, content, caption, level, buttons };
   bindViewer(created);
+  attachMediaContextMenu(dialog, stage);
   return created;
 }
 
@@ -203,6 +205,7 @@ function openViewer(element: HTMLElement, width: number, height: number, label: 
 function openImage(source: HTMLImageElement) {
   const image = document.createElement("img");
   image.decoding = "async"; image.draggable = false; image.alt = source.alt; image.src = source.currentSrc || source.src;
+  if (source.dataset.localPath) image.dataset.localPath = source.dataset.localPath;
   openViewer(image, source.naturalWidth, source.naturalHeight, source.alt.trim() || langText("Powiększony obraz", "Enlarged image"), 1);
 }
 
@@ -230,6 +233,7 @@ export async function openImageFile(path: string): Promise<void> {
   try {
     const image = new Image();
     image.decoding = "async"; image.draggable = false; image.alt = name;
+    image.dataset.localPath = path;
     image.src = await localImageUrl(path);
     await image.decode();
     openViewer(image, image.naturalWidth || 1, image.naturalHeight || 1, name, 1);

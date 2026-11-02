@@ -2499,3 +2499,9 @@ html[data-theme="contrast"] .cm-panels .tn-search .tn-search-toggle.selected{bor
 .mermaid-inspector-code{font-family:var(--font-mono,ui-monospace,Consolas,monospace)}
 .diagram-stage .is-picked{filter:drop-shadow(0 0 3px var(--ui-accent))}
 .formula-matrix-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+
+/* Disabled entries of any context menu look disabled and do not light up on hover (the hover rule above also matched them). */
+.context-menu button:disabled{opacity:.42;cursor:not-allowed}
+/* !important: the global `button:hover` rule above is !important too. */
+.context-menu button:disabled:hover{background:transparent!important;border-color:transparent!important;color:inherit!important}
+
