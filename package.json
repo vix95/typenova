@@ -1,7 +1,7 @@
 {
   "name": "typenova",
   "private": true,
-  "version": "0.5.113",
+  "version": "0.5.114",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -10,7 +10,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "audit:dependencies": "npm audit --omit=dev",
-    "test": "tsc src/graph/section-model.ts src/graph/workspace-controller.ts src/graph/spatial-query.ts src/filesystem/path-utils.ts src/documents/session.ts src/documents/tab-order.ts src/filesystem/project-roots.ts src/documents/section-ranges.ts src/filesystem/file-names.ts src/documents/recovery-store.ts src/settings/storage.ts src/filesystem/project-tree-operations.ts src/filesystem/project-filter-tree.ts src/filesystem/project-tree-state.ts src/filesystem/project-tree-controller.ts --target ES2022 --module ES2022 --outDir .test-build --skipLibCheck && node --test tests/*.test.mjs",
+    "test": "tsc src/graph/section-model.ts src/graph/workspace-controller.ts src/graph/spatial-query.ts src/filesystem/path-utils.ts src/documents/session.ts src/documents/tab-order.ts src/filesystem/project-roots.ts src/documents/section-ranges.ts src/filesystem/file-names.ts src/editor/formula-block.ts src/editor/flowchart-edit.ts src/editor/text-history.ts src/editor/line-edit.ts src/documents/recovery-store.ts src/settings/storage.ts src/filesystem/project-tree-operations.ts src/filesystem/project-filter-tree.ts src/filesystem/project-tree-state.ts src/filesystem/project-tree-controller.ts --target ES2022 --module ES2022 --outDir .test-build --skipLibCheck && node --test tests/*.test.mjs",
     "benchmark:graph": "tsc src/graph/section-model.ts --target ES2022 --module ES2022 --outDir .benchmark-build --skipLibCheck && node benchmarks/graph-indexing.mjs",
     "benchmark:graph:small": "tsc src/graph/section-model.ts --target ES2022 --module ES2022 --outDir .benchmark-build --skipLibCheck && node benchmarks/graph-indexing.mjs 100 1000",
     "typecheck": "tsc --noEmit"
@@ -20,22 +20,23 @@
     "@codemirror/commands": "^6.8.1",
     "@codemirror/lang-markdown": "^6.3.2",
     "@codemirror/language": "^6.11.0",
+    "@codemirror/language-data": "^6.5.1",
     "@codemirror/search": "^6.5.10",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.5",
-    "@tauri-apps/api": "^2.5.0",
     "@lezer/highlight": "^1.2.1",
+    "@tauri-apps/api": "^2.5.0",
     "@tauri-apps/plugin-dialog": "^2.2.1",
     "@tauri-apps/plugin-fs": "^2.2.1",
+    "@tauri-apps/plugin-opener": "^2.2.7",
     "highlight.js": "^11.11.1",
     "katex": "^0.16.22",
     "markdown-it": "^14.3.2",
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-task-lists": "^2.1.1",
     "markdown-it-texmath": "^1.0.0",
-    "mermaid": "^11.15.0",
-    "@codemirror/language-data": "^6.5.1",
-    "@tauri-apps/plugin-opener": "^2.2.7"
+    "mathlive": "^0.111.4",
+    "mermaid": "^11.15.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.5.0",

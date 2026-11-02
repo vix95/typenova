@@ -8,6 +8,7 @@ import { editorThemeFor, syntaxThemeFor } from "./themes";
 import { Prec } from "@codemirror/state";
 import { acceptCompletion, autocompletion } from "@codemirror/autocomplete";
 import { search, openSearchPanel, searchKeymap } from "@codemirror/search";
+import { createSearchPanel } from "./search-panel";
 import { isMarkdownPath } from "../filesystem/path-utils";
 import { openCommandPalette } from "../app/command-palette";
 import { $ } from "../app/dom";
@@ -86,7 +87,7 @@ export const editorExtensions = [
     run: (editor: EditorView) => acceptCompletion(editor) || (indentWithTab.run?.(editor) ?? false)
   }])),
   autocompletion({ override: [completions], activateOnTyping: true }),
-  search(),
+  search({ createPanel: createSearchPanel }),
   EditorView.contentAttributes.of({ spellcheck: "false", autocapitalize: "off", autocomplete: "off", autocorrect: "off" }),
   // Typing a dollar sign while text is selected wraps the selection in inline
   // math delimiters. When there is no selection, the character is inserted normally.

@@ -2379,3 +2379,123 @@ dialog.name-dialog{width:min(420px,calc(100vw - 32px))}
 .typenova-tooltip-thumb[hidden]{display:none}
 .typenova-tooltip.has-thumbnail .typenova-tooltip-label{text-align:left}
 
+/* 0.5.113 formula editor (Math / LaTeX button): MathLive field, LaTeX source, KaTeX preview and a symbol palette. */
+/* MathLive's field defines its own --ui-* variables, so its colors read app tokens through these aliases set outside the field. */
+dialog.formula-dialog{width:min(980px,calc(100vw - 32px));--formula-text:var(--ui-text);--formula-accent:var(--ui-accent);--formula-panel:var(--ui-panel);--formula-hover:var(--ui-hover);--formula-active:var(--ui-active);--formula-border:var(--ui-border);--formula-accent-contrast:var(--ui-accent-contrast)}
+.formula-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;min-height:0}
+.formula-palette{display:flex;flex-direction:column;gap:8px;min-width:0}
+.formula-tabs{display:flex;flex-wrap:wrap;gap:4px}
+.formula-tabs button,.formula-mode button,.formula-tool,.mermaid-quick,.mermaid-viewtools button,.mermaid-builder button{padding:5px 10px;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-panel2);color:var(--ui-text);font-size:12px}
+.formula-tabs button:hover,.formula-mode button:hover,.formula-tool:hover,.mermaid-quick:hover,.mermaid-viewtools button:hover,.mermaid-builder button:hover{background:var(--ui-hover)}
+.formula-tabs button.selected,.formula-mode button.selected{background:var(--ui-active);border-color:var(--ui-accent)}
+.formula-tabs button:focus-visible,.formula-mode button:focus-visible,.formula-tool:focus-visible,.mermaid-quick:focus-visible,.mermaid-viewtools button:focus-visible,.mermaid-builder button:focus-visible,.formula-key:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+.formula-keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:4px;height:300px;overflow:auto;align-content:start;padding:4px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-input-bg);overscroll-behavior:contain}
+.formula-key{display:grid;place-items:center;min-height:40px;padding:2px 4px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--ui-text);overflow:hidden}
+.formula-key:hover{background:var(--ui-hover);border-color:var(--ui-border)}
+.formula-key .katex{font-size:1.1em}
+.formula-edit{display:flex;flex-direction:column;gap:8px;min-width:0}
+.formula-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.formula-mode{display:inline-flex;gap:4px}
+.formula-templates{min-width:0;max-width:100%}
+math-field.formula-field{display:block;min-height:64px;padding:8px 10px;font-size:26px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-input-bg);color:var(--formula-text);--caret-color:var(--formula-accent);--primary-color:var(--formula-accent);--selection-background-color:color-mix(in srgb,var(--formula-accent) 35%,transparent);--selection-color:var(--formula-text);--contains-highlight-background-color:color-mix(in srgb,var(--formula-accent) 16%,transparent);--contains-highlight-color:var(--formula-text);--ui-menu-bg:var(--formula-panel);--ui-menu-text:var(--formula-text);--ui-menu-bg-hover:var(--formula-hover);--ui-menu-text-hover:var(--formula-text);--ui-menu-bg-active:var(--formula-accent);--ui-menu-text-active:var(--formula-accent-contrast);--ui-menu-bg-active-muted:var(--formula-active);--ui-menu-text-active-muted:var(--formula-text);--ui-menu-divider:1px solid var(--formula-border);--ui-menu-shadow:0 12px 32px rgba(0,0,0,.45);--ui-font-family:inherit}
+math-field.formula-field::part(virtual-keyboard-toggle),math-field.formula-field::part(menu-toggle){display:none}
+math-field.formula-field:focus-within{outline:2px solid var(--ui-accent);outline-offset:1px}
+.formula-label{font-size:12px;color:var(--ui-muted)}
+.formula-source{width:100%;box-sizing:border-box;resize:vertical;padding:8px 10px;border-radius:6px;font-family:var(--font-mono,ui-monospace,Consolas,monospace);font-size:13px}
+.formula-preview{min-height:56px;max-height:160px;overflow:auto;padding:10px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-input-bg);text-align:center}
+.formula-error{padding:6px 10px;border:1px solid var(--ui-accent);border-radius:6px;font-size:12px;color:var(--ui-text);white-space:pre-wrap}
+.formula-error[hidden]{display:none}
+html[data-theme="contrast"] .formula-tabs button.selected,html[data-theme="contrast"] .formula-mode button.selected{border-width:2px}
+@media (max-width:760px){.formula-columns{grid-template-columns:1fr}}
+
+/* 0.5.113 Mermaid editor (Mermaid button): source, quick insert lines and flowchart builder next to a pannable live preview. */
+dialog.mermaid-dialog{width:min(1180px,calc(100vw - 32px));max-height:calc(100vh - 24px);overflow:auto}
+.mermaid-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:16px;min-height:0}
+.mermaid-left,.mermaid-right{display:flex;flex-direction:column;gap:8px;min-width:0}
+.mermaid-toolbar{display:flex;flex-direction:column;gap:6px}
+.mermaid-quicklines{display:flex;flex-wrap:wrap;gap:4px}
+.mermaid-quicklines[hidden]{display:none}
+.mermaid-source-input{width:100%;box-sizing:border-box;height:250px;resize:vertical;padding:10px;border-radius:8px;font-family:var(--font-mono,ui-monospace,Consolas,monospace);font-size:13px;line-height:1.5;tab-size:2;white-space:pre}
+.mermaid-builder{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-panel2)}
+.mermaid-builder[hidden]{display:none}
+.mermaid-builder-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mermaid-builder-row input,.mermaid-builder-row select{min-width:0;flex:1 1 90px;padding:5px 8px;font-size:12px}
+.mermaid-builder-title{flex:0 0 78px;font-size:12px;color:var(--ui-muted)}
+.mermaid-builder button:disabled{opacity:.5}
+.diagram-viewport{position:relative;height:clamp(220px,36vh,400px);overflow:hidden;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-input-bg);cursor:grab;touch-action:none}
+.diagram-viewport.dragging{cursor:grabbing}
+.diagram-viewport:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+.diagram-stage{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.diagram-stage svg{display:block;max-width:none}
+.mermaid-viewtools{display:flex;gap:4px}
+.mermaid-status{min-height:18px;font-size:12px;color:var(--ui-muted);white-space:pre-wrap}
+.mermaid-status.error{padding:6px 10px;border:1px solid var(--ui-accent);border-radius:6px;color:var(--ui-text)}
+@media (max-width:860px){.mermaid-columns{grid-template-columns:1fr}}
+.dialog-hint{font-size:12px;line-height:1.5;color:var(--ui-muted)}
+.mermaid-builder-head{font-size:12px;font-weight:600;color:var(--ui-text)}
+.mermaid-viewtools .mermaid-viewtool{display:inline-grid;place-items:center;width:32px;height:30px;padding:0}
+.mermaid-viewtool svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* 0.5.113 find and replace panel (src/editor/search-panel.ts): one row of icon buttons and toggles, a collapsible replace row. */
+.cm-panels .tn-search{display:flex;flex-direction:column;gap:6px;padding:8px 10px;font:13px/1.4 var(--tn-font-ui,inherit);color:var(--ui-text);background:var(--ui-panel)}
+.tn-search-row{display:flex;align-items:center;gap:6px;min-width:0}
+.tn-search-row[hidden]{display:none}
+.tn-search-field{position:relative;display:flex;align-items:center;flex:1 1 220px;min-width:140px;max-width:420px}
+.tn-search-field>svg{position:absolute;left:9px;width:14px;height:14px;fill:none;stroke:var(--ui-muted);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.cm-panels .tn-search .tn-search-input{width:100%;box-sizing:border-box;min-height:32px;padding:5px 10px;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-input-bg);color:var(--ui-text);font:inherit}
+.cm-panels .tn-search-field .tn-search-input{padding-left:30px;padding-right:96px}
+.cm-panels .tn-search .tn-search-replace{flex:1 1 220px;min-width:140px;max-width:420px}
+.cm-panels .tn-search .tn-search-input:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+.cm-panels .tn-search .tn-search-input.invalid{border-color:#e5534b;box-shadow:0 0 0 1px #e5534b}
+.tn-search-count{position:absolute;right:9px;font-size:12px;color:var(--ui-muted);white-space:nowrap;pointer-events:none}
+.tn-search-count.none{color:#e5534b}
+.cm-panels .tn-search .tn-search-btn,.cm-panels .tn-search .tn-search-toggle{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:32px;height:32px;padding:0 8px;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-panel2);color:var(--ui-text);font:inherit;cursor:pointer}
+.cm-panels .tn-search .tn-search-toggle{font-family:var(--font-mono,ui-monospace,Consolas,monospace);font-size:12px;font-weight:600}
+.cm-panels .tn-search .tn-search-btn:hover,.cm-panels .tn-search .tn-search-toggle:hover{background:var(--ui-hover)}
+.cm-panels .tn-search .tn-search-toggle.selected{background:var(--ui-active);border-color:var(--ui-accent)}
+.cm-panels .tn-search .tn-search-btn:active,.cm-panels .tn-search .tn-search-toggle:active{transform:translateY(1px)}
+.cm-panels .tn-search .tn-search-btn:focus-visible,.cm-panels .tn-search .tn-search-toggle:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+.cm-panels .tn-search .tn-search-btn:disabled{opacity:.45;cursor:default}
+.tn-search-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tn-search-expand svg{transition:transform .12s}
+.tn-search-expand.open svg{transform:rotate(90deg)}
+.tn-search-close{margin-left:auto}
+html[data-theme="contrast"] .cm-panels .tn-search .tn-search-toggle.selected{border-width:2px}
+@media (prefers-reduced-motion:reduce){.tn-search-expand svg{transition:none}}
+@media (max-width:640px){.tn-search-row{flex-wrap:wrap}.cm-panels .tn-search .tn-search-replace{max-width:none}}
+
+/* 0.5.113 editing a flowchart by clicking its preview (src/editor/mermaid-inspector.ts). */
+.diagram-stage g.node{cursor:pointer}
+.diagram-stage g.node.is-selected :is(rect,circle,polygon,path,ellipse){stroke:var(--ui-accent)!important;stroke-width:3px!important}
+.diagram-stage path.flowchart-link.is-selected{stroke:var(--ui-accent)!important;stroke-width:3px!important}
+.diagram-stage .edge-hit{fill:none;stroke:transparent;stroke-width:14px;pointer-events:stroke;cursor:pointer}
+.diagram-viewport.linking{cursor:crosshair}
+.mermaid-inspector{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-panel2)}
+.mermaid-inspector[hidden]{display:none}
+.mermaid-inspector-title{font-size:12px;font-weight:600;color:var(--ui-text)}
+.mermaid-inspector-hint{font-size:12px;line-height:1.5;color:var(--ui-muted)}
+.mermaid-inspector-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mermaid-inspector-row input,.mermaid-inspector-row select{flex:1 1 120px;min-width:0;padding:5px 8px;font-size:12px}
+.mermaid-inspector-btn{padding:5px 10px;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-panel);color:var(--ui-text);font-size:12px;cursor:pointer}
+.mermaid-inspector-btn:hover{background:var(--ui-hover)}
+.mermaid-inspector-btn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+.mermaid-inspector-btn.danger{border-color:color-mix(in srgb,#e5534b 60%,var(--ui-border))}
+
+/* Themed dropdowns inside the formula, Mermaid and inspector rows share the row like the plain selects did. */
+.formula-toolbar .tn-select{flex:1 1 220px;min-width:0}
+.mermaid-builder-row .tn-select,.mermaid-inspector-row .tn-select{flex:1 1 110px;min-width:0}
+
+/* The Mermaid toolbar stacks its parts in a column, so the themed select must not claim a row width as its height. */
+.mermaid-toolbar .tn-select{flex:0 0 auto}
+.mermaid-toolbar-top{display:flex;gap:6px;align-items:center}
+.mermaid-toolbar-top .tn-select{flex:1 1 auto;min-width:0}
+.mermaid-toolbar-top .mermaid-historybtn{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--ui-border);border-radius:6px;background:var(--ui-panel2);color:var(--ui-text);cursor:pointer}
+.mermaid-historybtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.mermaid-historybtn:hover:not(:disabled){background:var(--ui-hover)}
+.mermaid-historybtn:disabled{opacity:.4;cursor:default}
+.mermaid-historybtn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+
+.mermaid-inspector-caption{flex:0 0 44px;font-size:12px;color:var(--ui-muted)}
+.mermaid-inspector-code{font-family:var(--font-mono,ui-monospace,Consolas,monospace)}
+.diagram-stage .is-picked{filter:drop-shadow(0 0 3px var(--ui-accent))}
+.formula-matrix-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}

@@ -101,6 +101,14 @@ export async function renderMermaidBlock(pre: HTMLElement) {
     pre.replaceWith(container);
   } catch (error) { pre.dataset.rendered = "error"; pre.title = langText("Nie udało się wyrenderować diagramu Mermaid", "Could not render Mermaid diagram"); console.warn("Mermaid render error", error); }
 }
+/** Renders diagram source to SVG text for the Mermaid editor dialog; rejects with Mermaid's message when the source is invalid. */
+export async function renderMermaidSvg(source: string, id: string): Promise<string> {
+  if (!mermaidPromise) mermaidPromise = import("mermaid").then(({ default: mermaid }) => mermaid);
+  const mermaid = await mermaidPromise;
+  initializeMermaidTheme(mermaid);
+  try { return (await mermaid.render(id, source)).svg; }
+  finally { document.getElementById(`d${id}`)?.remove(); } // a failed render leaves its error drawing in the page
+}
 export function refreshMermaidTheme() {
   const rendered = Array.from(previewContent.querySelectorAll<HTMLElement>(".mermaid-container[data-mermaid-source]"));
   if (!rendered.length) return;

@@ -459,3 +459,65 @@ test("showing only one section hides everything around it and keeps the choice i
   assert.equal(parseFocusedSection(text), "2:A2:0");
   assert.equal(parseFocusedSection(serializeSectionConfig("a.md", [])), null);
 });
+
+test("the math and Mermaid editors find the formula or diagram under the caret", async () => {
+  const { findFormulaAt, findMermaidBlockAt, formulaMarkdown, mermaidMarkdown, flowchartNodeIds, mermaidKind } = await import("../.test-build/editor/formula-block.js");
+  const text = "Intro $a+b$ and\n\n$$\n\\frac{1}{2}\n$$\n\nEnd $x$.";
+  const inline = findFormulaAt(text, text.indexOf("a+b") + 1, text.indexOf("a+b") + 1);
+  assert.deepEqual([inline.latex, inline.display], ["a+b", false]);
+  const block = findFormulaAt(text, text.indexOf("frac"), text.indexOf("frac"));
+  assert.deepEqual([block.latex, block.display], ["\\frac{1}{2}", true]);
+  assert.equal(findFormulaAt(text, text.indexOf("Intro"), text.indexOf("Intro")), null);
+  assert.equal(text.slice(block.from, block.to), "$$\n\\frac{1}{2}\n$$");
+  assert.equal(formulaMarkdown(" x ", true), "$$\nx\n$$");
+  assert.equal(formulaMarkdown(" x ", false), "$x$");
+  const doc = "Text\n\n```mermaid\nflowchart TD\n  A --> B\n```\n\nAfter";
+  const diagram = findMermaidBlockAt(doc, doc.indexOf("A -->"));
+  assert.equal(diagram.source, "flowchart TD\n  A --> B");
+  assert.equal(doc.slice(diagram.from, diagram.to), "```mermaid\nflowchart TD\n  A --> B\n```");
+  assert.equal(findMermaidBlockAt(doc, 1), null);
+  assert.equal(mermaidMarkdown("pie\n  \"a\" : 1\n\n"), "```mermaid\npie\n  \"a\" : 1\n```");
+  assert.deepEqual(flowchartNodeIds("flowchart TD\n  A[Start] --> B{Ok?}\n  B -->|Tak| C(Go)\n  C --> D & E\n  subgraph G\n  end"), ["A", "B", "C", "D", "E"]);
+  assert.deepEqual(flowchartNodeIds("flowchart TD\n  A[Start] --> B\n  E((\"asd\")) --> F[(Baza)]\n  G([Stadion]) -->|x| H{Ok?}"), ["A", "B", "E", "F", "G", "H"]);
+  assert.equal(mermaidKind("%% c\nsequenceDiagram\n A->>B: x"), "sequence");
+  assert.equal(mermaidKind("graph LR\n A-->B"), "flowchart");
+  assert.equal(mermaidKind("???"), "other");
+});
+
+test("formulas with colour boxes are written without dollars inside, so the preview parser keeps them", async () => {
+  const { formulaMarkdown, latexForMarkdown, latexFromMarkdown } = await import("../.test-build/editor/formula-block.js");
+  const mathlive = "\\colorbox{#fbbbb6}{\\textcolor{#d7170b}{$ \\sqrt[3]{x} $}}";
+  const written = latexForMarkdown(mathlive);
+  assert.equal(written, "\\colorbox{#fbbbb6}{\\textcolor{#d7170b}{\\( \\sqrt[3]{x} \\)}}");
+  assert.equal(latexFromMarkdown(written), mathlive);
+  assert.equal(latexForMarkdown("a \\$ b"), "a \\$ b");
+  assert.ok(!formulaMarkdown(mathlive, true).slice(2, -2).includes("$"));
+});
+
+test("flowchart edits by node and link keep the rest of the source", async () => {
+  const fe = await import("../.test-build/editor/flowchart-edit.js");
+  const src = "flowchart TD\n  A[Start] --> B{Warunek?}\n  B -->|Tak| C[Akcja]\n  B -->|Nie| D[Koniec]\n  C --> D";
+  assert.deepEqual(fe.describeNode(src, "B"), { text: "Warunek?", shape: 4, defined: true });
+  assert.equal(fe.describeNode(src, "Z"), null);
+  const renamed = fe.updateNode(src, "C", { text: "Nowa akcja", shape: 1 });
+  assert.ok(renamed.includes('B -->|Tak| C("Nowa akcja")'));
+  assert.ok(renamed.includes("C --> D"));
+  const without = fe.removeNode(src, "B");
+  assert.ok(!without.includes("B"), without);
+  assert.ok(without.includes("A[Start]") && without.includes("C[Akcja] --> D") === false && without.includes("C --> D"));
+  assert.deepEqual(fe.listEdges(src).map(e => e.from + ">" + e.to), ["A>B", "B>C", "B>D", "C>D"]);
+  const relabeled = fe.updateEdge(src, "B", "C", 0, { label: "Jasne", arrow: "==>" });
+  assert.ok(relabeled.includes("B ==>|Jasne| C[Akcja]"), relabeled);
+  const dropped = fe.removeEdge(src, "B", "C", 0);
+  assert.deepEqual(fe.listEdges(dropped).map(e => e.from + ">" + e.to), ["A>B", "B>D", "C>D"]);
+  assert.ok(dropped.includes("C[Akcja]"));
+  const chain = "flowchart LR" + "\n  A --> B --> C";
+  assert.deepEqual(fe.listEdges(fe.removeEdge(chain, "A", "B", 0)).map(e => e.from + ">" + e.to), ["B>C"]);
+  assert.deepEqual(fe.listEdges(fe.removeNode(chain, "B")), []);
+  const added = fe.addNode(src, ["A", "B", "C", "D"], "C", 0, "Nowy");
+  assert.equal(added.id, "E");
+  assert.ok(added.source.includes('E["Nowy"]') && added.source.includes("C --> E"));
+  assert.ok(fe.addLink(src, "A", "D", "-.->", "x").endsWith("A -.->|x| D" + "\n"));
+  const odd = "flowchart TD" + "\n  subgraph G\n    A & B --> C\n  end";
+  assert.equal(fe.removeNode(odd, "Z"), odd);
+});

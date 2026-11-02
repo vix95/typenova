@@ -320,6 +320,24 @@ function initializeTypeNovaSelects(): void {
 let typeahead = "";
 let typeaheadTimer = 0;
 
+let dynamicSelectCounter = 0;
+/** Gives a select created at run time (already inside the document, for example in a dialog) the themed dropdown instead of the system one. */
+export function themeSelect(select: HTMLSelectElement): void {
+  if (select.dataset.tnCustomSelect === "true" || !select.parentElement) return;
+  if (!select.id) select.id = `tnSelect${++dynamicSelectCounter}`;
+  enhanceSelect(select, select.parentElement);
+}
+
+/** Rebuilds the themed list after the options of a select were replaced from code. */
+export function refreshCustomSelect(select: HTMLSelectElement): void {
+  typeNovaSelectControls.get(select)?.refreshOptions();
+}
+
+/** Forgets the themed controls of selects inside a part of the page that is being removed. */
+export function releaseCustomSelects(root: ParentNode): void {
+  root.querySelectorAll<HTMLSelectElement>("select").forEach(select => { typeNovaSelectControls.get(select)?.menu.remove(); typeNovaSelectControls.delete(select); });
+}
+
 export function initCustomSelects(): void {
   initializeTypeNovaSelects();
   syncAllCustomSelectControls();

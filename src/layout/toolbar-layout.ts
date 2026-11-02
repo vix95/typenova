@@ -37,7 +37,7 @@ export function scheduleToolbarLayout() { if (toolbarLayoutQueued) return; toolb
 export function initToolbarLayout(): void {
   if (formattingToolbar && formattingOverflow && formattingOverflowMenu) {
     for (const node of Array.from(formattingToolbar.children)) {
-      if (!(node instanceof HTMLElement) || !node.matches('button[data-wrap],button[data-prefix],#insertImage,#insertTable,#insertRule,#insertMermaid')) continue;
+      if (!(node instanceof HTMLElement) || !node.matches('button[data-wrap],button[data-prefix],#insertImage,#insertTable,#insertRule,#insertMath,#insertMermaid')) continue;
       const slot = document.createComment("toolbar-action-slot"); node.before(slot); toolbarSlots.set(node, slot); movableToolbarButtons.push(node);
     }
   }

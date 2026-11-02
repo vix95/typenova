@@ -28,6 +28,8 @@ import { initPreviewResizer } from "./graph-ui/preview-resizer";
 import { initGraphInteractions } from "./graph-ui/graph-interactions";
 import { initSidebarBindings } from "./app/sidebar";
 import { initToolbarBindings } from "./app/toolbar-bindings";
+import { initMathEditor } from "./editor/math-editor";
+import { initMermaidEditor } from "./editor/mermaid-editor";
 import { initToolbarLayout } from "./layout/toolbar-layout";
 import { initSettingsBindings } from "./app/settings-bindings";
 import { initImageInsert } from "./editor/image-insert";
@@ -125,6 +127,8 @@ initGraphInteractions();
 // Sidebar, toolbar and settings
 initSidebarBindings();
 initToolbarBindings();
+initMathEditor();
+initMermaidEditor();
 initToolbarLayout();
 initFileMenuBindings();
 initSettingsBindings();

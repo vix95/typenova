@@ -52,7 +52,6 @@ export function initToolbarBindings(): void {
   document.querySelectorAll<HTMLButtonElement>("[data-prefix]").forEach(button => button.addEventListener("click", () => prefixLine(button.dataset.prefix!)));
   $("insertSnippet").addEventListener("click", () => ($("snippetDialog") as HTMLDialogElement).showModal());
   $("confirmSnippet").addEventListener("click", () => insertAtCursor("\n" + snippets[($("snippetSelect") as HTMLSelectElement).value] + "\n"));
-  $("insertMermaid").addEventListener("click", () => insertAtCursor("\n" + snippets.mermaid + "\n"));
   $("insertTable").addEventListener("click", () => insertAtCursor("\n| Column 1 | Column 2 |\n| --- | --- |\n| Value | Value |\n"));
   $("insertRule").addEventListener("click", () => insertAtCursor("\n---\n"));
 }
