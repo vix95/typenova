@@ -150,7 +150,7 @@ function installTreeKeyboardShortcuts(files: HTMLElement): void {
     if (modifier && !e.altKey) {
       if (e.key.toLowerCase() === "c") { e.preventDefault(); setTreeClipboard(path, "copy", type === "directory"); return; }
       if (e.key.toLowerCase() === "x") { e.preventDefault(); setTreeClipboard(path, "cut", type === "directory"); return; }
-      if (e.key.toLowerCase() === "v" && projectTreeState.clipboard) { e.preventDefault(); projectTreeState.contextTarget = { path, isDirectory: type === "directory", isRoot: false }; void handleTreeContextAction("paste"); return; }
+      if (e.key.toLowerCase() === "v") { e.preventDefault(); projectTreeState.contextTarget = { path, isDirectory: type === "directory", isRoot: false }; void handleTreeContextAction("paste"); return; }
     }
     if (e.key === "F2" && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); projectTreeState.contextTarget = { path, isDirectory: type === "directory", isRoot: false }; void handleTreeContextAction("rename"); return; }
     if (e.key === "Delete" && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); projectTreeState.contextTarget = { path, isDirectory: type === "directory", isRoot: false }; void handleTreeContextAction("delete"); }

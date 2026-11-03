@@ -1,4 +1,5 @@
 /** Project tree context menu and its file operations (open, new file, delete, copy, cut, paste). */
+import { pasteSystemFiles, systemClipboardFiles, systemFilesAreNewer } from "./system-clipboard";
 import { normalizedFsPath, pathIsInside, parentPath } from "../filesystem/project-tree-operations";
 import { basename, isEditableTextFile, isViewableImageFile } from "../filesystem/path-utils";
 import { openImageFile } from "../preview/media-viewer";
@@ -61,7 +62,9 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
       add(langText("Zmień nazwę…", "Rename…"), "rename", { shortcut: "F2" });
       const hr = document.createElement("hr"); menu.append(hr);
     }
-    add(langText("Wklej", "Paste"), "paste", { disabled: !projectTreeState.clipboard, shortcut: "Ctrl+V" });
+    const paste = add(langText("Wklej", "Paste"), "paste", { disabled: !projectTreeState.clipboard, shortcut: "Ctrl+V" });
+    // Files copied in the system file manager can be pasted too; whether there are any is only known asynchronously.
+    if (paste.disabled) void systemClipboardFiles().then(files => { if (files.names.length && menu && !menu.hidden) paste.disabled = false; });
     if (!isRoot) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń", "Delete"), "delete", { danger: true, shortcut: "Delete" }); }
     if (rootRow) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń folder z drzewa", "Remove folder from tree"), "remove-root"); }
     { const hr = document.createElement("hr"); menu.append(hr); add(langText("Pokaż w eksploratorze", "Show in file explorer"), "reveal"); }
@@ -250,6 +253,21 @@ export async function openProjectTreeEntry(path: string, isDirectory: boolean) {
     }
   }
 }
+/** Pastes into a folder what was copied last: files from the system file manager, or what was copied inside the tree. */
+async function pasteIntoFolder(folder: string): Promise<void> {
+  const system = await systemClipboardFiles();
+  if (systemFilesAreNewer(system, !!projectTreeState.clipboard)) {
+    if (!projectRootFor(folder)) { showToast(langText("Folder docelowy musi znajdować się w otwartym projekcie.", "The destination folder must be inside the open project.")); return; }
+    const created = await pasteSystemFiles(folder);
+    projectTreeState.expandedFolders.add(folder);
+    await refreshProjectTree();
+    showToast(created.length === 1 ? `${langText("Wklejono", "Pasted")}: ${basename(created[0])}` : `${langText("Wklejono elementów", "Items pasted")}: ${created.length}`);
+    return;
+  }
+  if (projectTreeState.clipboard) await handleTreeContextAction("paste-internal");
+  else showToast(langText("W schowku nie ma plików do wklejenia.", "There are no files on the clipboard to paste."));
+}
+
 export async function handleTreeContextAction(action: string) {
   const target = projectTreeState.contextTarget;
   const menu = treeContextMenuElement(); menu.hidden = true;
@@ -276,7 +294,8 @@ export async function handleTreeContextAction(action: string) {
     else if (action === "delete" && !isRoot) await deleteProjectEntry(path, isDirectory);
     else if (action === "rename" && !isRoot) await promptAndRenameProjectEntry(path, isDirectory);
     else if (action === "reveal") await revealItemInDir(path);
-    else if (action === "paste" && projectTreeState.clipboard) {
+    else if (action === "paste") await pasteIntoFolder(destinationFolder);
+    else if (action === "paste-internal" && projectTreeState.clipboard) {
       const clipboard = { ...projectTreeState.clipboard };
       await performTreeMoveOrCopy(clipboard.path, destinationFolder, clipboard.operation, clipboard.isDirectory, false);
       if (clipboard.operation === "cut") projectTreeController.clearClipboard();

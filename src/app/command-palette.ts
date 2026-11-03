@@ -1,4 +1,5 @@
 /** Ctrl+K command palette: command catalogue, filtering and keyboard navigation. */
+import { openGitHistory } from "../git-ui/git-history";
 import { openSearchPanel } from "@codemirror/search";
 import { undo, redo } from "@codemirror/commands";
 import { $ } from "./dom";
@@ -20,6 +21,7 @@ const commandItems: CommandItem[] = [
   { labelPl: "Plik: zapisz jako", labelEn: "File: save as", shortcut: "Ctrl+Shift+S", run: () => void saveDocumentAs() },
   { labelPl: "Eksportuj HTML", labelEn: "Export HTML", run: exportHtml },
   { labelPl: "Historia wersji", labelEn: "Version history", run: () => void showVersionHistory() },
+  { labelPl: "Historia Git: commity i gałęzie", labelEn: "Git history: commits and branches", run: () => void openGitHistory() },
   { labelPl: "Pokaż / ukryj ukryte sekcje", labelEn: "Show / hide hidden sections", run: () => toggleShowHiddenSections() },
   { labelPl: "Drukuj / eksportuj PDF", labelEn: "Print / export PDF", run: () => void printDocument() },
   { labelPl: "Szukaj w dokumencie", labelEn: "Find in document", shortcut: "Ctrl+F", run: () => openSearchPanel(view) },

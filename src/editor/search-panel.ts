@@ -25,22 +25,36 @@ const ICONS = {
 function remembered(): boolean { try { return localStorage.getItem(REPLACE_KEY) === "1"; } catch { return false; } }
 function remember(open: boolean): void { try { localStorage.setItem(REPLACE_KEY, open ? "1" : "0"); } catch { /* storage unavailable */ } }
 
-/** How many matches the query has (outside hidden sections) and the number of the one that is selected; null when the pattern is invalid. */
-export function countMatches(state: EditorState, query: SearchQuery): { total: number; index: number; capped: boolean } | null {
-  if (!query.search) return { total: 0, index: 0, capped: false };
-  if (!query.valid) return null;
+const CHUNK_CHARS = 250_000;
+
+/**
+ * Adds the start positions of the matches between `from` and the end of the line holding `to` to `starts` (matches inside hidden
+ * sections are left out; scanning stops at `cap` matches) and returns where the next chunk begins. A document is scanned in
+ * chunks so that a search on a very large text never blocks the interface for long.
+ */
+export function scanChunk(state: EditorState, query: SearchQuery, from: number, starts: number[], cap: number): number {
+  const doc = state.doc;
+  const to = query.search.includes("\n") ? doc.length : doc.lineAt(Math.min(doc.length, from + CHUNK_CHARS)).to;
   const hidden = hiddenSectionsInState(state);
-  const { from: selFrom, to: selTo } = state.selection.main;
-  const cursor = query.getCursor(state);
-  let total = 0, index = 0;
+  const cursor = query.getCursor(state, from, to);
   for (let step = cursor.next(); !step.done; step = cursor.next()) {
-    const { from, to } = step.value;
-    if (hidden.length) { const line = state.doc.lineAt(from).number; if (hidden.some(range => line >= range.startLine && line <= range.endLine)) continue; }
-    total++;
-    if (from === selFrom && to === selTo) index = total;
-    if (total >= COUNT_LIMIT) return { total, index, capped: true };
+    const start = step.value.from;
+    if (hidden.length) { const line = doc.lineAt(start).number; if (hidden.some(range => line >= range.startLine && line <= range.endLine)) continue; }
+    starts.push(start);
+    if (starts.length >= cap) return doc.length + 1;
   }
-  return { total, index, capped: false };
+  return to + 1;
+}
+
+/** Number (1-based) of the match that starts at `position`, or 0 when none does (binary search). */
+export function matchIndexAt(starts: readonly number[], position: number): number {
+  let low = 0, high = starts.length - 1;
+  while (low <= high) {
+    const middle = (low + high) >> 1;
+    if (starts[middle] === position) return middle + 1;
+    if (starts[middle] < position) low = middle + 1; else high = middle - 1;
+  }
+  return 0;
 }
 
 function button(className: string, svg: string, label: string): HTMLButtonElement {
@@ -56,7 +70,7 @@ function toggle(label: string, text: string, title: string): HTMLButtonElement {
 }
 
 interface SearchDom {
-  dom: HTMLElement; find: HTMLInputElement; replace: HTMLInputElement; count: HTMLElement; second: HTMLElement;
+  dom: HTMLElement; go: HTMLButtonElement; find: HTMLInputElement; replace: HTMLInputElement; count: HTMLElement; second: HTMLElement;
   prev: HTMLButtonElement; next: HTMLButtonElement; every: HTMLButtonElement; matchCase: HTMLButtonElement; wholeWord: HTMLButtonElement; regexp: HTMLButtonElement;
   expand: HTMLButtonElement; close: HTMLButtonElement; replaceOne: HTMLButtonElement; replaceEvery: HTMLButtonElement;
 }
@@ -71,6 +85,8 @@ function buildSearchDom(initial: SearchQuery): SearchDom {
   const count = document.createElement("span"); count.className = "tn-search-count"; count.setAttribute("aria-live", "polite");
   field.append(find, count);
 
+  const go = document.createElement("button"); go.type = "button"; go.className = "tn-search-btn tn-search-go"; go.textContent = langText("Szukaj", "Search");
+  go.title = langText("Szukaj (Enter)", "Search (Enter)");
   const prev = button("tn-search-prev", ICONS.up, langText("Poprzednie dopasowanie (Shift+Enter)", "Previous match (Shift+Enter)"));
   const next = button("tn-search-next", ICONS.down, langText("Następne dopasowanie (Enter)", "Next match (Enter)"));
   const every = button("tn-search-all", ICONS.all, langText("Zaznacz wszystkie dopasowania (Ctrl+Enter)", "Select all matches (Ctrl+Enter)"));
@@ -80,7 +96,7 @@ function buildSearchDom(initial: SearchQuery): SearchDom {
   const expand = button("tn-search-expand", ICONS.chevron, langText("Pokaż lub ukryj zamianę", "Show or hide replace"));
   const close = button("tn-search-close", ICONS.close, langText("Zamknij (Esc)", "Close (Esc)"));
   const first = document.createElement("div"); first.className = "tn-search-row";
-  first.append(expand, field, prev, next, every, matchCase, wholeWord, regexp, close);
+  first.append(expand, field, go, prev, next, every, matchCase, wholeWord, regexp, close);
 
   const replace = document.createElement("input"); replace.type = "text"; replace.className = "tn-search-input tn-search-replace"; replace.spellcheck = false; replace.value = initial.replace;
   replace.placeholder = langText("Zamień na…", "Replace with…"); replace.setAttribute("aria-label", langText("Tekst zastępujący", "Replacement text"));
@@ -92,12 +108,58 @@ function buildSearchDom(initial: SearchQuery): SearchDom {
   const second = document.createElement("div"); second.className = "tn-search-row tn-search-replace-row";
   second.append(replace, replaceOne, replaceEvery);
   dom.append(first, second);
-  return { dom, find, replace, count, second, prev, next, every, matchCase, wholeWord, regexp, expand, close, replaceOne, replaceEvery };
+  return { dom, go, find, replace, count, second, prev, next, every, matchCase, wholeWord, regexp, expand, close, replaceOne, replaceEvery };
+}
+
+interface CounterUi { find: HTMLInputElement; count: HTMLElement; buttons: HTMLButtonElement[] }
+
+/** Counts the matches of the active query chunk by chunk (the interface stays free in between) and shows "3 of 90" in the field. */
+function createMatchCounter(view: EditorView, ui: CounterUi) {
+  let found: { starts: number[]; capped: boolean } | null = { starts: [], capped: false };
+  let counting = false, counted = false, job = 0, afterFirst: (() => void) | null = null;
+
+  const show = () => {
+    const query = getSearchQuery(view.state);
+    ui.find.classList.toggle("invalid", found === null);
+    ui.count.classList.toggle("none", !!query.search && !counting && !!found && found.starts.length === 0);
+    if (!query.search) ui.count.textContent = "";
+    else if (!found) ui.count.textContent = langText("Błędny wzorzec", "Invalid pattern");
+    else if (!found.starts.length) ui.count.textContent = counting ? langText("Szukanie…", "Searching…") : langText("Brak wyników", "No results");
+    else ui.count.textContent = `${matchIndexAt(found.starts, view.state.selection.main.from) || "?"} ${langText("z", "of")} ${found.starts.length}${found.capped ? "+" : ""}${counting ? "…" : ""}`;
+    const none = !query.search || !found || !found.starts.length;
+    for (const node of ui.buttons) node.disabled = none;
+  };
+
+  /** Starts counting for the active query; `afterFirst` (if set) runs once the first match is known. */
+  const start = () => {
+    const mine = ++job, state = view.state, query = getSearchQuery(state);
+    counted = false; counting = false;
+    if (!query.search || !query.valid) { found = query.search ? null : { starts: [], capped: false }; counted = true; afterFirst = null; show(); return; }
+    const starts: number[] = [];
+    found = { starts, capped: false }; counting = true;
+    let position = 0;
+    const step = () => {
+      if (mine !== job) return;
+      position = scanChunk(state, query, position, starts, COUNT_LIMIT);
+      found = { starts, capped: starts.length >= COUNT_LIMIT };
+      if (starts.length && afterFirst) { const action = afterFirst; afterFirst = null; action(); }
+      if (position > state.doc.length) { counting = false; counted = true; afterFirst = null; show(); return; }
+      show(); window.setTimeout(step, 0);
+    };
+    step();
+  };
+
+  return {
+    show, start,
+    get found() { return found; }, get counting() { return counting; }, get counted() { return counted; },
+    afterFirst(action: (() => void) | null) { afterFirst = action; },
+    cancel() { job++; },
+  };
 }
 
 export function createSearchPanel(view: EditorView): Panel {
   const initial = getSearchQuery(view.state);
-  const { dom, find, replace, count, second, prev, next, every, matchCase, wholeWord, regexp, expand, close, replaceOne, replaceEvery } = buildSearchDom(initial);
+  const { dom, go, find, replace, count, second, prev, next, every, matchCase, wholeWord, regexp, expand, close, replaceOne, replaceEvery } = buildSearchDom(initial);
   dom.addEventListener("keydown", event => { if (event.key === "Escape") { event.preventDefault(); closeSearchPanel(view); view.focus(); } });
 
   const setPressed = (node: HTMLElement, on: boolean) => { node.setAttribute("aria-pressed", String(on)); node.classList.toggle("selected", on); };
@@ -106,41 +168,53 @@ export function createSearchPanel(view: EditorView): Panel {
   };
   showReplace(remembered() || !!initial.replace);
 
-  const commit = () => {
-    const query = new SearchQuery({ search: find.value, replace: replace.value, caseSensitive: matchCase.getAttribute("aria-pressed") === "true", wholeWord: wholeWord.getAttribute("aria-pressed") === "true", regexp: regexp.getAttribute("aria-pressed") === "true" });
-    if (!query.eq(getSearchQuery(view.state))) view.dispatch({ effects: setSearchQuery.of(query) });
-    return query;
-  };
-  const refreshCount = () => {
-    const query = getSearchQuery(view.state), result = countMatches(view.state, query);
-    find.classList.toggle("invalid", result === null);
-    count.classList.toggle("none", !!query.search && !!result && result.total === 0);
-    if (!query.search) count.textContent = "";
-    else if (result === null) count.textContent = langText("Błędny wzorzec", "Invalid pattern");
-    else if (result.total === 0) count.textContent = langText("Brak wyników", "No results");
-    else count.textContent = `${result.index || "?"} ${langText("z", "of")} ${result.total}${result.capped ? "+" : ""}`;
-    for (const node of [prev, next, every, replaceOne, replaceEvery]) node.disabled = !query.search || result === null || result.total === 0;
+  // The query runs only on "Search" or Enter: typing does not search, highlight or count anything. Counting is done in chunks
+  // between which the interface stays free, and the jump to a match happens as soon as the first match is known.
+  let applied = initial.search;
+  const counter = createMatchCounter(view, { find, count, buttons: [prev, next, every, replaceOne, replaceEvery] });
+  const flag = (node: HTMLElement) => node.getAttribute("aria-pressed") === "true";
+  /** Makes the typed text the active query; returns true when the editor's query had to change. */
+  const apply = (text: string) => {
+    applied = text;
+    const query = new SearchQuery({ search: text, replace: replace.value, caseSensitive: flag(matchCase), wholeWord: flag(wholeWord), regexp: flag(regexp) });
+    if (query.eq(getSearchQuery(view.state))) return false;
+    view.dispatch({ effects: setSearchQuery.of(query) });
+    return true;
   };
   const syncFromQuery = () => {
     const query = getSearchQuery(view.state);
+    applied = query.search;
     if (find.value !== query.search) find.value = query.search;
     if (replace.value !== query.replace) replace.value = query.replace;
     setPressed(matchCase, query.caseSensitive); setPressed(wholeWord, query.wholeWord); setPressed(regexp, query.regexp);
-    refreshCount();
+    counter.start();
   };
   syncFromQuery();
 
-  find.addEventListener("input", () => { commit(); if (find.value && getSearchQuery(view.state).valid) findNext(view); refreshCount(); });
-  replace.addEventListener("input", commit);
-  for (const node of [matchCase, wholeWord, regexp]) node.addEventListener("click", () => { setPressed(node, node.getAttribute("aria-pressed") !== "true"); commit(); refreshCount(); find.focus(); });
+  /** Runs the typed query and moves to the next (or previous) match, or selects them all. */
+  const search = (direction: "next" | "previous" | "all" = "next") => {
+    const act = () => {
+      if (direction === "all") selectMatches(view); else if (direction === "previous") findPrevious(view); else findNext(view);
+    };
+    counter.afterFirst(null);
+    const changed = apply(find.value); // a changed query restarts the counting through the panel update below
+    if (!find.value || !getSearchQuery(view.state).valid) return;
+    if (!changed && !counter.counting && !counter.counted) counter.start();
+    if (counter.found && counter.found.starts.length) act(); else counter.afterFirst(act);
+  };
+  // Typing only blanks the counter, which no longer belongs to the text in the field.
+  find.addEventListener("input", () => { if (find.value !== applied) { count.textContent = ""; find.classList.remove("invalid"); } });
+  // The options change an already running query, not the text being typed.
+  for (const node of [matchCase, wholeWord, regexp]) node.addEventListener("click", () => { setPressed(node, !flag(node)); if (applied) apply(applied); find.focus(); });
   find.addEventListener("keydown", event => {
     if (event.key !== "Enter") return;
-    event.preventDefault(); commit();
-    if (event.ctrlKey || event.metaKey) selectMatches(view); else if (event.shiftKey) findPrevious(view); else findNext(view);
+    event.preventDefault();
+    search(event.ctrlKey || event.metaKey ? "all" : event.shiftKey ? "previous" : "next");
   });
+  go.addEventListener("click", () => search());
   replace.addEventListener("keydown", event => {
     if (event.key !== "Enter") return;
-    event.preventDefault(); commit();
+    event.preventDefault(); apply(applied);
     if (event.ctrlKey && event.altKey) replaceAll(view); else replaceNext(view);
   });
   dom.addEventListener("keydown", event => {
@@ -148,25 +222,25 @@ export function createSearchPanel(view: EditorView): Panel {
     const target = ({ c: matchCase, w: wholeWord, r: regexp } as Record<string, HTMLElement>)[event.key.toLowerCase()];
     if (target) { event.preventDefault(); target.click(); }
   });
-  prev.addEventListener("click", () => { commit(); findPrevious(view); });
-  next.addEventListener("click", () => { commit(); findNext(view); });
-  every.addEventListener("click", () => { commit(); selectMatches(view); });
-  replaceOne.addEventListener("click", () => { commit(); replaceNext(view); });
-  replaceEvery.addEventListener("click", () => { commit(); replaceAll(view); });
+  prev.addEventListener("click", () => search("previous"));
+  next.addEventListener("click", () => search("next"));
+  every.addEventListener("click", () => search("all"));
+  replaceOne.addEventListener("click", () => { apply(applied); replaceNext(view); });
+  replaceEvery.addEventListener("click", () => { apply(applied); replaceAll(view); });
   expand.addEventListener("click", () => { showReplace(second.hidden); if (!second.hidden) replace.focus(); });
   close.addEventListener("click", () => { closeSearchPanel(view); view.focus(); });
 
-  let pending = 0;
+  let timer = 0;
   return {
     dom,
     top: false,
     mount() { find.focus(); find.select(); },
+    destroy() { window.clearTimeout(timer); counter.cancel(); },
     update(update: ViewUpdate) {
       const queryChanged = update.transactions.some(transaction => transaction.effects.some(effect => effect.is(setSearchQuery)));
       if (queryChanged) syncFromQuery();
-      else if ((update.docChanged || update.selectionSet) && !pending) {
-        pending = window.requestAnimationFrame(() => { pending = 0; refreshCount(); });
-      }
+      else if (update.docChanged) { window.clearTimeout(timer); timer = window.setTimeout(counter.start, 500); }
+      else if (update.selectionSet) counter.show();
     },
   };
 }

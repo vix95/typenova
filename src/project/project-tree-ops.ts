@@ -1,4 +1,5 @@
 /** Glue between the project tree controller and the UI: clipboard state, move/copy and open-tab path remapping. */
+import { noteInternalCopy } from "./system-clipboard";
 import { createProjectTreeState } from "../filesystem/project-tree-state";
 import { join } from "@tauri-apps/api/path";
 import { exists, readDir, mkdir, copyFile, remove, rename } from "@tauri-apps/plugin-fs";
@@ -45,6 +46,7 @@ export function markTreeClipboardState() {
 }
 export function setTreeClipboard(path: string, operation: "copy" | "cut", isDirectory: boolean) {
   projectTreeController.setClipboard(path, operation, isDirectory);
+  void noteInternalCopy();
   markTreeClipboardState();
   const label = basename(path);
   showToast(operation === "copy"
