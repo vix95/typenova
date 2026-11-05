@@ -1,0 +1,34 @@
+{
+  "benchmark": "typenova-section-indexing",
+  "node": "v22.16.0",
+  "note": "Synthetic deterministic corpus; measures parser/model work and cooperative async-yield overhead, excludes disk I/O and DOM/Canvas rendering. Run on the same machine and Node version for comparisons.",
+  "results": [
+    {
+      "files": 100,
+      "sections": 300,
+      "relations": 400,
+      "indexingMs": 31.4,
+      "modelMs": 4.01,
+      "totalMs": 35.41,
+      "heapDeltaMiB": 0.85
+    },
+    {
+      "files": 1000,
+      "sections": 3000,
+      "relations": 4000,
+      "indexingMs": 860.82,
+      "modelMs": 51.58,
+      "totalMs": 912.4,
+      "heapDeltaMiB": 6.31
+    },
+    {
+      "files": 5000,
+      "sections": 15000,
+      "relations": 20000,
+      "indexingMs": 4890.53,
+      "modelMs": 3545.1,
+      "totalMs": 8435.63,
+      "heapDeltaMiB": 29.25
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "benchmark": "typenova-section-indexing",
+  "node": "v22.16.0",
+  "fixture": {
+    "files": 5000,
+    "sections": 15000,
+    "relations": 20000
+  },
+  "methodology": "One adjacent run pair on the same environment using identical synthetic input. Includes parser/model JavaScript work and timer-backed cooperative yield overhead; excludes disk I/O and DOM/Canvas rendering. Not a statistically controlled multi-run measurement.",
+  "baseline": {
+    "version": "0.5.110",
+    "indexingMs": 21264.12,
+    "modelMs": 210.66,
+    "totalMs": 21474.78
+  },
+  "optimized": {
+    "version": "0.5.111",
+    "indexingMs": 974.44,
+    "modelMs": 168.29,
+    "totalMs": 1142.73
+  },
+  "observedTotalSpeedup": 18.79,
+  "limitations": [
+    "Results can vary with system load and runtime state.",
+    "This is a focused Section Graph microbenchmark, not end-to-end application performance.",
+    "The measurement does not validate Canvas rendering, layout worker performance, real filesystem access, or Windows Tauri runtime behavior."
+  ]
+}
