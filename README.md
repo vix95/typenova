@@ -42,7 +42,7 @@ The repository ships with a small, interlinked project in [`examples/demo-vault`
 
 ## Getting started
 
-You need [Node.js](https://nodejs.org/), a Rust toolchain and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform. TypeNova is developed and tested on Windows.
+You need [Node.js](https://nodejs.org/), a Rust toolchain and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform. TypeNova is developed on Windows, tested on Windows, Debian and Ubuntu.
 
 ```bash
 git clone https://github.com/vix95/typenova.git
@@ -58,6 +58,34 @@ npm run tauri:build
 ```
 
 On Windows this produces an NSIS setup and an MSI under `src-tauri/target/release/bundle/`. The installers are not code-signed yet, so SmartScreen will warn you.
+
+### Linux
+
+Tauri needs WebKitGTK 4.1 and a few system libraries. On Ubuntu or Debian:
+
+```bash
+sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file \
+  libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+```
+
+Package names for Fedora, Arch and other distributions are in the [Tauri prerequisites](https://tauri.app/start/prerequisites/#linux). Install Rust with [rustup](https://rustup.rs); distribution-packaged Rust is often too old.
+
+Alternatively, `install-and-run.sh` does the checks for you. It verifies Node.js and Rust, offers to install Rust with rustup and the system libraries with `apt`, `dnf` or `pacman` (asking before each step) and runs `npm install`.
+
+To install TypeNova for everyday use, build the packages and install one of them. `npm run tauri:build` (or the script with `--build-installer`) produces `.deb`, `.rpm` and `.AppImage` packages under `src-tauri/target/release/bundle/`. On Ubuntu or Debian:
+
+```bash
+./install-and-run.sh --build-installer
+sudo apt install ./src-tauri/target/release/bundle/deb/TypeNova_*_amd64.deb
+```
+
+The package installs the `.desktop` entry and the icons, so TypeNova shows up in the application menu and with its own icon in the taskbar or dock.
+
+Running the script without options starts the app in development mode (`npm run tauri:dev`). This is meant for working on TypeNova only.
+
+```bash
+./install-and-run.sh  # development: install dependencies and run with tauri dev
+```
 
 Other useful commands:
 
