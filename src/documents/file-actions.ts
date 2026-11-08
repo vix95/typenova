@@ -2,7 +2,8 @@
 import { basename } from "../filesystem/path-utils";
 import { writeRecoverySnapshot as recoveryWrite, saveDocumentVersion as saveVersion } from "./recovery-store";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { BinaryFileError, loadTextFile, saveTextFile } from "../filesystem/text-io";
+import { countUnmappable, DEFAULT_FORMAT, type TextFormat } from "../filesystem/text-codec";
 import { readPreferenceJson, isStringArray } from "../settings/storage";
 import { $ } from "../app/dom";
 import { previousSidebarTab, setSidebarTab } from "../app/sidebar";
@@ -15,7 +16,7 @@ import { graphPreviewOwnsPreview } from "../graph-ui/preview-host";
 import { langText } from "../i18n/language";
 import { clearPreviewCache, schedulePreview, syncPreviewForActiveDocument } from "../preview/preview-scheduler";
 import { isFilesystemScopeError } from "../project/project-tree-ops";
-import { appAlert } from "../ui/dialogs";
+import { appAlert, appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
 
 export let autoSaveTimer = 0;
@@ -25,7 +26,7 @@ export function markProjectTreeSelection(path: string | null) {
   const selected = path ? path.replace(/\\/g, "/").toLowerCase() : "";
   document.querySelectorAll<HTMLButtonElement>("#projectFiles .tree-file[data-file-path]").forEach(row => row.classList.toggle("active", !!selected && (row.dataset.filePath || "").replace(/\\/g, "/").toLowerCase() === selected));
 }
-export function openTextInTab(path: string, text: string) {
+export function openTextInTab(path: string, text: string, format?: TextFormat) {
   if (graphPreviewOwnsPreview && document.body.classList.contains("graph-mode")) setSidebarTab(previousSidebarTab);
   const normalizedPath = path.replace(/\\/g, "/").toLowerCase();
   const existing = documentState.tabs.find(tab => tab.path && tab.path.replace(/\\/g, "/").toLowerCase() === normalizedPath);
@@ -35,7 +36,7 @@ export function openTextInTab(path: string, text: string) {
   } else {
     const tab: DocumentTab = {
       id: `tab-${documentState.tabSequence++}`, path, label: basename(path),
-      state: createEditorState(text), savedText: text, dirty: false
+      state: createEditorState(text), savedText: text, dirty: false, format
     };
     documentState.tabs.push(tab);
     switchToTab(tab.id);
@@ -57,14 +58,35 @@ export function openTextInTab(path: string, text: string) {
   schedulePreview();
   view.focus();
 }
+/** The message for a file that could not be opened as text. */
+export function openErrorText(error: unknown): string {
+  if (error instanceof BinaryFileError) return langText("Ten plik nie jest tekstowy (wygląda na binarny), więc nie można go otworzyć w edytorze.", "This file is not text (it looks binary), so it cannot be opened in the editor.");
+  return `${langText("Nie udało się otworzyć pliku", "Could not open file")}:\n${String(error)}`;
+}
+
+/** Writes the active document in the encoding and line endings it was opened with. Asks before characters would be lost; false when the user cancelled. */
+async function writeActiveDocument(path: string, text: string, ask = true): Promise<boolean> {
+  const tab = activeTab();
+  let format = tab?.format ?? DEFAULT_FORMAT;
+  const lost = countUnmappable(text, format.encoding);
+  if (lost) {
+    if (!ask) return false;
+    const question = langText(`${lost} znaków nie da się zapisać w kodowaniu ${format.encoding}. Zapisać plik jako UTF-8?`, `${lost} characters cannot be stored in the ${format.encoding} encoding. Save the file as UTF-8?`);
+    if (!await appConfirm(question, { confirmLabel: langText("Zapisz jako UTF-8", "Save as UTF-8"), primaryAction: "cancel" })) return false;
+    format = { ...format, encoding: "utf-8" }; if (tab) tab.format = format;
+  }
+  await saveTextFile(path, text, format);
+  return true;
+}
+
 export async function openDocument() {
   try {
     // No extension filter: this is a text editor and must open code/text files too.
     const chosen = await open({ multiple: false });
     if (typeof chosen !== "string") return;
-    const text = await readTextFile(chosen);
-    openTextInTab(chosen, text);
-  } catch (error) { await appAlert(`${langText("Nie udało się otworzyć pliku", "Could not open file")}:\n${String(error)}`); }
+    const loaded = await loadTextFile(chosen);
+    openTextInTab(chosen, loaded.text, loaded);
+  } catch (error) { await appAlert(openErrorText(error)); }
 }
 export async function saveDocument() {
   try {
@@ -78,7 +100,7 @@ export async function saveDocument() {
     const text = view.state.doc.toString();
     if (documentState.savedText && documentState.savedText !== text) void saveVersion(documentState.savedText, documentState.currentPath);
     const saveRevision = documentState.docRevision;
-    await writeTextFile(targetPath, text);
+    if (!await writeActiveDocument(targetPath, text)) return;
     const pathChanged = documentState.currentPath !== targetPath;
     documentState.currentPath = targetPath;
     documentState.untitledLabel = basename(targetPath);
@@ -109,7 +131,7 @@ async function runAutoSave() {
   autoSaveInFlight = true; autoSaveQueued = false;
   const path = documentState.currentPath, revision = documentState.docRevision, text = view.state.doc.toString();
   try {
-    await writeTextFile(path, text);
+    if (!await writeActiveDocument(path, text, false)) { $("statusText").textContent = langText("Automatyczny zapis wstrzymany: w tym kodowaniu nie da się zapisać wszystkich znaków", "Auto-save paused: not every character fits this encoding"); return; }
     if (documentState.currentPath === path) { documentState.savedText = text; rememberRecentFile(path); persistOpenSession(); if (documentState.docRevision === revision) setClean(); else { setDirty(); autoSaveQueued = true; } }
     if (documentState.currentPath === path) $("statusText").textContent = `${langText("Zapisano automatycznie", "Auto-saved")}: ${basename(path)}`;
     if (documentState.docRevision === revision) void recoveryWrite({ text: "", path, updated: Date.now() }).catch(() => { });
@@ -119,13 +141,13 @@ async function runAutoSave() {
 export function recentFiles(): string[] { return readPreferenceJson("typenova.recentFiles", isStringArray, []).slice(0, 8); }
 export function renderRecentFiles() { const root = $("recentFiles"); if (!root) return; root.replaceChildren(); const title = document.createElement("span"); title.className = "recent-files-title"; title.textContent = langText("Ostatnie pliki", "Recent files"); root.append(title); const paths = recentFiles(); if (!paths.length) { const empty = document.createElement("span"); empty.className = "recent-empty"; empty.textContent = langText("Brak ostatnich plików", "No recent files"); root.append(empty); return; } for (const path of paths) { const b = document.createElement("button"); b.type = "button"; b.className = "recent-file-button"; b.textContent = basename(path); b.title = path; b.addEventListener("click", () => void openRecentFile(path)); root.append(b); } }
 export function rememberRecentFile(path: string) { const paths = [path, ...recentFiles().filter(x => x !== path)].slice(0, 8); localStorage.setItem("typenova.recentFiles", JSON.stringify(paths)); renderRecentFiles(); }
-async function openRecentFile(path: string) { try { const existing = documentState.tabs.find(tab => tab.path && tab.path.replace(/\\/g, "/").toLowerCase() === path.replace(/\\/g, "/").toLowerCase()); if (existing) { switchToTab(existing.id); return; } const text = await readTextFile(path); openTextInTab(path, text); } catch (error) { if (isFilesystemScopeError(error)) { showToast(langText("Dostęp do tego pliku wygasł. Otwórz go ponownie przez wybór pliku lub folderu projektu.", "Access to this file has expired. Reopen it using the file picker or project folder picker.")); return; } const paths = recentFiles().filter(x => x !== path); localStorage.setItem("typenova.recentFiles", JSON.stringify(paths)); renderRecentFiles(); showToast(`${langText("Nie można otworzyć pliku. Mógł zostać przeniesiony lub usunięty", "Could not open file. It may have been moved or deleted")}: ${String(error)}`); } }
+async function openRecentFile(path: string) { try { const existing = documentState.tabs.find(tab => tab.path && tab.path.replace(/\\/g, "/").toLowerCase() === path.replace(/\\/g, "/").toLowerCase()); if (existing) { switchToTab(existing.id); return; } const loaded = await loadTextFile(path); openTextInTab(path, loaded.text, loaded); } catch (error) { if (isFilesystemScopeError(error)) { showToast(langText("Dostęp do tego pliku wygasł. Otwórz go ponownie przez wybór pliku lub folderu projektu.", "Access to this file has expired. Reopen it using the file picker or project folder picker.")); return; } const paths = recentFiles().filter(x => x !== path); localStorage.setItem("typenova.recentFiles", JSON.stringify(paths)); renderRecentFiles(); showToast(`${langText("Nie można otworzyć pliku. Mógł zostać przeniesiony lub usunięty", "Could not open file. It may have been moved or deleted")}: ${String(error)}`); } }
 export async function saveDocumentAs() {
   const chosen = await save({ defaultPath: documentState.currentPath ? basename(documentState.currentPath) : documentState.untitledLabel });
   if (!chosen) return;
   try {
     const text = view.state.doc.toString(); if (documentState.savedText && documentState.savedText !== text) void saveVersion(documentState.savedText, documentState.currentPath);
-    const saveRevision = documentState.docRevision; await writeTextFile(chosen, text); const pathChanged = documentState.currentPath !== chosen;
+    const saveRevision = documentState.docRevision; if (!await writeActiveDocument(chosen, text)) return; const pathChanged = documentState.currentPath !== chosen;
     documentState.currentPath = chosen; documentState.untitledLabel = basename(chosen); rememberRecentFile(chosen); documentState.savedText = text;
     const tab = activeTab(); if (tab) { tab.path = chosen; tab.label = basename(chosen); tab.savedText = text; tab.state = view.state; }
     if (documentState.docRevision === saveRevision) setClean(); else setDirty(); updateStats();

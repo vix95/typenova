@@ -1,4 +1,5 @@
 /** Find and replace panel of the editor: icon buttons, a match counter, option toggles and a collapsible replace row (replaces the stock CodeMirror panel). */
+import { ICONS as SHARED_ICONS } from "../ui/icons";
 import {
   SearchQuery, closeSearchPanel, findNext, findPrevious, getSearchQuery, replaceAll, replaceNext, selectMatches, setSearchQuery,
 } from "@codemirror/search";
@@ -63,8 +64,8 @@ function button(className: string, svg: string, label: string): HTMLButtonElemen
   return node;
 }
 
-function toggle(label: string, text: string, title: string): HTMLButtonElement {
-  const node = document.createElement("button"); node.type = "button"; node.className = "tn-search-toggle"; node.textContent = text;
+function toggle(label: string, svgIcon: string, title: string): HTMLButtonElement {
+  const node = document.createElement("button"); node.type = "button"; node.className = "tn-search-toggle"; node.innerHTML = svgIcon;
   node.title = title; node.setAttribute("aria-label", label); node.setAttribute("aria-pressed", "false");
   return node;
 }
@@ -90,9 +91,9 @@ function buildSearchDom(initial: SearchQuery): SearchDom {
   const prev = button("tn-search-prev", ICONS.up, langText("Poprzednie dopasowanie (Shift+Enter)", "Previous match (Shift+Enter)"));
   const next = button("tn-search-next", ICONS.down, langText("Następne dopasowanie (Enter)", "Next match (Enter)"));
   const every = button("tn-search-all", ICONS.all, langText("Zaznacz wszystkie dopasowania (Ctrl+Enter)", "Select all matches (Ctrl+Enter)"));
-  const matchCase = toggle(langText("Rozróżniaj wielkość liter", "Match case"), "Aa", langText("Rozróżniaj wielkość liter (Alt+C)", "Match case (Alt+C)"));
-  const wholeWord = toggle(langText("Całe wyrazy", "Whole words"), "ab", langText("Tylko całe wyrazy (Alt+W)", "Whole words only (Alt+W)"));
-  const regexp = toggle(langText("Wyrażenie regularne", "Regular expression"), ".*", langText("Wyrażenie regularne (Alt+R)", "Regular expression (Alt+R)"));
+  const matchCase = toggle(langText("Rozróżniaj wielkość liter", "Match case"), SHARED_ICONS.matchCase, langText("Rozróżniaj wielkość liter (Alt+C)", "Match case (Alt+C)"));
+  const wholeWord = toggle(langText("Całe wyrazy", "Whole words"), SHARED_ICONS.wholeWord, langText("Tylko całe wyrazy (Alt+W)", "Whole words only (Alt+W)"));
+  const regexp = toggle(langText("Wyrażenie regularne", "Regular expression"), SHARED_ICONS.regex, langText("Wyrażenie regularne (Alt+R)", "Regular expression (Alt+R)"));
   const expand = button("tn-search-expand", ICONS.chevron, langText("Pokaż lub ukryj zamianę", "Show or hide replace"));
   const close = button("tn-search-close", ICONS.close, langText("Zamknij (Esc)", "Close (Esc)"));
   const first = document.createElement("div"); first.className = "tn-search-row";

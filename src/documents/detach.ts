@@ -34,6 +34,7 @@ function stageTab(tabId: string): string | null {
     savedText: isActive ? documentState.savedText : tab.savedText,
     dirty: isActive ? documentState.dirty : tab.dirty,
     position: isActive ? captureViewPosition() : tab.viewPosition ?? null,
+    format: tab.format,
   });
 }
 

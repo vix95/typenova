@@ -1,4 +1,5 @@
 /** Ctrl+K command palette: command catalogue, filtering and keyboard navigation. */
+import { formatActiveDocument } from "../editor/format-command";
 import { openGitHistory } from "../git-ui/git-history";
 import { openSearchPanel } from "@codemirror/search";
 import { undo, redo } from "@codemirror/commands";
@@ -21,6 +22,8 @@ const commandItems: CommandItem[] = [
   { labelPl: "Plik: zapisz jako", labelEn: "File: save as", shortcut: "Ctrl+Shift+S", run: () => void saveDocumentAs() },
   { labelPl: "Eksportuj HTML", labelEn: "Export HTML", run: exportHtml },
   { labelPl: "Historia wersji", labelEn: "Version history", run: () => void showVersionHistory() },
+  { labelPl: "Formatuj dokument (JSON, YAML, XML, tabele)", labelEn: "Format document (JSON, YAML, XML, tables)", shortcut: "Shift+Alt+F", run: () => formatActiveDocument() },
+  { labelPl: "Importuj dokument Word/HTML jako Markdown…", labelEn: "Import Word/HTML document as Markdown…", run: () => void import("../documents/import-document").then(module => module.importDocument()) },
   { labelPl: "Historia Git: commity i gałęzie", labelEn: "Git history: commits and branches", run: () => void openGitHistory() },
   { labelPl: "Pokaż / ukryj ukryte sekcje", labelEn: "Show / hide hidden sections", run: () => toggleShowHiddenSections() },
   { labelPl: "Drukuj / eksportuj PDF", labelEn: "Print / export PDF", run: () => void printDocument() },

@@ -1,5 +1,5 @@
 /** Section selection and opening a section in the editor. */
-import { readTextFile } from "@tauri-apps/plugin-fs";
+import { loadTextFile } from "../filesystem/text-io";
 import { EditorView } from "@codemirror/view";
 import { $ } from "../app/dom";
 import { previousSidebarTab, setSidebarTab } from "../app/sidebar";
@@ -52,4 +52,4 @@ export function selectGraphSection(section: GraphSection) {
     else renderGraph();
   });
 }
-export async function openGraphSection(section: GraphSection) { try { if (document.body.classList.contains("graph-mode")) setSidebarTab(previousSidebarTab); const existing = documentState.tabs.find(t => t.path && t.path.replace(/\\/g, "/").toLowerCase() === section.path.replace(/\\/g, "/").toLowerCase()); if (existing) switchToTab(existing.id); else openTextInTab(section.path, await readTextFile(section.path)); const pos = view.state.doc.line(Math.min(section.line, view.state.doc.lines)).from; view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: "center" }) }); view.focus(); } catch (e) { showToast(`${langText("Nie można otworzyć sekcji", "Could not open section")}: ${String(e)}`); } }
+export async function openGraphSection(section: GraphSection) { try { if (document.body.classList.contains("graph-mode")) setSidebarTab(previousSidebarTab); const existing = documentState.tabs.find(t => t.path && t.path.replace(/\\/g, "/").toLowerCase() === section.path.replace(/\\/g, "/").toLowerCase()); if (existing) switchToTab(existing.id); else { const loaded = await loadTextFile(section.path); openTextInTab(section.path, loaded.text, loaded); } const pos = view.state.doc.line(Math.min(section.line, view.state.doc.lines)).from; view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: "center" }) }); view.focus(); } catch (e) { showToast(`${langText("Nie można otworzyć sekcji", "Could not open section")}: ${String(e)}`); } }

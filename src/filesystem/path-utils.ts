@@ -1,5 +1,7 @@
 /** Pure filesystem-path helpers shared by editor, project explorer and graph indexing. */
-export const MARKDOWN_EXTENSIONS = new Set(["md", "markdown", "mdown", "mkd", "mdx"]);
+import { fileKind, MARKDOWN_EXTENSIONS as MARKDOWN_EXTENSION_SET } from "./file-types.js";
+
+export const MARKDOWN_EXTENSIONS = MARKDOWN_EXTENSION_SET;
 
 export function basename(path: string): string {
   return path.split(/[\\/]/).pop() || path;
@@ -48,21 +50,19 @@ export function isMarkdownPath(path: string): boolean {
   return MARKDOWN_EXTENSIONS.has(extension);
 }
 
-const EDITABLE_TEXT_EXTENSIONS = new Set((
-  "md markdown mdown mkd mdx txt text log csv tsv env diff patch py pyw pyi ipynb java js jsx mjs cjs ts tsx mts cts json jsonc yaml yml toml xml html htm css scss sass less sql sh bash zsh ps1 bat cmd c cc cpp cxx h hh hpp hxx cs fs fsi vb go rs rb php swift kt kts scala clj cljs ex exs erl hr l lua r jl pl pm dart vue svelte astro graphql gql proto ini cfg conf properties tex bib rst adoc org lock pem cer crt key gradle groovy gvy"
-).split(/\s+/));
-const EDITABLE_TEXT_NAMES = new Set([".gitignore", ".editorconfig", ".env", "dockerfile", "makefile", "readme", "license"]);
-
-const VIEWABLE_IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico", "avif", "apng"]);
-
-/** Image formats the webview can display; these open in the image viewer instead of the editor. */
+/** Image formats the viewer shows instead of the editor (see `file-types.ts`). */
 export function isViewableImageFile(name: string): boolean {
-  const base = basename(name).toLowerCase();
-  return base.includes(".") && VIEWABLE_IMAGE_EXTENSIONS.has(base.split(".").pop() || "");
+  return fileKind(name) === "image";
 }
 
+/** Files with a viewer of their own (picture, PDF, audio, video) or an import (Word) instead of the editor. */
+export function isViewerFile(name: string): boolean {
+  const kind = fileKind(name);
+  return kind === "image" || kind === "pdf" || kind === "audio" || kind === "video" || kind === "docx";
+}
+
+/** Files that can be tried in the editor: known text formats and files of an unknown kind (a binary one is turned away after reading the start of it). */
 export function isEditableTextFile(name: string): boolean {
-  const base = basename(name).toLowerCase();
-  const extension = base.includes(".") ? (base.split(".").pop() || "") : "";
-  return EDITABLE_TEXT_EXTENSIONS.has(extension) || EDITABLE_TEXT_NAMES.has(base);
+  const kind = fileKind(name);
+  return kind === "markdown" || kind === "text" || kind === "unknown";
 }

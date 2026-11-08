@@ -1,4 +1,5 @@
 /** The right-hand side of the Git panel: one commit's message, author, parents and changed files, and the diff of the chosen file. */
+import { ICONS } from "../ui/icons";
 import { langText } from "../i18n/language";
 import { showToast } from "../ui/toast";
 import { gitCommitDetail, gitFileDiff, type GitCommitDetail, type GitFileChange } from "./git-api";
@@ -11,6 +12,8 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className = "", text 
 const STATUS_LABELS: Record<string, [string, string]> = {
   A: ["Dodany", "Added"], M: ["Zmieniony", "Modified"], D: ["Usunięty", "Deleted"], R: ["Przeniesiony", "Renamed"], C: ["Skopiowany", "Copied"], T: ["Zmieniony typ", "Type changed"],
 };
+
+const STATUS_ICONS: Record<string, string> = { A: ICONS.fileAdded, M: ICONS.fileModified, D: ICONS.fileDeleted, R: ICONS.fileRenamed, C: ICONS.fileAdded, T: ICONS.fileModified };
 
 export interface DetailPanel {
   element: HTMLElement;
@@ -76,7 +79,7 @@ export function createDetailPanel(host: { repo(): string; openCommit(hash: strin
     const list = el("div", "git-file-list");
     for (const file of detail.files) {
       const row = el("button", "git-file"); row.type = "button";
-      const status = el("span", `git-status status-${file.status}`, file.status); const label = STATUS_LABELS[file.status];
+      const status = el("span", `git-status status-${file.status}`); status.innerHTML = STATUS_ICONS[file.status] ?? ICONS.fileModified; const label = STATUS_LABELS[file.status];
       if (label) status.title = langText(label[0], label[1]);
       const name = el("span", "git-file-name", file.oldPath ? `${file.oldPath} → ${file.path}` : file.path); name.title = name.textContent ?? "";
       const stat = el("span", "git-file-stat");

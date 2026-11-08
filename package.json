@@ -1,7 +1,7 @@
 {
   "name": "typenova",
   "private": true,
-  "version": "0.5.115",
+  "version": "0.5.118",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -10,7 +10,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "audit:dependencies": "npm audit --omit=dev",
-    "test": "tsc src/graph/section-model.ts src/graph/workspace-controller.ts src/graph/spatial-query.ts src/filesystem/path-utils.ts src/documents/session.ts src/documents/tab-order.ts src/filesystem/project-roots.ts src/documents/section-ranges.ts src/filesystem/file-names.ts src/editor/formula-block.ts src/editor/flowchart-edit.ts src/editor/text-history.ts src/editor/line-edit.ts src/git-ui/git-graph.ts src/documents/recovery-store.ts src/settings/storage.ts src/filesystem/project-tree-operations.ts src/filesystem/project-filter-tree.ts src/filesystem/project-tree-state.ts src/filesystem/project-tree-controller.ts --target ES2022 --module ES2022 --outDir .test-build --skipLibCheck && node --test tests/*.test.mjs",
+    "test": "tsc src/graph/section-model.ts src/graph/workspace-controller.ts src/graph/spatial-query.ts src/filesystem/path-utils.ts src/filesystem/file-types.ts src/filesystem/language-map.ts src/editor/format-document.ts src/preview/preview-source.ts src/preview/structured-preview.ts src/preview/media-format.ts src/documents/session.ts src/documents/tab-order.ts src/filesystem/project-roots.ts src/documents/section-ranges.ts src/filesystem/file-names.ts src/editor/formula-block.ts src/editor/flowchart-edit.ts src/editor/text-history.ts src/editor/line-edit.ts src/git-ui/git-graph.ts src/filesystem/text-codec.ts src/documents/recovery-store.ts src/settings/storage.ts src/filesystem/project-tree-operations.ts src/filesystem/project-filter-tree.ts src/filesystem/project-tree-state.ts src/filesystem/project-tree-controller.ts --target ES2022 --module ES2022 --moduleResolution bundler --outDir .test-build --skipLibCheck && node --test tests/*.test.mjs",
     "benchmark:graph": "tsc src/graph/section-model.ts --target ES2022 --module ES2022 --outDir .benchmark-build --skipLibCheck && node benchmarks/graph-indexing.mjs",
     "benchmark:graph:small": "tsc src/graph/section-model.ts --target ES2022 --module ES2022 --outDir .benchmark-build --skipLibCheck && node benchmarks/graph-indexing.mjs 100 1000",
     "typecheck": "tsc --noEmit"
@@ -31,15 +31,22 @@
     "@tauri-apps/plugin-opener": "^2.2.7",
     "highlight.js": "^11.11.1",
     "katex": "^0.16.22",
+    "mammoth": "^1.8.0",
     "markdown-it": "^14.3.2",
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-task-lists": "^2.1.1",
     "markdown-it-texmath": "^1.0.0",
     "mathlive": "^0.111.4",
-    "mermaid": "^11.15.0"
+    "mermaid": "^11.15.0",
+    "pdfjs-dist": "^4.10.38",
+    "smol-toml": "^1.9.1",
+    "turndown": "^7.2.0",
+    "utif": "^3.1.0",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.5.0",
+    "@types/turndown": "^5.0.6",
     "typescript": "~5.7.2",
     "vite": "^6.1.0"
   }

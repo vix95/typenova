@@ -1,0 +1,645 @@
+[
+  {
+    "path": "markdown/sample.md",
+    "kind": "markdown",
+    "contains": "# Sample document",
+    "language": null
+  },
+  {
+    "path": "markdown/sample.markdown",
+    "kind": "markdown",
+    "contains": "longer extension"
+  },
+  {
+    "path": "markdown/component.mdx",
+    "kind": "markdown",
+    "contains": "MDX document"
+  },
+  {
+    "path": "markdown/analysis.rmd",
+    "kind": "markdown",
+    "contains": "R Markdown"
+  },
+  {
+    "path": "markdown/paper.qmd",
+    "kind": "markdown",
+    "contains": "Quarto document"
+  },
+  {
+    "path": "markdown/rules.mdc",
+    "kind": "markdown",
+    "contains": "Rules file"
+  },
+  {
+    "path": "markdown/math-and-diagrams.md",
+    "kind": "markdown",
+    "contains": "mermaid"
+  },
+  {
+    "path": "markdown/tables.md",
+    "kind": "markdown",
+    "contains": "| apple | 3 |",
+    "format": "ok",
+    "formatted": "| Name       | Quantity |"
+  },
+  {
+    "path": "text/plain.txt",
+    "kind": "text",
+    "contains": "Plain text file.",
+    "language": null
+  },
+  {
+    "path": "text/server.log",
+    "kind": "text",
+    "contains": "Server started",
+    "language": null
+  },
+  {
+    "path": "data/comma.csv",
+    "kind": "text",
+    "language": null,
+    "preview": "table",
+    "previewContains": "| name | city | quantity |"
+  },
+  {
+    "path": "data/semicolon.csv",
+    "kind": "text",
+    "language": null,
+    "preview": "table",
+    "previewContains": "| name | city | quantity |"
+  },
+  {
+    "path": "data/quoted.csv",
+    "kind": "text",
+    "language": null,
+    "preview": "table",
+    "previewContains": "a \"quoted\" word"
+  },
+  {
+    "path": "data/data.tsv",
+    "kind": "text",
+    "language": null,
+    "preview": "table",
+    "previewContains": "| name | city |"
+  },
+  {
+    "path": "data/minified.json",
+    "kind": "text",
+    "language": "JSON",
+    "format": "ok",
+    "formatted": "{\n  \"name\": \"TypeNova\",",
+    "preview": "json",
+    "previewContains": "- `name`: `\"TypeNova\"`"
+  },
+  {
+    "path": "data/users.json",
+    "kind": "text",
+    "language": "JSON",
+    "format": "ok",
+    "preview": "json",
+    "previewContains": "| `id` | `name` | `tags` |"
+  },
+  {
+    "path": "data/broken.json",
+    "kind": "text",
+    "language": "JSON",
+    "format": "error",
+    "preview": "json",
+    "previewContains": "> Cannot show the structure"
+  },
+  {
+    "path": "data/with-comments.jsonc",
+    "kind": "text",
+    "language": "JSON"
+  },
+  {
+    "path": "data/events.jsonl",
+    "kind": "text",
+    "language": "JSON",
+    "format": "ok",
+    "formatted": "{\"id\":1,\"event\":\"open\"}"
+  },
+  {
+    "path": "data/broken.jsonl",
+    "kind": "text",
+    "language": "JSON",
+    "format": "error"
+  },
+  {
+    "path": "data/settings.yaml",
+    "kind": "text",
+    "language": "YAML",
+    "format": "ok",
+    "formatted": "# A comment that must survive\nname: TypeNova\nitems:\n  - first\n  - second\n"
+  },
+  {
+    "path": "data/broken.yaml",
+    "kind": "text",
+    "language": "YAML",
+    "format": "error"
+  },
+  {
+    "path": "data/config.toml",
+    "kind": "text",
+    "language": "TOML",
+    "format": "ok"
+  },
+  {
+    "path": "data/broken.toml",
+    "kind": "text",
+    "language": "TOML",
+    "format": "error"
+  },
+  {
+    "path": "data/feed.xml",
+    "kind": "text",
+    "language": "XML",
+    "format": "ok",
+    "formatted": "<?xml version=\"1.0\"?>\n<feed>\n  <entry id=\"1\">\n    <title>First</title>",
+    "preview": "xml",
+    "previewContains": "- `title` — `First`"
+  },
+  {
+    "path": "data/broken.xml",
+    "kind": "text",
+    "language": "XML",
+    "format": "error",
+    "preview": "xml",
+    "previewContains": "> Cannot show the structure"
+  },
+  {
+    "path": "data/project.csproj",
+    "kind": "text",
+    "language": "XML",
+    "format": "ok"
+  },
+  {
+    "path": "data/notebook.ipynb",
+    "kind": "text",
+    "language": "JSON",
+    "format": "ok"
+  },
+  {
+    "path": "data/places.geojson",
+    "kind": "text",
+    "language": "JSON",
+    "format": "ok"
+  },
+  {
+    "path": "data/board.canvas",
+    "kind": "text",
+    "language": "JSON",
+    "format": "ok",
+    "preview": "canvas",
+    "previewContains": "n0 -->|\"see\"| n1"
+  },
+  {
+    "path": "config/.editorconfig",
+    "kind": "text",
+    "language": "Properties files"
+  },
+  {
+    "path": "config/.gitignore",
+    "kind": "text",
+    "language": null
+  },
+  {
+    "path": "config/.env.example",
+    "kind": "text",
+    "language": null
+  },
+  {
+    "path": "config/settings.ini",
+    "kind": "text",
+    "language": "Properties files"
+  },
+  {
+    "path": "config/app.conf",
+    "kind": "text",
+    "language": "Properties files"
+  },
+  {
+    "path": "config/.prettierrc",
+    "kind": "text",
+    "language": "JSON"
+  },
+  {
+    "path": "config/Dockerfile",
+    "kind": "text",
+    "language": "Dockerfile"
+  },
+  {
+    "path": "config/Makefile",
+    "kind": "text"
+  },
+  {
+    "path": "code/hello.py",
+    "kind": "text",
+    "language": "Python"
+  },
+  {
+    "path": "code/hello.pyi",
+    "kind": "text",
+    "language": "Python"
+  },
+  {
+    "path": "code/script.sh",
+    "kind": "text",
+    "language": "Shell"
+  },
+  {
+    "path": "code/script.zsh",
+    "kind": "text",
+    "language": "Shell"
+  },
+  {
+    "path": "code/hello.ps1",
+    "kind": "text",
+    "language": "PowerShell"
+  },
+  {
+    "path": "code/run.bat",
+    "kind": "text",
+    "language": null,
+    "lineEnding": "crlf"
+  },
+  {
+    "path": "code/main.rs",
+    "kind": "text",
+    "language": "Rust"
+  },
+  {
+    "path": "code/app.ts",
+    "kind": "text",
+    "language": "TypeScript"
+  },
+  {
+    "path": "code/App.tsx",
+    "kind": "text",
+    "language": "TSX"
+  },
+  {
+    "path": "code/index.js",
+    "kind": "text",
+    "language": "JavaScript"
+  },
+  {
+    "path": "code/style.scss",
+    "kind": "text",
+    "language": "SCSS"
+  },
+  {
+    "path": "code/page.html",
+    "kind": "text",
+    "language": "HTML"
+  },
+  {
+    "path": "code/template.hbs",
+    "kind": "text",
+    "language": "HTML"
+  },
+  {
+    "path": "code/Component.svelte",
+    "kind": "text",
+    "language": "HTML"
+  },
+  {
+    "path": "code/Component.vue",
+    "kind": "text",
+    "language": "Vue"
+  },
+  {
+    "path": "code/query.sql",
+    "kind": "text",
+    "language": "SQL"
+  },
+  {
+    "path": "code/schema.graphql",
+    "kind": "text",
+    "language": null
+  },
+  {
+    "path": "code/main.go",
+    "kind": "text",
+    "language": "Go"
+  },
+  {
+    "path": "code/Main.java",
+    "kind": "text",
+    "language": "Java"
+  },
+  {
+    "path": "code/Program.cs",
+    "kind": "text",
+    "language": "C#"
+  },
+  {
+    "path": "code/program.cpp",
+    "kind": "text",
+    "language": "C++"
+  },
+  {
+    "path": "code/hello.c",
+    "kind": "text",
+    "language": "C"
+  },
+  {
+    "path": "code/Main.hs",
+    "kind": "text",
+    "language": "Haskell"
+  },
+  {
+    "path": "code/build.cmake",
+    "kind": "text",
+    "language": "CMake"
+  },
+  {
+    "path": "code/layout.xaml",
+    "kind": "text",
+    "language": "XML",
+    "format": "ok",
+    "preview": "xml",
+    "previewContains": "- `TextBlock` (`Text=\"Hello\"`)"
+  },
+  {
+    "path": "code/shader.glsl",
+    "kind": "text",
+    "language": "C"
+  },
+  {
+    "path": "code/main.tf",
+    "kind": "text",
+    "language": null
+  },
+  {
+    "path": "code/main.zig",
+    "kind": "text",
+    "language": null
+  },
+  {
+    "path": "code/changes.diff",
+    "kind": "text",
+    "language": "diff"
+  },
+  {
+    "path": "code/changes.patch",
+    "kind": "text",
+    "language": "diff"
+  },
+  {
+    "path": "diagrams/flow.mmd",
+    "kind": "text",
+    "language": null,
+    "preview": "diagram",
+    "previewContains": "```mermaid"
+  },
+  {
+    "path": "diagrams/sequence.mermaid",
+    "kind": "text",
+    "language": null,
+    "preview": "diagram",
+    "previewContains": "```mermaid"
+  },
+  {
+    "path": "diagrams/architecture.puml",
+    "kind": "text",
+    "language": null
+  },
+  {
+    "path": "diagrams/graph.dot",
+    "kind": "text",
+    "language": null
+  },
+  {
+    "path": "encodings/utf8.txt",
+    "kind": "text",
+    "encoding": "utf-8",
+    "bom": false,
+    "lineEnding": "lf",
+    "contains": "Łódź"
+  },
+  {
+    "path": "encodings/utf8-bom.txt",
+    "kind": "text",
+    "encoding": "utf-8",
+    "bom": true,
+    "lineEnding": "lf",
+    "contains": "Łódź"
+  },
+  {
+    "path": "encodings/utf16le.txt",
+    "kind": "text",
+    "encoding": "utf-16le",
+    "bom": true,
+    "lineEnding": "lf",
+    "contains": "Łódź"
+  },
+  {
+    "path": "encodings/utf16be.txt",
+    "kind": "text",
+    "encoding": "utf-16be",
+    "bom": true,
+    "lineEnding": "lf",
+    "contains": "Łódź"
+  },
+  {
+    "path": "encodings/windows-1250.txt",
+    "kind": "text",
+    "encoding": "windows-1250",
+    "bom": false,
+    "lineEnding": "crlf",
+    "contains": "Łódź"
+  },
+  {
+    "path": "encodings/iso-8859-2.txt",
+    "kind": "text",
+    "encoding": "iso-8859-2",
+    "bom": false,
+    "lineEnding": "lf",
+    "contains": "Łódź"
+  },
+  {
+    "path": "encodings/windows-1252.txt",
+    "kind": "text",
+    "encoding": "windows-1250",
+    "bom": false,
+    "lineEnding": "lf",
+    "contains": "caf"
+  },
+  {
+    "path": "encodings/line-endings-crlf.txt",
+    "kind": "text",
+    "encoding": "utf-8",
+    "lineEnding": "crlf",
+    "contains": "second line"
+  },
+  {
+    "path": "encodings/line-endings-lf.txt",
+    "kind": "text",
+    "encoding": "utf-8",
+    "lineEnding": "lf",
+    "contains": "second line"
+  },
+  {
+    "path": "encodings/line-endings-cr.txt",
+    "kind": "text",
+    "encoding": "utf-8",
+    "lineEnding": "cr",
+    "contains": "second line"
+  },
+  {
+    "path": "encodings/line-endings-mixed.txt",
+    "kind": "text",
+    "encoding": "utf-8",
+    "lineEnding": "crlf",
+    "mixed": true,
+    "contains": "fourth line"
+  },
+  {
+    "path": "media/gradient.png",
+    "kind": "image",
+    "magic": [
+      137,
+      80,
+      78,
+      71
+    ]
+  },
+  {
+    "path": "media/scan.tif",
+    "kind": "image",
+    "magic": [
+      73,
+      73,
+      42,
+      0
+    ]
+  },
+  {
+    "path": "media/pixel.bmp",
+    "kind": "image",
+    "magic": [
+      66,
+      77
+    ]
+  },
+  {
+    "path": "media/image.gif",
+    "kind": "image",
+    "magic": [
+      71,
+      73,
+      70
+    ]
+  },
+  {
+    "path": "media/drawing.svg",
+    "kind": "image",
+    "contains": "<circle"
+  },
+  {
+    "path": "media/document.pdf",
+    "kind": "pdf",
+    "magic": [
+      37,
+      80,
+      68,
+      70
+    ]
+  },
+  {
+    "path": "media/tone.wav",
+    "kind": "audio",
+    "magic": [
+      82,
+      73,
+      70,
+      70
+    ]
+  },
+  {
+    "path": "media/clip.webm",
+    "kind": "video",
+    "magic": [
+      26,
+      69,
+      223,
+      163
+    ]
+  },
+  {
+    "path": "pages/index.html",
+    "kind": "text",
+    "language": "HTML",
+    "page": true,
+    "pageLinks": [
+      "css/style.css",
+      "js/app.js",
+      "images/logo.svg",
+      "about.html"
+    ]
+  },
+  {
+    "path": "pages/about.html",
+    "kind": "text",
+    "language": "HTML",
+    "page": true,
+    "pageLinks": [
+      "css/style.css",
+      "index.html"
+    ]
+  },
+  {
+    "path": "pages/css/style.css",
+    "kind": "text",
+    "language": "CSS"
+  },
+  {
+    "path": "pages/js/app.js",
+    "kind": "text",
+    "language": "JavaScript"
+  },
+  {
+    "path": "pages/images/logo.svg",
+    "kind": "image",
+    "contains": "<rect"
+  },
+  {
+    "path": "documents/report.docx",
+    "kind": "docx",
+    "magic": [
+      80,
+      75,
+      3,
+      4
+    ],
+    "importContains": "# Sample report"
+  },
+  {
+    "path": "documents/article.html",
+    "kind": "text",
+    "language": "HTML",
+    "importContains": "# Article title"
+  },
+  {
+    "path": "unsupported/random.bin",
+    "kind": "binary",
+    "binaryContent": true
+  },
+  {
+    "path": "unsupported/archive.zip",
+    "kind": "binary",
+    "binaryContent": true
+  },
+  {
+    "path": "unsupported/mystery.xyz",
+    "kind": "unknown",
+    "contains": "tries it as text",
+    "language": null
+  },
+  {
+    "path": "unsupported/disguised.txt",
+    "kind": "text",
+    "binaryContent": true
+  }
+]

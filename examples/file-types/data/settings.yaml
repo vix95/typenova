@@ -1,0 +1,5 @@
+# A comment that must survive
+name:    TypeNova
+items:
+    - first
+    -   second

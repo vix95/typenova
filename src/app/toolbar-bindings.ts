@@ -12,6 +12,8 @@ import { langText } from "../i18n/language";
 import { applyWidths } from "../layout/layout";
 import { outlineState } from "../outline/outline";
 import { exportHtml, printDocument } from "../preview/export-print";
+import { pagePreviewActive, refreshPagePreview } from "../preview/page-preview";
+import { refreshTreePreview, treePreviewActive } from "../preview/tree-preview";
 import { schedulePreview, syncPreviewForActiveDocument } from "../preview/preview-scheduler";
 import { previewState } from "../preview/preview-state";
 import { showToast } from "../ui/toast";
@@ -29,7 +31,7 @@ export function initToolbarBindings(): void {
     if (document.fullscreenElement === pane) { void document.exitFullscreen().catch(() => { }); }
     else if (pane.requestFullscreen) { void pane.requestFullscreen().catch(() => showToast(langText("Pełny ekran nie jest dostępny w tym środowisku.", "Fullscreen is unavailable in this environment."))); }
   });
-  $("refreshPreviewButton").addEventListener("click", () => schedulePreview());
+  $("refreshPreviewButton").addEventListener("click", () => { if (pagePreviewActive()) refreshPagePreview(true); else if (treePreviewActive()) refreshTreePreview(true); else schedulePreview(); });
   $("previewMoreButton").addEventListener("click", () => { const m = $("previewQuickMenu") as HTMLElement; m.hidden = !m.hidden; });
   $("previewExportButton").addEventListener("click", () => { ($("previewQuickMenu") as HTMLElement).hidden = true; void exportHtml(); });
   $("previewPrintButton").addEventListener("click", () => { ($("previewQuickMenu") as HTMLElement).hidden = true; void printDocument(); });

@@ -1,0 +1,17 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Anna",
+      "tags": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Ben"
+    }
+  ],
+  "total": 2
+}

@@ -18,6 +18,9 @@ export function iconForPath(path: string) {
   if (["html", "htm", "css", "scss"].includes(ext)) return "</>";
   return ext.slice(0, 2).toUpperCase() || "T";
 }
+const dirtyListeners: Array<() => void> = [];
+/** Calls `listener` whenever the dirty indicator is refreshed (after a change, a save or a tab switch). */
+export function onDirtyUiUpdate(listener: () => void): void { dirtyListeners.push(listener); }
 export function updateDirtyUi() {
   const label = documentState.currentPath ? basename(documentState.currentPath) : documentState.untitledLabel;
   const dirtyIndicator = $("dirtyIndicator");
@@ -37,6 +40,7 @@ export function updateDirtyUi() {
   if (tab) { tab.label = label; tab.path = documentState.currentPath; tab.dirty = documentState.dirty; tab.savedText = documentState.savedText; }
   renderTabs();
   updateHeadingBreadcrumbs();
+  for (const listener of dirtyListeners) listener();
 }
 export function setDirty() {
   documentState.dirty = true;

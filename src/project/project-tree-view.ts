@@ -1,7 +1,7 @@
 /** Opening a project folder and rendering the project tree. */
 import { open } from "@tauri-apps/plugin-dialog";
 import { normalizedFsPath } from "../filesystem/project-tree-operations";
-import { basename, isEditableTextFile, isViewableImageFile } from "../filesystem/path-utils";
+import { basename, isEditableTextFile, isViewableImageFile, isViewerFile } from "../filesystem/path-utils";
 import { readDir } from "@tauri-apps/plugin-fs";
 import { join } from "@tauri-apps/api/path";
 import { $ } from "../app/dom";
@@ -119,7 +119,7 @@ function createTreeLoadErrorRow(error: unknown, retryLoad: () => Promise<void>):
 /** Builds the (not yet attached) explorer row for one directory entry. */
 function createTreeEntryRow(entry: { name: string; isDirectory?: boolean }, full: string, depth: number): { row: HTMLButtonElement; disclosure: HTMLElement } {
   const editable = !entry.isDirectory && isEditableTextFile(entry.name);
-  const viewable = !entry.isDirectory && !editable && isViewableImageFile(entry.name);
+  const viewable = !entry.isDirectory && !editable && isViewerFile(entry.name);
   const row = document.createElement("button");
   row.type = "button";
   row.className = `tree-entry ${entry.isDirectory ? "tree-folder" : "tree-file"}${!entry.isDirectory && !editable && !viewable ? " tree-file-unsupported" : ""}`;
@@ -127,7 +127,7 @@ function createTreeEntryRow(entry: { name: string; isDirectory?: boolean }, full
   row.title = entry.isDirectory ? full : (editable || viewable ? full : `${full}\n${langText("TypeNova nie może otworzyć tego pliku.", "TypeNova cannot open this file.")}`);
   row.dataset.filePath = full;
   // Hovering an image shows a thumbnail next to its path in the tooltip.
-  if (viewable) row.dataset.tooltipImage = full;
+  if (viewable && isViewableImageFile(entry.name) && !/\.tiff?$/i.test(entry.name)) row.dataset.tooltipImage = full; // the webview shows a thumbnail of the pictures it can decode
   row.dataset.entryType = entry.isDirectory ? "directory" : (editable ? "editable-file" : viewable ? "image-file" : "other-file");
   // Internal Project moves use pointer-driven drag handling; native HTML DnD is unreliable in WebView2.
   row.draggable = false;

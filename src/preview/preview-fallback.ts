@@ -1,4 +1,5 @@
 /** Main-thread fallback renderer, used only when the preview worker cannot be used. */
+import { previewRequest } from "./preview-request";
 import MarkdownIt from "markdown-it";
 import { createMarkdownRenderer } from "./markdown-renderer";
 import { $ } from "../app/dom";
@@ -75,7 +76,7 @@ export function renderPreviewFallback() {
       $("renderState").textContent = langText("Podgląd notebooka niedostępny", "Notebook preview unavailable"); markStartupReady(); return;
     }
     const fallbackRenderer = ensurePreviewFallbackRenderer();
-    const source = view.state.doc.toString();
+    const source = previewRequest(view.state.doc.toString()).text;
     const env: Record<string, any> = {};
     const tokens = fallbackRenderer.parse(source, env);
     const html = fallbackRenderer.renderer.render(tokens, fallbackRenderer.options, env);

@@ -4,7 +4,9 @@ import { moveItem } from "./tab-order";
 import { deduplicateSessionPaths, sameSessionPath, serializeOpenSession } from "./session";
 import { rememberViewPosition, restoreViewPosition, viewPositionsForSession } from "./view-position";
 import { basename, isMarkdownPath } from "../filesystem/path-utils";
+import { LanguageDescription } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
+import { highlightFilename } from "../filesystem/language-map";
 import { EditorState } from "@codemirror/state";
 import { editorThemeFor, syntaxThemeFor } from "../editor/themes";
 import { lineNumbers, EditorView } from "@codemirror/view";
@@ -192,17 +194,17 @@ export async function configureLanguageForTab(tab: DocumentTab) {
   const ext = (tab.path || tab.label).split(".").pop()?.toLowerCase() || "md";
   const size = tab.state.doc.length;
   try {
-    const languageExt = ext === "ipynb" ? "json" : ext;
     if (isMarkdownPath(tab.path || tab.label)) {
       const extension = markdownSupportForSize(size);
       if (tab.id === documentState.activeTabId && requestId === languageLoadSequence) view.dispatch({ effects: languageCompartment.reconfigure(extension) });
       return;
     }
-    if (["txt", "text", "log", "csv", "tsv", "env", "diff", "patch"].includes(ext) || size >= LARGE_SOURCE_THRESHOLD) {
+    const filename = highlightFilename(tab.path || tab.label);
+    if (!filename || size >= LARGE_SOURCE_THRESHOLD) {
       if (tab.id === documentState.activeTabId && requestId === languageLoadSequence) view.dispatch({ effects: languageCompartment.reconfigure([]) });
       return;
     }
-    const description = languages.find((language: { extensions?: readonly string[] }) => language.extensions?.some((extension: string) => extension.toLowerCase() === languageExt));
+    const description = LanguageDescription.matchFilename(languages, filename);
     const support = description ? await description.load() : null;
     if (tab.id === documentState.activeTabId && requestId === languageLoadSequence) view.dispatch({ effects: languageCompartment.reconfigure(support || []) });
   } catch (error) {
@@ -264,7 +266,7 @@ export function adoptDocumentTab(doc: DetachedDocument, index?: number): void {
   // The same file is already open here and the incoming copy has no unsaved edits: just show that tab.
   if (existing && !doc.dirty) { switchToTab(existing.id); return; }
   const tab = createNewTab(doc.text, doc.label);
-  tab.path = doc.path; tab.savedText = doc.savedText; tab.dirty = doc.dirty; tab.viewPosition = doc.position;
+  tab.path = doc.path; tab.savedText = doc.savedText; tab.dirty = doc.dirty; tab.viewPosition = doc.position; tab.format = doc.format;
   documentState.currentPath = doc.path; documentState.savedText = doc.savedText; documentState.dirty = doc.dirty;
   // Dropped on the strip: open at the drop position instead of at the end.
   if (index !== undefined) documentState.tabs = moveItem(documentState.tabs, item => item.id === tab.id, index);

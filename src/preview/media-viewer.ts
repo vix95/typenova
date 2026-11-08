@@ -5,6 +5,7 @@ import { langText } from "../i18n/language";
 import { showToast } from "../ui/toast";
 import { localImageUrl } from "./code-blocks";
 import { attachMediaContextMenu } from "./media-context-menu";
+import { tiffObjectUrl } from "./tiff";
 
 const MIN_SCALE_FACTOR = 0.25;   // relative to the fitted scale
 const MAX_SCALE = 16;
@@ -234,8 +235,10 @@ export async function openImageFile(path: string): Promise<void> {
     const image = new Image();
     image.decoding = "async"; image.draggable = false; image.alt = name;
     image.dataset.localPath = path;
-    image.src = await localImageUrl(path);
+    const tiff = /\.tiff?$/i.test(path);
+    image.src = tiff ? await tiffObjectUrl(path) : await localImageUrl(path);
     await image.decode();
+    if (tiff) URL.revokeObjectURL(image.src); // the decoded picture stays in the element
     openViewer(image, image.naturalWidth || 1, image.naturalHeight || 1, name, 1);
   } catch {
     showToast(`${langText("Nie udało się otworzyć obrazu", "Could not open the image")}: ${name}`);

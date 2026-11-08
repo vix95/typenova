@@ -1,11 +1,11 @@
 /** HTML export and printing of the rendered document. */
+import { previewRequest } from "./preview-request";
 import { readFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { normalizeLocalImagePath, basename } from "../filesystem/path-utils";
 import { save } from "@tauri-apps/plugin-dialog";
 import { $ } from "../app/dom";
 import { printArea } from "../app/workspace-dom";
 import { documentState } from "../documents/document-state";
-import { documentMode } from "../documents/document-stats";
 import { removeHiddenLines } from "../documents/section-ranges";
 import { sectionVisibility } from "../documents/section-visibility";
 import { view } from "../editor/editor-view";
@@ -22,7 +22,7 @@ async function renderFullDocument(): Promise<string> {
     const timer = window.setTimeout(() => { worker.terminate(); reject(new Error("Przekroczono czas renderowania dokumentu.")); }, 120000);
     worker.addEventListener("message", (event: MessageEvent) => { if (event.data.action !== "all") return; clearTimeout(timer); worker.terminate(); if (event.data.error) reject(new Error(event.data.error)); else resolve(event.data.html as string); }, { once: true });
     worker.addEventListener("error", (event: ErrorEvent) => { clearTimeout(timer); worker.terminate(); reject(new Error(event.message)); }, { once: true });
-    worker.postMessage({ id: 1, action: "all", text, revision: documentState.docRevision, mode: documentMode(), language: document.documentElement.lang === "en" ? "en" : "pl" });
+    worker.postMessage({ id: 1, action: "all", text: previewRequest(text).text, revision: documentState.docRevision, mode: previewRequest(text).mode, language: document.documentElement.lang === "en" ? "en" : "pl" });
   });
 }
 function mimeForImage(path: string) { const name = path.split(/[\/\\]/).pop() || path; const ext = name.split(".").pop()?.toLowerCase(); return ({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp", avif: "image/avif", ico: "image/x-icon", tif: "image/tiff", tiff: "image/tiff" } as Record<string, string>)[ext || ""] || "application/octet-stream"; }

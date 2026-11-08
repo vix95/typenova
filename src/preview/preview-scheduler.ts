@@ -10,6 +10,8 @@ import { applyWidths } from "../layout/layout";
 import { activatePreviewFallback, renderPreviewFallback } from "./preview-fallback";
 import { resizeObserver } from "./preview-observers";
 import { blockElements, blockIndex, forceRenderIndices, heightCache, htmlCache, pendingRenderIndices, previewState } from "./preview-state";
+import { pagePreviewActive, refreshPagePreview } from "./page-preview";
+import { refreshTreePreview, treePreviewActive } from "./tree-preview";
 import { pumpWorker } from "./preview-worker-client";
 
 let previewTimer = 0;
@@ -28,6 +30,8 @@ export function markStartupReady() {
 export function schedulePreview() {
   if (graphPreviewOwnsPreview) return;
   window.clearTimeout(previewTimer);
+  if (pagePreviewActive()) { previewState.updatePending = false; refreshPagePreview(); return; }
+  if (treePreviewActive()) { previewState.updatePending = false; refreshTreePreview(); return; }
   const n = view.state.doc.length;
   // Once a document becomes large, always leave synchronous fallback mode.
   if (n >= 250_000) previewState.previewFallbackActive = false;
@@ -45,7 +49,7 @@ export function schedulePreview() {
 export function syncPreviewForActiveDocument() {
   const mode = documentMode(documentState.currentPath || documentState.untitledLabel);
   const isPreviewable = mode !== "plain";
-  const isNotebook = mode === "notebook";
+  const isNotebook = mode === "notebook", isPage = mode === "page", isTree = mode === "json" || mode === "xml";
   previewState.previewVisible = isPreviewable && previewState.previewPreference;
   const pane = $("previewPane") as HTMLElement;
   const layout = $("layout") as HTMLElement;
@@ -57,12 +61,14 @@ export function syncPreviewForActiveDocument() {
   toggle.classList.toggle("primary", previewState.previewVisible);
   toggle.setAttribute("aria-pressed", String(previewState.previewVisible));
   toggle.title = isPreviewable
-    ? langText(previewState.previewVisible ? (isNotebook ? "Ukryj widok notebooka" : "Ukryj podgląd") : (isNotebook ? "Pokaż widok notebooka" : "Pokaż podgląd"), previewState.previewVisible ? (isNotebook ? "Hide notebook view" : "Hide preview") : (isNotebook ? "Show notebook view" : "Show preview"))
-    : langText("Podgląd jest dostępny dla dokumentów Markdown i notebooków Jupyter", "Preview is available for Markdown documents and Jupyter notebooks");
+    ? langText(previewState.previewVisible ? (isNotebook ? "Ukryj widok notebooka" : isPage ? "Ukryj podgląd strony" : isTree ? "Ukryj drzewo" : "Ukryj podgląd") : (isNotebook ? "Pokaż widok notebooka" : isPage ? "Pokaż podgląd strony" : isTree ? "Pokaż drzewo" : "Pokaż podgląd"), previewState.previewVisible ? (isNotebook ? "Hide notebook view" : isPage ? "Hide page preview" : isTree ? "Hide tree" : "Hide preview") : (isNotebook ? "Show notebook view" : isPage ? "Show page preview" : isTree ? "Show tree" : "Show preview"))
+    : langText("Podgląd jest dostępny dla Markdown, notebooków Jupyter, tabel CSV, diagramów, stron HTML oraz JSON i XML", "Preview is available for Markdown, Jupyter notebooks, CSV tables, diagrams, HTML pages, JSON and XML");
   const previewLabel = document.querySelector<HTMLElement>(".preview-toolbar-label");
-  if (previewLabel) previewLabel.textContent = isNotebook ? langText("Notebook Jupyter", "Jupyter Notebook") : langText("Podgląd", "Preview");
+  if (previewLabel) previewLabel.textContent = isNotebook ? langText("Notebook Jupyter", "Jupyter Notebook") : isPage ? langText("Podgląd strony", "Page preview") : isTree ? langText("Drzewo", "Tree") : langText("Podgląd", "Preview");
   const formatStatus = $("formatStatus") as HTMLElement | null;
   if (formatStatus) formatStatus.textContent = isNotebook ? "Jupyter Notebook" : mode === "markdown" ? "Markdown" : (documentState.currentPath || documentState.untitledLabel).split(".").pop()?.toUpperCase() || "Text";
+  refreshPagePreview();
+  refreshTreePreview(true);
   applyWidths();
   requestAnimationFrame(() => view.requestMeasure());
 }

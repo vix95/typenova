@@ -1,4 +1,5 @@
 /** Edits any Mermaid diagram from its preview: a click on a label finds the line of the code it comes from, to change its text, edit the line, move, duplicate or delete it. */
+import { ICONS } from "../ui/icons";
 import { langText } from "../i18n/language";
 import { blockRange, deleteRange, duplicateRange, matchLines, moveRange, normalizeText, replaceInLine, type LineMatch } from "./line-edit";
 import { mermaidKind } from "./formula-block";
@@ -6,6 +7,9 @@ import type { Inspector, InspectorHost } from "./mermaid-inspector";
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className = "", text = ""): HTMLElementTagNameMap[K] => {
   const node = document.createElement(tag); if (className) node.className = className; if (text) node.textContent = text; return node;
+};
+const iconAction = (label: string, icon: string, onClick: () => void) => {
+  const button = el("button", "mermaid-inspector-btn icon-only"); button.type = "button"; button.innerHTML = icon; button.title = label; button.setAttribute("aria-label", label); button.addEventListener("click", onClick); return button;
 };
 const action = (label: string, onClick: () => void, danger = false) => {
   const button = el("button", `mermaid-inspector-btn${danger ? " danger" : ""}`, label); button.type = "button"; button.addEventListener("click", onClick); return button;
@@ -30,8 +34,7 @@ export function createLineInspector(host: InspectorHost): Inspector {
     const head = el("div", "mermaid-inspector-row"); head.append(title);
     if (match.indices.length > 1) {
       const step = (delta: number) => () => { if (!match) return; match.current = (match.current + delta + match.indices.length) % match.indices.length; label = match.found; panel(); };
-      head.append(action("◀", step(-1)), el("span", "mermaid-inspector-hint", `${match.current + 1} ${langText("z", "of")} ${match.indices.length}`), action("▶", step(1)));
-      head.children[1].setAttribute("aria-label", langText("Poprzednie dopasowanie", "Previous match")); head.children[3].setAttribute("aria-label", langText("Następne dopasowanie", "Next match"));
+      head.append(iconAction(langText("Poprzednie dopasowanie", "Previous match"), ICONS.chevronLeft, step(-1)), el("span", "mermaid-inspector-hint", `${match.current + 1} ${langText("z", "of")} ${match.indices.length}`), iconAction(langText("Następne dopasowanie", "Next match"), ICONS.chevronRight, step(1)));
     }
     const text = el("input"); text.type = "text"; text.value = label; text.setAttribute("aria-label", langText("Tekst na diagramie", "Text on the diagram"));
     text.addEventListener("input", () => {

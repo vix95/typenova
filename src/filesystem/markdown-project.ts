@@ -1,4 +1,5 @@
-import { readDir, readTextFile } from "@tauri-apps/plugin-fs";
+import { readDir } from "@tauri-apps/plugin-fs";
+import { readTextAuto } from "./text-io";
 import { join } from "@tauri-apps/api/path";
 import { isMarkdownPath } from "./path-utils";
 
@@ -41,8 +42,8 @@ export async function scanMarkdownProject(
       if (entry.isDirectory) { await walk(fullPath); continue; }
       if (!isMarkdownPath(entry.name)) continue;
       try {
-        const text = await readTextFile(fullPath);
-        files.push({ path: fullPath, name: entry.name, text });
+        const text = await readTextAuto(fullPath);
+        if (text !== null) files.push({ path: fullPath, name: entry.name, text });
       } catch (error) {
         // Report incomplete indexing rather than silently presenting a partial graph as complete.
         options.onError?.({ path: fullPath, operation: "read-file", message: error instanceof Error ? error.message : String(error) });
