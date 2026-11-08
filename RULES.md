@@ -5,7 +5,7 @@ Thanks for wanting to work on TypeNova. This page is short on purpose: it covers
 ## Before you start
 
 - For anything bigger than a small fix, open an issue first so we can agree on the approach.
-- Read the closest note in [`docs/`](docs/) before touching an existing subsystem. Most features have one, and they explain decisions that the code alone doesn't.
+- Read the relevant section of [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) before touching an existing subsystem; it explains decisions that the code alone does not.
 - Keep changes small and focused. Please don't mix a feature with unrelated cleanup, and don't remove features, docs or scripts as a side effect.
 - Don't add a dependency, switch the package manager or replace a framework as incidental cleanup. If you need a new dependency, explain why in the issue.
 - Don't add a package lockfile or regenerate one without a concrete reason.
@@ -21,14 +21,14 @@ A local-first desktop app (TypeScript, Vite, Tauri 2 / Rust, CodeMirror 6, with 
 - `tests/module-structure.test.mjs` enforces these rules (thin `main.ts`, module size, init wiring, function length). If it fails, restructure the code rather than loosening the test.
 - Background Markdown work stays in the worker. Keep CodeMirror transactions and caret updates responsive, and don't run full-document parsing on the UI thread.
 - Keep preview virtualization, source block identity, worker revision checks and stale-result rejection working. The worker message protocol only changes with a documented reason.
-- Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/ARCHITECTURE-MODULARIZATION-0.5.113.md`](docs/ARCHITECTURE-MODULARIZATION-0.5.113.md).
+- Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Files and security
 
 - File operations stay inside the project folder the user selected and inside the permissions Tauri already grants. Don't widen `src-tauri/capabilities/default.json` or the asset-protocol scope to make something easier. `tests/tauri-config.test.mjs` guards the important parts.
 - File content is data. Never execute it, and don't inject unsanitized HTML into the preview; follow the existing escaping and rendering conventions.
-- For copy, cut, paste, delete, duplicate and drag-and-drop in the project tree, read [`docs/FILE-TREE-OPERATIONS-0.5.59.md`](docs/FILE-TREE-OPERATIONS-0.5.59.md) and [`docs/FILESYSTEM-SCOPE-0.5.58.md`](docs/FILESYSTEM-SCOPE-0.5.58.md). Avoid overwrites, moving a folder into itself, stale paths in open tabs and half-finished directory operations.
-- Don't change the Content Security Policy casually. Tauri adds nonces to CSP directives it is allowed to modify, which silently disables `'unsafe-inline'`; see [`docs/CSP-STYLE-NONCE-0.5.113.md`](docs/CSP-STYLE-NONCE-0.5.113.md).
+- For copy, cut, paste, delete, duplicate and drag-and-drop in the project tree, read sections 6 and 7 of [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Avoid overwrites, moving a folder into itself, stale paths in open tabs and half-finished directory operations.
+- Don't change the Content Security Policy casually. Tauri adds nonces to CSP directives it is allowed to modify, which silently disables `'unsafe-inline'`; see section 7 of [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## UI and CSS
 
@@ -62,8 +62,8 @@ In the pull request, say what you actually ran and what you didn't. "Not tested 
 
 ## Documentation
 
-- For a user-visible change, add a line to the current version in [`docs/CHANGELOG.md`](docs/CHANGELOG.md) and a short focused note in `docs/`, following the existing naming (`FEATURE-NAME-x.y.z.md`).
-- Bump the version in `package.json` only for an actual release, not for every change.
+- For a user-visible change, if an architectural rule changes, update the matching section of [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); there are no per-feature note files.
+- [`docs/CHANGELOG.md`](docs/CHANGELOG.md) is built from the commit history: one entry per release, each item linking its commit. Add the entry together with the version bump (`package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`).
 
 ## Pull requests
 

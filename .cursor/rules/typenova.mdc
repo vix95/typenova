@@ -1,0 +1,19 @@
+---
+description: Always apply TypeNova repository workflow and safety constraints
+alwaysApply: true
+---
+
+**Before any repository task, read the complete root `AGENTS.md` and follow it.** It is the canonical repository guide. Do not start implementation before reading it and relevant feature documentation.
+
+TypeNova-specific critical rules:
+- For any UI/HTML/CSS, theme, interaction, or accessibility task, read and obey `.claude/skills/typenova-ui-css/SKILL.md`.
+- Every stateful button, toggle, and segmented switch must visually retain its selected/pressed state and keep it synchronized with ARIA state; do not rely only on `:hover` or `:active`.
+- Preserve the TypeScript/Vite + Tauri 2 architecture and Markdown worker/preview behavior.
+- Keep file access constrained to the selected project root; never broaden Tauri filesystem capabilities for convenience.
+- Preserve existing theme tokens, keyboard accessibility, and file-tree semantics.
+- Tooltip localization is mandatory: explicitly localize all changed tooltips and accessible names in Polish and English, checking `data-tooltip`, `title`, `aria-label`, and keyboard-focus behavior. Do not rely on automatically inferred button text.
+- Ask the user when a material requirement remains ambiguous after inspecting code and docs.
+- Run relevant checks and be precise about anything not verified.
+- Git is the version control of this repository. Create commits, branches, tags, pushes or pull requests only when the user asks for them, and never commit automatically; when a commit is wanted, propose its message.
+- Buttons always use SVG icons (`ICONS` in `src/ui/icons.ts` for buttons built in TypeScript, inline `<svg aria-hidden="true">` in `index.html`), never text characters or emoji as icons.
+- Bump the application version when handing work back (see `AGENTS.md`). A ZIP or installers only on request.
