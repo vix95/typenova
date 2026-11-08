@@ -41,3 +41,6 @@ Desktop.ini
 
 # Tauri generated schemas
 src-tauri/gen/
+
+# Sample files are byte-exact fixtures (encodings, line endings): keep them out of the log ignore and never convert them.
+!examples/file-types/**/*.log

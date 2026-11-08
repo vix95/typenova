@@ -9,6 +9,7 @@ import { createDiagramViewport } from "./diagram-viewport";
 import { createInspector, type Inspector } from "./mermaid-inspector";
 import { createLineInspector } from "./mermaid-line-inspector";
 import { createTextHistory } from "./text-history";
+import { documentState } from "../documents/document-state";
 import { view } from "./editor-view";
 import { findMermaidBlockAt, flowchartNodeIds, mermaidKind, mermaidMarkdown } from "./formula-block";
 import { LINK_STYLES, MERMAID_TEMPLATES, NODE_SHAPES, QUICK_LINES } from "./mermaid-templates";
@@ -226,6 +227,14 @@ async function askMermaid(initial: string, editing: boolean): Promise<MermaidCho
 
 /** Opens the editor for the diagram at the caret, or for a new one. */
 export async function openMermaidEditor(): Promise<void> {
+  // A .mmd / .mermaid file is one diagram: the editor works on the whole file.
+  if (/\.(mmd|mermaid)$/i.test(documentState.currentPath || documentState.untitledLabel)) {
+    const whole = view.state.doc.toString();
+    const wholeChoice = await askMermaid(whole.trim() ? whole.replace(/\s+$/, "") : MERMAID_TEMPLATES[0].source, !!whole.trim());
+    if (wholeChoice && wholeChoice.source.trim()) view.dispatch({ changes: { from: 0, to: whole.length, insert: wholeChoice.source.replace(/\s+$/, "") + "\n" }, userEvent: "input.diagram" });
+    view.focus();
+    return;
+  }
   const { from, to } = view.state.selection.main;
   const found = findMermaidBlockAt(view.state.doc.toString(), from);
   const choice = await askMermaid(found ? found.source : MERMAID_TEMPLATES[0].source, !!found);

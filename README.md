@@ -22,6 +22,10 @@ Everything runs locally. There's no account, no sync service, no telemetry and n
 
 ![Live preview with a Mermaid diagram and a rendered formula](docs/screenshots/typenova-live-preview.png)
 
+**More than Markdown.** Markdown (`md`, `markdown`, `mdx`, `rmd`, `qmd`, ...) gets the full treatment. About 340 text and code formats open in the editor with syntax highlighting, and unknown extensions are tried as text. Files keep their encoding (UTF-8, UTF-16, Windows-1250, ISO-8859-2 and more) and line endings (CRLF/LF) when saved; the status bar shows both. CSV/TSV files preview as tables, Mermaid files (`.mmd`) as diagrams, and **Format document** (`Shift+Alt+F`) tidies JSON, JSON Lines, YAML, XML and Markdown tables. Pictures (including TIFF), PDF, audio and video open in built-in viewers, and Word and HTML files can be imported as Markdown.
+
+**Web pages.** HTML files get a page preview with the CSS, images and fonts they link to; page scripts run only after you turn them on, in an isolated frame. Sample files for every supported type live in [`examples/file-types`](examples/file-types/README.md).
+
 **A graph made of sections.** A section starts at a heading and runs to the next heading of the same or higher level. Sections are linked to their parents, children and neighbours, and also by `[[Section name]]` links you write yourself. You can look at the result three ways:
 
 - a flat canvas for the whole picture,

@@ -1,5 +1,6 @@
 /** Code-block toolbar (language label, copy action) and local image resolution. */
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { fileKind } from "../filesystem/file-types.js";
 import { normalizeLocalImagePath } from "../filesystem/path-utils";
 import { documentState } from "../documents/document-state";
 import { langText } from "../i18n/language";
@@ -168,6 +169,34 @@ function loadLocalImage(img: HTMLImageElement, absolutePath: string): void {
   else void ensureImageAccess(absolutePath).then(assign);
 }
 
+/** `![](clip.mp4)` and `![](song.mp3)` become a player. */
+function embedPlayer(img: HTMLImageElement, absolutePath: string, kind: "audio" | "video"): void {
+  const player = document.createElement(kind);
+  player.controls = true; player.preload = "metadata"; player.className = `preview-${kind}`;
+  if (kind === "video") player.style.maxWidth = "100%";
+  player.setAttribute("aria-label", img.alt || normalizeLocalImagePath(absolutePath).split("/").pop() || kind);
+  img.replaceWith(player);
+  void ensureImageAccess(absolutePath).then(() => { player.src = imageUrl(absolutePath); });
+}
+
+/** `![](paper.pdf)` becomes a button that opens the PDF viewer. */
+function embedPdfButton(img: HTMLImageElement, absolutePath: string): void {
+  const open = document.createElement("button");
+  open.type = "button"; open.className = "preview-pdf-link";
+  open.textContent = `PDF: ${img.alt || normalizeLocalImagePath(absolutePath).split("/").pop() || "PDF"}`;
+  open.title = langText("Otwórz PDF", "Open PDF");
+  open.addEventListener("click", () => { void import("./pdf-viewer").then(module => module.openPdfFile(absolutePath)); });
+  img.replaceWith(open);
+}
+
+/** TIFF pictures cannot be shown by the webview, so they are decoded first. */
+function loadTiffImage(img: HTMLImageElement, absolutePath: string): void {
+  img.dataset.localPath = absolutePath;
+  img.addEventListener("error", () => markLocalImageUnavailable(img));
+  img.addEventListener("load", () => markLocalImageAvailable(img));
+  void import("./tiff").then(module => module.tiffObjectUrl(absolutePath)).then(url => { img.src = url; }).catch(() => markLocalImageUnavailable(img));
+}
+
 export function resolveLocalImages(root: HTMLElement, sourcePath: string | null = documentState.currentPath) {
   for (const img of Array.from(root.querySelectorAll<HTMLImageElement>("img"))) {
     const src = img.getAttribute("src") || "";
@@ -181,6 +210,10 @@ export function resolveLocalImages(root: HTMLElement, sourcePath: string | null 
     const combined = /^(?:[A-Za-z]:[\\/]|\/)/.test(clean) ? clean : `${parent}/${clean}`;
     const absolutePath = normalizeLocalImagePath(combined);
     img.loading = "lazy"; img.decoding = "async"; img.dataset.resolved = "yes";
+    const kind = fileKind(absolutePath);
+    if (kind === "audio" || kind === "video") { embedPlayer(img, absolutePath, kind); continue; }
+    if (kind === "pdf") { embedPdfButton(img, absolutePath); continue; }
+    if (/\.tiff?$/i.test(absolutePath)) { loadTiffImage(img, absolutePath); continue; }
     loadLocalImage(img, absolutePath);
   }
 }

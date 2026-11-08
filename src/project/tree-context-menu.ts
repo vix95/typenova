@@ -1,9 +1,10 @@
 /** Project tree context menu and its file operations (open, new file, delete, copy, cut, paste). */
 import { pasteSystemFiles, systemClipboardFiles, systemFilesAreNewer } from "./system-clipboard";
 import { normalizedFsPath, pathIsInside, parentPath } from "../filesystem/project-tree-operations";
-import { basename, isEditableTextFile, isViewableImageFile } from "../filesystem/path-utils";
-import { openImageFile } from "../preview/media-viewer";
-import { exists, mkdir, rename, writeTextFile, readTextFile } from "@tauri-apps/plugin-fs";
+import { basename, isEditableTextFile, isViewerFile } from "../filesystem/path-utils";
+import { openViewerFile } from "../preview/open-media";
+import { exists, mkdir, rename, writeTextFile } from "@tauri-apps/plugin-fs";
+import { BinaryFileError, loadTextFile } from "../filesystem/text-io";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { askForName } from "../ui/name-dialog";
 import { fileNameProblem } from "../editor/image-paste-dialog";
@@ -236,16 +237,18 @@ export async function openProjectTreeEntry(path: string, isDirectory: boolean) {
     row.focus({ preventScroll: true });
     return;
   }
-  if (isViewableImageFile(basename(path))) { await openImageFile(path); return; }
+  if (isViewerFile(basename(path))) { await openViewerFile(path); return; }
   if (!isEditableTextFile(basename(path))) {
     showToast(langText("TypeNova nie może otworzyć tego pliku.", "TypeNova cannot open this file."));
     return;
   }
   try {
-    const text = await readTextFile(path);
-    openTextInTab(path, text);
+    const loaded = await loadTextFile(path);
+    openTextInTab(path, loaded.text, loaded);
   } catch (error) {
-    if (isFilesystemScopeError(error)) {
+    if (error instanceof BinaryFileError) {
+      showToast(langText("Ten plik nie jest tekstowy, więc nie można go otworzyć w edytorze.", "This file is not text, so it cannot be opened in the editor."));
+    } else if (isFilesystemScopeError(error)) {
       await appAlert(langText("TypeNova nie ma aktualnego dostępu do folderu projektu. Wybierz folder projektu ponownie, aby przywrócić dostęp.", "TypeNova no longer has access to the project folder. Choose the project folder again to restore access."));
       await openProject();
     } else {

@@ -1,7 +1,8 @@
 /** Preview worker lifecycle and message protocol (revision checks, timeouts, stale-result rejection). */
+import { previewRequest } from "./preview-request";
 import { $ } from "../app/dom";
 import { documentState } from "../documents/document-state";
-import { documentMode, updateStats } from "../documents/document-stats";
+import { updateStats } from "../documents/document-stats";
 import { view } from "../editor/editor-view";
 import { langText } from "../i18n/language";
 import { buildOutline } from "../outline/outline";
@@ -48,10 +49,10 @@ export function pumpWorker() {
   if (previewState.updatePending) {
     previewState.updatePending = false;
     pendingRenderIndices.clear(); forceRenderIndices.clear();
-    const id = ++workerRequestId, revision = documentState.docRevision, text = view.state.doc.toString();
+    const id = ++workerRequestId, revision = documentState.docRevision, request = previewRequest(view.state.doc.toString()), text = request.text;
     const visible = currentVisibleLines();
     previewState.workerBusy = true; previewState.activeWorkerRequest = { id, action: "update", revision };
-    worker.postMessage({ id, action: "update", revision, text, mode: documentMode(), language: document.documentElement.lang === "en" ? "en" : "pl", visibleFromLine: visible.from, visibleToLine: visible.to });
+    worker.postMessage({ id, action: "update", revision, text, mode: request.mode, language: document.documentElement.lang === "en" ? "en" : "pl", visibleFromLine: visible.from, visibleToLine: visible.to });
     armWorkerTimeout();
     return;
   }

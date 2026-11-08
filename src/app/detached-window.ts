@@ -1,5 +1,6 @@
 /** Hand-off of a document torn off a tab into its own window (the window is told which entry to read by a URL token). */
 import type { ViewPosition } from "../documents/session";
+import { ENCODINGS, type LineEnding, type TextFormat } from "../filesystem/text-codec";
 
 /** Token in the window URL (`?detach=...`), or null for the main window. */
 export const detachToken: string | null = new URLSearchParams(window.location.search).get("detach");
@@ -13,6 +14,13 @@ export interface DetachedDocument {
   savedText: string;
   dirty: boolean;
   position: ViewPosition | null;
+  format?: TextFormat;
+}
+
+function parseFormat(value: unknown): TextFormat | undefined {
+  const item = value as Partial<TextFormat> | null;
+  if (!item || !ENCODINGS.some(encoding => encoding.name === item.encoding) || !(["lf", "crlf", "cr"] as LineEnding[]).includes(item.lineEnding as LineEnding)) return undefined;
+  return { encoding: item.encoding!, bom: !!item.bom, lineEnding: item.lineEnding! };
 }
 
 const STORAGE_PREFIX = "typenova.detach.";
@@ -56,6 +64,7 @@ export function takeDetachedDocument(token: string): DetachedDocument | null {
       savedText: typeof doc.savedText === "string" ? doc.savedText : doc.text,
       dirty: !!doc.dirty,
       position: doc.position && typeof doc.position === "object" ? doc.position : null,
+      format: parseFormat(doc.format),
     };
   } catch { return null; }
 }

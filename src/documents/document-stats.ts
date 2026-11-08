@@ -1,12 +1,13 @@
 /** Word and byte statistics plus document-mode helpers. */
-import { resolveDocumentMode } from "../editor/editor-preferences";
+import { resolveDocumentMode, type DocumentMode } from "../editor/editor-preferences";
 import { $ } from "../app/dom";
 import { documentState } from "./document-state";
 import { view } from "../editor/editor-view";
+import { updateFormatStatus } from "./format-display";
 
 export let lastWordCount = 0;
 let lastByteCount = 0;
-export function documentMode(path = documentState.currentPath || documentState.untitledLabel): "markdown" | "plain" | "notebook" {
+export function documentMode(path = documentState.currentPath || documentState.untitledLabel): DocumentMode {
   return resolveDocumentMode(path);
 }
 export function updateQuickStats() {
@@ -19,6 +20,7 @@ export function updateQuickStats() {
 }
 export function updateStats(stats?: { words: number; chars: number; bytes: number; fastMode?: boolean }) {
   if (stats) { lastWordCount = stats.words; lastByteCount = stats.bytes; }
+  updateFormatStatus();
   const chars = view.state.doc.length;
   const en = document.documentElement.lang === "en"; const locale = en ? "en-US" : "pl-PL";
   $("wordCount").textContent = en ? `${lastWordCount.toLocaleString(locale)} words` : `${lastWordCount.toLocaleString(locale)} słów`;

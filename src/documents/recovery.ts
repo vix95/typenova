@@ -4,7 +4,8 @@ import { basename } from "../filesystem/path-utils";
 import { detachToken, isDetachedWindow, takeDetachedDocument } from "../app/detached-window";
 import { parseOpenSession, deduplicateSessionPaths, findViewPosition, sameSessionPath, type ViewPositions } from "./session";
 import { restoreViewPosition } from "./view-position";
-import { readTextFile } from "@tauri-apps/plugin-fs";
+import { loadTextFile } from "../filesystem/text-io";
+import type { TextFormat } from "../filesystem/text-codec";
 import { $ } from "../app/dom";
 import { updateDirtyUi } from "./dirty-state";
 import { OPEN_SESSION_STORAGE_KEY, documentState, showWelcomeWhenNoSession, type DocumentTab } from "./document-state";
@@ -24,7 +25,7 @@ import { showToast } from "../ui/toast";
 export async function showVersionHistory() { const dialog = $("historyDialog") as HTMLDialogElement; const list = $("historyList"); list.replaceChildren(); const en = document.documentElement.lang === "en"; try { const items = await listDocumentVersions(); if (!items.length) { list.textContent = langText("Brak zapisanych wersji. Historia tworzy się przy zapisywaniu kolejnych wersji dokumentu.", "No saved versions yet. History is created as you save subsequent document versions."); } for (const item of items) { const row = document.createElement("div"); row.className = "history-row"; const label = document.createElement("span"); label.textContent = `${item.path ? basename(item.path) : langText("Dokument", "Document")} · ${new Date(item.updated).toLocaleString(en ? "en-US" : "pl-PL")} · ${(new TextEncoder().encode(item.text).length / 1024).toFixed(1)} KB`; const restore = document.createElement("button"); restore.textContent = langText("Przywróć", "Restore"); restore.addEventListener("click", async () => { if (documentState.dirty && !await appConfirm(langText("Zastąpić bieżącą treść wersją historyczną?", "Replace the current content with this historical version?"), { confirmLabel: langText("Zastąp", "Replace"), primaryAction: "cancel" })) return; const path = item.path || null; const recoveredLabel = path ? basename(path) : langText("Odzyskana wersja.md", "Recovered version.md"); createNewTab(item.text, recoveredLabel); documentState.currentPath = path; const tab = activeTab(); if (tab) { tab.path = path; tab.label = recoveredLabel; tab.savedText = ""; tab.dirty = true; } documentState.savedText = ""; documentState.dirty = true; updateDirtyUi(); schedulePreview(); dialog.close(); }); row.append(label, restore); list.append(row); } } catch (e) { list.textContent = `${langText("Nie udało się odczytać historii", "Could not read version history")}: ${String(e)}`; } dialog.showModal(); }
 let recoveryTimer = 0;
 export function scheduleRecovery() { if (isDetachedWindow) return; clearTimeout(recoveryTimer); recoveryTimer = window.setTimeout(() => { if (!documentState.dirty) { localStorage.removeItem("typenova.recoveryHandled"); void recoveryWrite({ text: "", path: documentState.currentPath, updated: Date.now() }).catch(() => { }); return; } void recoveryWrite({ text: view.state.doc.toString(), path: documentState.currentPath, updated: Date.now() }).catch(() => { }); }, 1200); }
-type SessionFileResult = { path: string; text: string; error: unknown };
+type SessionFileResult = { path: string; text: string; error: unknown; format?: TextFormat };
 
 /** Paths to reopen and the tab to activate, derived from the saved session (or the most recent file on first run). */
 function resolveSessionCandidates(): { paths: string[]; activePath: string | null; positions: ViewPositions } {
@@ -41,7 +42,7 @@ function resolveSessionCandidates(): { paths: string[]; activePath: string | nul
 
 async function readSessionFiles(paths: readonly string[]): Promise<SessionFileResult[]> {
   return Promise.all(paths.map(async (path): Promise<SessionFileResult> => {
-    try { return { path, text: await readTextFile(path), error: null }; }
+    try { const loaded = await loadTextFile(path); return { path, text: loaded.text, error: null, format: loaded }; }
     catch (error) { return { path, text: "", error }; }
   }));
 }
@@ -102,7 +103,7 @@ function polishFileNoun(count: number): string {
   return count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14) ? "pliki" : "plików";
 }
 
-function restoreFileTabs(restored: readonly { path: string; text: string }[], activePath: string | null, positions: ViewPositions, failedCount: number): void {
+function restoreFileTabs(restored: readonly { path: string; text: string; format?: TextFormat }[], activePath: string | null, positions: ViewPositions, failedCount: number): void {
   // Reuse the initial tab ID for the first restored document and replace the startup
   // placeholder so no extra Welcome.md / Untitled.md appears beside restored files.
   const starter = documentState.tabs[0];
@@ -115,7 +116,8 @@ function restoreFileTabs(restored: readonly { path: string; text: string }[], ac
       state: createEditorState(entry.text),
       savedText: entry.text,
       dirty: false,
-      viewPosition: findViewPosition(positions, entry.path)
+      viewPosition: findViewPosition(positions, entry.path),
+      format: entry.format,
     };
   });
   documentState.tabs = restoredTabs;
@@ -148,6 +150,7 @@ function openDetachedDocument(): void {
     savedText: doc.savedText,
     dirty: doc.dirty,
     viewPosition: doc.position,
+    format: doc.format,
   };
   documentState.tabs = [tab];
   activateRestoredTab(tab);

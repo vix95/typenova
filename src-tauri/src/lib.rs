@@ -1,13 +1,17 @@
 mod clipboard_files;
 mod git;
+mod page_server;
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager};
 
-/// Image formats the preview may display from outside the pre-granted folders.
-const PREVIEW_IMAGE_EXTENSIONS: [&str; 10] = ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico", "avif", "apng"];
+/// Files the preview and the viewers may load from outside the pre-granted folders: images, PDF, audio and video.
+const PREVIEW_IMAGE_EXTENSIONS: [&str; 29] = [
+  "png", "jpg", "jpeg", "jfif", "gif", "webp", "svg", "bmp", "ico", "avif", "apng", "tif", "tiff", "pdf",
+  "mp3", "wav", "ogg", "oga", "m4a", "flac", "aac", "opus", "weba", "mp4", "m4v", "webm", "ogv", "mov", "mkv",
+];
 
 /// Validates a path referenced by an image in an opened Markdown document and returns its canonical,
 /// symlink-resolved form without the Windows verbatim (`\?\`) prefix.
@@ -15,14 +19,18 @@ const PREVIEW_IMAGE_EXTENSIONS: [&str; 10] = ["png", "jpg", "jpeg", "gif", "webp
 /// Only existing regular files with an image extension are accepted, so the grant can never widen
 /// to a directory, to a non-image file, or to a path that does not exist.
 fn preview_image_grant_path(path: &str) -> Result<PathBuf, String> {
+  grant_path(path, &PREVIEW_IMAGE_EXTENSIONS)
+}
+
+fn grant_path(path: &str, allowed: &[&str]) -> Result<PathBuf, String> {
   let canonical = std::fs::canonicalize(Path::new(path)).map_err(|error| format!("cannot resolve image path: {error}"))?;
   let extension = canonical
     .extension()
     .and_then(|value| value.to_str())
     .map(|value| value.to_ascii_lowercase())
     .unwrap_or_default();
-  if !PREVIEW_IMAGE_EXTENSIONS.contains(&extension.as_str()) {
-    return Err("not an image file".into());
+  if !allowed.contains(&extension.as_str()) {
+    return Err("this kind of file cannot be granted to the preview".into());
   }
   if !canonical.is_file() {
     return Err("not a file".into());
@@ -41,6 +49,49 @@ fn preview_image_grant_path(path: &str) -> Result<PathBuf, String> {
 fn grant_preview_image<R: tauri::Runtime>(app: &impl Manager<R>, path: &str) -> Result<(), String> {
   let granted = preview_image_grant_path(path)?;
   app.asset_protocol_scope().allow_file(&granted).map_err(|error| error.to_string())
+}
+
+/// Files named on the command line (a double click in the file manager passes the path): existing regular files only.
+fn launch_paths(args: &[String]) -> Vec<String> {
+  args
+    .iter()
+    .skip(1)
+    .filter(|argument| !argument.starts_with('-'))
+    .filter_map(|argument| {
+      let path = Path::new(argument);
+      if !path.is_file() {
+        return None;
+      }
+      let canonical = std::fs::canonicalize(path).ok()?;
+      let text = canonical.to_string_lossy();
+      Some(text.strip_prefix(r"\?\").map(str::to_owned).unwrap_or_else(|| text.into_owned()))
+    })
+    .collect()
+}
+
+/// Lets the app read the files it was asked to open from outside (the file system scope only covers what the user picked in the app).
+fn grant_launch_files<R: tauri::Runtime>(app: &impl Manager<R>, paths: &[String]) {
+  use tauri_plugin_fs::FsExt;
+  for path in paths {
+    let _ = app.fs_scope().allow_file(path);
+    let _ = app.asset_protocol_scope().allow_file(path);
+  }
+}
+
+/// Paths given on the command line at startup, until the page asks for them.
+static PENDING_LAUNCH_PATHS: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+#[tauri::command]
+fn take_launch_paths() -> Vec<String> {
+  PENDING_LAUNCH_PATHS.lock().map(|mut paths| std::mem::take(&mut *paths)).unwrap_or_default()
+}
+
+/// Registers the folder of an HTML page for the `tnpage` scheme and returns the URL path to load it from; its relative
+/// links then resolve inside `root` (a project folder holding the page) or the page's own folder.
+#[tauri::command]
+fn open_page(path: String, root: Option<String>) -> Result<String, String> {
+  let file = grant_path(&path, &page_server::PAGE_EXTENSIONS)?;
+  page_server::register_page(&file, root.as_deref())
 }
 
 #[tauri::command]
@@ -317,13 +368,20 @@ fn close_current_window(window: tauri::WebviewWindow) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    .register_uri_scheme_protocol("tnpage", |_context, request| page_server::handle(request))
     // Register first: a second launch forwards to this instance instead of
     // creating a second application process/window.
-    .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+    .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
       if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
+      }
+      // A second launch with files (double click in the file manager) hands them to this instance.
+      let paths = launch_paths(&argv);
+      if !paths.is_empty() {
+        grant_launch_files(app, &paths);
+        let _ = app.emit_to("main", "open-paths", paths);
       }
     }))
     .plugin(tauri_plugin_dialog::init())
@@ -334,6 +392,11 @@ pub fn run() {
     .setup(|app| {
       if let Some(window) = app.get_webview_window("main") {
         harden_webview(&window);
+      }
+      let paths = launch_paths(&std::env::args().collect::<Vec<_>>());
+      grant_launch_files(app, &paths);
+      if let Ok(mut pending) = PENDING_LAUNCH_PATHS.lock() {
+        *pending = paths;
       }
       Ok(())
     })
@@ -348,7 +411,7 @@ pub fn run() {
         }
       }
     })
-    .invoke_handler(tauri::generate_handler![clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, allow_preview_image, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
+    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
     .run(tauri::generate_context!())
     .expect("error while running TypeNova");
 }
@@ -375,6 +438,38 @@ mod tests {
     let granted = preview_image_grant_path(reference.to_str().unwrap()).unwrap();
     assert!(granted.ends_with("assets/algorithms/absolute-value.PNG") || granted.ends_with(r"assets\algorithms\absolute-value.PNG"));
     assert!(!granted.to_string_lossy().starts_with(r"\?\"));
+    let _ = fs::remove_dir_all(&root);
+  }
+
+  #[test]
+  fn only_existing_files_on_the_command_line_are_opened() {
+    let root = temp_dir("launch");
+    let file = root.join("note.md");
+    fs::write(&file, b"x").unwrap();
+    fs::create_dir_all(root.join("folder")).unwrap();
+    let args = vec![
+      "typenova".to_string(),
+      file.to_string_lossy().into_owned(),
+      "--flag".to_string(),
+      root.join("missing.md").to_string_lossy().into_owned(),
+      root.join("folder").to_string_lossy().into_owned(),
+    ];
+    let paths = launch_paths(&args);
+    assert_eq!(paths.len(), 1);
+    assert!(paths[0].ends_with("note.md"));
+    assert!(launch_paths(&["typenova".to_string()]).is_empty());
+    let _ = fs::remove_dir_all(&root);
+  }
+
+  #[test]
+  fn accepts_pdf_audio_and_video_files() {
+    let root = temp_dir("media");
+    for name in ["doc.pdf", "song.MP3", "clip.webm", "scan.tiff"] {
+      fs::write(root.join(name), b"x").unwrap();
+      assert!(preview_image_grant_path(root.join(name).to_str().unwrap()).is_ok(), "{name}");
+    }
+    fs::write(root.join("program.exe"), b"x").unwrap();
+    assert!(preview_image_grant_path(root.join("program.exe").to_str().unwrap()).is_err());
     let _ = fs::remove_dir_all(&root);
   }
 

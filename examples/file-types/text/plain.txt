@@ -1,0 +1,4 @@
+Plain text file.
+Nothing here is highlighted.
+
+Third line.
