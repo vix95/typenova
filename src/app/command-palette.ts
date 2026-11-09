@@ -16,6 +16,8 @@ import { toggleShowHiddenSections } from "../documents/section-visibility";
 import { editBookmarkAtCaret } from "../editor/bookmark-dialogs";
 import { showBookmarksPanel } from "./bookmark-sidebar";
 import { toggleShowWhitespace } from "./whitespace-toggle";
+import { goToMisspelling, openSpellSuggestionsAtCaret, toggleSpellChecking } from "../spelling/spell-commands";
+import { openSpellWordsDialog } from "../spelling/spell-options";
 import { showHighlightsPanel } from "./highlight-sidebar";
 import { editHighlightAtSelection } from "../editor/highlight-dialogs";
 import { copyHighlightsAsMarkdown, getHighlights, goToNeighbourHighlight, toggleHighlight } from "../editor/highlights";
@@ -47,6 +49,11 @@ const commandItems: CommandItem[] = [
   { labelPl: "Wyróżnienia: poprzednie wyróżnienie", labelEn: "Highlights: previous highlight", shortcut: "Shift+F4", run: () => goToNeighbourHighlight(-1) },
   { labelPl: "Wyróżnienia: pokaż panel wyróżnień", labelEn: "Highlights: show the highlights panel", run: () => showHighlightsPanel() },
   { labelPl: "Wyróżnienia: skopiuj wszystkie jako Markdown", labelEn: "Highlights: copy all as Markdown", run: () => void copyHighlightsAsMarkdown(getHighlights(), "file") },
+  { labelPl: "Pisownia: włącz / wyłącz sprawdzanie", labelEn: "Spelling: turn spell checking on / off", run: () => toggleSpellChecking() },
+  { labelPl: "Pisownia: podpowiedzi dla słowa przy kursorze", labelEn: "Spelling: suggestions for the word at the caret", shortcut: "Ctrl+.", run: () => openSpellSuggestionsAtCaret() },
+  { labelPl: "Pisownia: następny błąd", labelEn: "Spelling: next mistake", shortcut: "F8", run: () => goToMisspelling(1) },
+  { labelPl: "Pisownia: poprzedni błąd", labelEn: "Spelling: previous mistake", shortcut: "Shift+F8", run: () => goToMisspelling(-1) },
+  { labelPl: "Pisownia: słownik osobisty", labelEn: "Spelling: personal dictionary", run: () => openSpellWordsDialog() },
   { labelPl: "Pokaż / ukryj znaki białe (spacje, tabulatory, końce wierszy)", labelEn: "Show / hide white space (spaces, tabs, line ends)", run: () => toggleShowWhitespace() },
   { labelPl: "Pokaż / ukryj ukryte sekcje", labelEn: "Show / hide hidden sections", run: () => toggleShowHiddenSections() },
   { labelPl: "Drukuj / eksportuj PDF", labelEn: "Print / export PDF", run: () => void printDocument() },

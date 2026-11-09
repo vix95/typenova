@@ -22,6 +22,8 @@ import { configureLanguageForTab } from "../documents/tabs";
 import { editorThemeCompartment, languageCompartment, lineNumbersCompartment, performanceCompartment, syntaxThemeCompartment, whitespaceCompartment, wrapping } from "./compartments";
 import { WHITESPACE_KEY, whitespaceExtension } from "./whitespace-extension";
 import { openAiEdit } from "../ai/edit-dialog";
+import { goToMisspelling, openSpellSuggestionsAtCaret } from "../spelling/spell-commands";
+import { spellExtension } from "../spelling/spellcheck";
 import { highlightExtension } from "./highlight-field";
 import { goToNeighbourHighlight, syncHighlightsFromEditor, toggleHighlight } from "./highlights";
 import { refreshSelectionContext } from "../ai/chat-panel";
@@ -84,6 +86,7 @@ export const editorExtensions = [
   hiddenSectionsExtension,
   bookmarkExtension,
   highlightExtension,
+  spellExtension,
   performanceCompartment.of(performanceExtensions(initialDocumentText.length)),
   lineNumbersCompartment.of(lineNumbersEnabled ? lineNumbers() : []), drawSelection(), history(),
   wrapping.of(localStorage.getItem("typenova.wrap") === "true" ? EditorView.lineWrapping : []),
@@ -133,6 +136,9 @@ export const editorExtensions = [
     { key: "Mod-Shift-x", run: () => wrapSelection("~~", "~~") },
     { key: "Mod-F2", run: () => { void toggleBookmark(); return true; } },
     { key: "Mod-Shift-a", run: () => { openAiEdit(); return true; } },
+    { key: "Mod-.", run: () => { openSpellSuggestionsAtCaret(); return true; } },
+    { key: "F8", run: () => { goToMisspelling(1); return true; } },
+    { key: "Shift-F8", run: () => { goToMisspelling(-1); return true; } },
     { key: "Mod-Shift-h", run: () => { void toggleHighlight(); return true; } },
     { key: "F4", run: () => { goToNeighbourHighlight(1); return true; } },
     { key: "Shift-F4", run: () => { goToNeighbourHighlight(-1); return true; } },

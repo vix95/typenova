@@ -1,2 +1,4 @@
 # Sample files must stay byte-exact: no line-ending conversion.
 examples/file-types/** -text
+# The spelling dictionaries are data files: no line-ending conversion.
+src-tauri/dictionaries/** -text
