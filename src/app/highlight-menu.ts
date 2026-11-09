@@ -1,7 +1,9 @@
 /** The Highlights menu (commands only; the list is the Highlights panel of the left column), the marker button of the formatting toolbar and the highlights button of the project row. */
 import { $ } from "./dom";
 import { showHighlightsPanel } from "./highlight-sidebar";
-import { editHighlightAtSelection } from "../editor/highlight-dialogs";
+import { editHighlightAtSelection, openHighlightEditor } from "../editor/highlight-dialogs";
+import { onHighlightNoteClick } from "../editor/highlight-field";
+import { onPreviewNoteClick } from "../preview/preview-highlights";
 import { copyHighlightsAsMarkdown, getHighlights, goToNeighbourHighlight, toggleHighlight } from "../editor/highlights";
 import { langText } from "../i18n/language";
 
@@ -31,6 +33,9 @@ function labelCommands(): void {
 
 export function initHighlightMenu(): void {
   labelCommands();
+  // A click on the note icon next to a highlight opens the highlight window.
+  onHighlightNoteClick(id => openHighlightEditor(id));
+  onPreviewNoteClick(id => openHighlightEditor(id));
   document.addEventListener("typenova:language-changed", labelCommands);
   $("menuHighlightToggle").addEventListener("click", () => { void toggleHighlight(); });
   $("menuHighlightEdit").addEventListener("click", () => editHighlightAtSelection());

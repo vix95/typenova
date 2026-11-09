@@ -119,6 +119,18 @@ export function groupNames(list: readonly Highlight[]): string[] {
   return [...new Set(list.map(item => item.group).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 }
 
+/** The group names in use with the number of highlights in each, the most used first (then by name). */
+export function groupCounts(list: readonly Highlight[]): { name: string; count: number }[] {
+  const counts = new Map<string, { name: string; count: number }>();
+  for (const item of list) {
+    if (!item.group) continue;
+    const key = item.group.toLocaleLowerCase();
+    const entry = counts.get(key);
+    if (entry) entry.count++; else counts.set(key, { name: item.group, count: 1 });
+  }
+  return [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+}
+
 /** Highlights whose text, note, group or file contain every word of the query. */
 export function filterHighlights(list: readonly Highlight[], query: string): Highlight[] {
   const words = query.toLocaleLowerCase().split(/\s+/).filter(Boolean);

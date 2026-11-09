@@ -43,3 +43,18 @@ html[data-theme="contrast"] .cm-highlight, html[data-theme="contrast"] mark.tn-h
 /* The global style of selected buttons must not repaint the colour swatches. */
 .highlight-colors .highlight-color, .highlight-colors .highlight-color.selected { background: var(--hl-solid) !important; }
 .highlight-colors .highlight-color.selected { border-color: var(--ui-text) !important; }
+
+/* The highlight window has four buttons in a row: it is a little wider and the row does not wrap. */
+dialog.highlight-dialog { width: min(640px, calc(100vw - 32px)); }
+.highlight-dialog .bookmark-actions { flex-wrap: nowrap; }
+.highlight-group-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: -6px; }
+.highlight-group-chips[hidden] { display: none; }
+.highlight-group-chip { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
+/* Many groups: the area scrolls instead of making the window taller. */
+.highlight-group-chips.is-scrolling { max-height: 92px; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+
+/* The note icon after a highlight that has a note (editor and preview). */
+.cm-highlight-note, .tn-highlight-note { display: inline-block; width: 13px; height: 13px; margin: 0 2px 0 3px; vertical-align: -2px; color: var(--hl-solid); cursor: pointer; user-select: none; }
+.cm-highlight-note .ui-icon, .tn-highlight-note .ui-icon { display: block; width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.cm-highlight-note:hover, .tn-highlight-note:hover { filter: brightness(1.2); }
+html[data-theme="contrast"] .cm-highlight-note, html[data-theme="contrast"] .tn-highlight-note { color: var(--ui-text); }

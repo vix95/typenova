@@ -73,7 +73,7 @@ function pushPreviewHighlights(): void {
   const byId = new Map(highlightsOfFile(highlights, path).map(item => [item.id, item]));
   setPreviewHighlights(highlightPositions(view.state).flatMap(position => {
     const item = byId.get(position.id);
-    return item ? [{ id: item.id, startLine: doc.lineAt(position.from).number, endLine: doc.lineAt(position.to).number, text: doc.sliceString(position.from, position.to), color: item.color, label: tooltipOf(item) }] : [];
+    return item ? [{ id: item.id, startLine: doc.lineAt(position.from).number, endLine: doc.lineAt(position.to).number, text: doc.sliceString(position.from, position.to), color: item.color, label: tooltipOf(item), hasNote: item.note.trim() !== "" }] : [];
   }));
 }
 
@@ -97,7 +97,7 @@ export function refreshHighlightMarks(): void {
       next = moveHighlight(next, item.id, { from, to, text: item.text });
     }
     missing.delete(item.id);
-    marks.push({ id: item.id, from, to, color: item.color, label: tooltipOf(item) });
+    marks.push({ id: item.id, from, to, color: item.color, label: tooltipOf(item), hasNote: item.note.trim() !== "" });
   }
   if (next !== highlights) { highlights = next; schedulePersist(); }
   view.dispatch({ effects: setHighlightMarks.of(marks), annotations: Transaction.addToHistory.of(false) });

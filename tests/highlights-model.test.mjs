@@ -127,3 +127,10 @@ test("the config file keeps every part of the settings of a document and never l
   assert.equal(c.isEmptyDocConfig(cleared), false, "an unknown part still counts as content");
   assert.equal(c.isEmptyDocConfig(c.withDocConfigParts({ version: 1, document: "a.md" }, { highlights: [] })), true);
 });
+
+test("group names are counted, most used first, and spelled once however they were typed", async () => {
+  const m = await model();
+  let list = [];
+  [["a", "Ideas"], ["b", "ideas"], ["c", "Zebra"], ["d", "Alpha"], ["e", "Alpha"], ["f", ""]].forEach(([id, group], i) => { list = make(m, list, i * 10, i * 10 + 5, "text" + i, id); list = m.editHighlight(list, id, { group }); });
+  assert.deepEqual(m.groupCounts(list), [{ name: "Ideas", count: 2 }, { name: "Alpha", count: 2 }, { name: "Zebra", count: 1 }].sort((x, y) => y.count - x.count || x.name.localeCompare(y.name)));
+});
