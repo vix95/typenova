@@ -19,7 +19,9 @@ import { openDocument, saveDocument, saveDocumentAs, scheduleAutoSave } from "..
 import { scheduleRecovery } from "../documents/recovery";
 import { initialDocumentText } from "../documents/start-text";
 import { configureLanguageForTab } from "../documents/tabs";
-import { editorThemeCompartment, languageCompartment, lineNumbersCompartment, performanceCompartment, syntaxThemeCompartment, wrapping } from "./compartments";
+import { editorThemeCompartment, languageCompartment, lineNumbersCompartment, performanceCompartment, syntaxThemeCompartment, whitespaceCompartment, wrapping } from "./compartments";
+import { WHITESPACE_KEY, whitespaceExtension } from "./whitespace-extension";
+import { readPreferenceFlag } from "../settings/preferences";
 import { completions } from "./completions";
 import { wrapSelection } from "./editing-commands";
 import { view } from "./editor-view";
@@ -80,6 +82,7 @@ export const editorExtensions = [
   performanceCompartment.of(performanceExtensions(initialDocumentText.length)),
   lineNumbersCompartment.of(lineNumbersEnabled ? lineNumbers() : []), drawSelection(), history(),
   wrapping.of(localStorage.getItem("typenova.wrap") === "true" ? EditorView.lineWrapping : []),
+  whitespaceCompartment.of(whitespaceExtension(readPreferenceFlag(WHITESPACE_KEY, false))),
   languageCompartment.of([]),
   editorThemeCompartment.of(editorThemeFor(localStorage.getItem("typenova.theme") || "midnight")),
   syntaxThemeCompartment.of(syntaxThemeFor(localStorage.getItem("typenova.theme") || "midnight")),

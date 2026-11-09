@@ -15,6 +15,7 @@ import { exportHtml, printDocument } from "../preview/export-print";
 import { toggleShowHiddenSections } from "../documents/section-visibility";
 import { editBookmarkAtCaret } from "../editor/bookmark-dialogs";
 import { showBookmarksPanel } from "./bookmark-sidebar";
+import { toggleShowWhitespace } from "./whitespace-toggle";
 import { goToNeighbourBookmark, toggleBookmark } from "../editor/bookmarks";
 
 type CommandItem = { labelPl: string; labelEn: string; shortcut?: string; run: () => void };
@@ -33,6 +34,7 @@ const commandItems: CommandItem[] = [
   { labelPl: "Zakładki: następna zakładka", labelEn: "Bookmarks: next bookmark", shortcut: "F2", run: () => goToNeighbourBookmark(1) },
   { labelPl: "Zakładki: poprzednia zakładka", labelEn: "Bookmarks: previous bookmark", shortcut: "Shift+F2", run: () => goToNeighbourBookmark(-1) },
   { labelPl: "Zakładki: pokaż panel zakładek", labelEn: "Bookmarks: show the bookmarks panel", run: () => showBookmarksPanel() },
+  { labelPl: "Pokaż / ukryj znaki białe (spacje, tabulatory, końce wierszy)", labelEn: "Show / hide white space (spaces, tabs, line ends)", run: () => toggleShowWhitespace() },
   { labelPl: "Pokaż / ukryj ukryte sekcje", labelEn: "Show / hide hidden sections", run: () => toggleShowHiddenSections() },
   { labelPl: "Drukuj / eksportuj PDF", labelEn: "Print / export PDF", run: () => void printDocument() },
   { labelPl: "Szukaj w dokumencie", labelEn: "Find in document", shortcut: "Ctrl+F", run: () => openSearchPanel(view) },

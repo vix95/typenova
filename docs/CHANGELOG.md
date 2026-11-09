@@ -2,6 +2,12 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.120] - 2026-11-09
+
+### Added
+
+- Show white space: a button with a pilcrow icon in the formatting toolbar (before Mermaid; it moves into the three-dot menu when the toolbar is narrow) and a command palette entry show spaces as dots, tabs as arrows and a paragraph mark at the end of every line. The setting is remembered between sessions and applies to all open documents; the marks follow the theme colours and are stronger in the high-contrast theme.
+
 ## [0.5.119] - 2026-11-09
 
 ### Added

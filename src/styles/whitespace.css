@@ -1,0 +1,7 @@
+/* White space in the editor (spaces, tabs, line ends): the toolbar button and the marks. Colours come from the theme tokens. */
+.cm-eol-mark { color: var(--ui-muted); opacity: 0.6; pointer-events: none; user-select: none; padding-left: 2px; }
+html[data-theme="contrast"] .cm-eol-mark { color: var(--ui-text); opacity: 1; }
+html[data-theme="contrast"] .cm-highlightSpace, html[data-theme="contrast"] .cm-highlightTab { opacity: 1; }
+/* The toggle shows that it is on also when the pointer is away: accent frame and the active background. */
+.formatbar button#toggleWhitespace[aria-pressed="true"], .toolbar-overflow-menu button#toggleWhitespace[aria-pressed="true"] { background: var(--ui-active); border-color: var(--ui-accent); color: var(--ui-text); }
+html[data-theme="contrast"] .formatbar button#toggleWhitespace[aria-pressed="true"] { border-width: 2px; }
