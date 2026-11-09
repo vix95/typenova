@@ -1,0 +1,103 @@
+/* Claude assistant: the chat pane at the right edge, the "Ask Claude" window and the settings fields. Colours come from the theme tokens; buttons are flat. */
+
+/* ---- Pane ---- */
+.ai-pane { display: flex; flex: 0 0 auto; flex-direction: column; min-width: 0; min-height: 0; background: var(--ui-panel); border-left: 1px solid var(--ui-border); color: var(--ui-text); }
+.ai-pane[hidden], .ai-splitter[hidden] { display: none !important; }
+body.focus-mode .ai-pane, body.focus-mode .ai-splitter, body.graph-mode .ai-pane, body.graph-mode .ai-splitter { display: none !important; }
+.ai-splitter { flex: 0 0 6px; cursor: col-resize; background: transparent; touch-action: none; user-select: none; }
+.ai-splitter:hover, .ai-splitter:focus-visible, body.resizing-panels .ai-splitter { background: color-mix(in srgb, var(--ui-accent) 45%, transparent); outline: none; }
+.ai-pane-head { display: flex; align-items: center; justify-content: space-between; flex: 0 0 44px; height: 44px; padding: 0 10px 0 16px; border-bottom: 1px solid var(--ui-border); }
+.ai-pane-title { margin: 0; font-size: 13px; font-weight: 650; }
+.ai-pane-actions { display: flex; gap: 2px; }
+.ai-icon-button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ui-muted); cursor: pointer; }
+.ai-icon-button .ui-icon, .ai-icon-button .button-icon { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.ai-icon-button:hover { color: var(--ui-text); border-color: var(--ui-border); background: var(--ui-hover); }
+.ai-icon-button:focus-visible, .ai-chip:focus-visible, .ai-flat-button:focus-visible, .ai-input:focus-visible, .ai-edit-instruction:focus-visible, .ai-messages:focus-visible { outline: 2px solid var(--ui-focus-ring, var(--ui-accent)); outline-offset: 1px; }
+
+.ai-setup { display: flex; flex-direction: column; gap: 10px; margin: 12px; padding: 12px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-panel2); }
+.ai-setup[hidden] { display: none; }
+.ai-setup-text { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ui-muted); }
+
+.ai-messages { display: flex; flex: 1 1 auto; flex-direction: column; gap: 10px; min-height: 0; padding: 12px; overflow-y: auto; overscroll-behavior: contain; }
+.ai-empty { margin: 0; padding: 8px 4px; font-size: 12px; line-height: 1.6; color: var(--ui-muted); }
+.ai-message { max-width: 100%; padding: 9px 11px; border: 1px solid var(--ui-border); border-radius: 8px; font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.ai-user { align-self: flex-end; max-width: 92%; background: color-mix(in srgb, var(--ui-accent) 16%, transparent); border-color: color-mix(in srgb, var(--ui-accent) 40%, var(--ui-border)); }
+.ai-assistant { align-self: stretch; background: var(--ui-panel2); }
+.ai-error { align-self: stretch; border-color: var(--ui-danger); color: var(--ui-text); background: color-mix(in srgb, var(--ui-danger) 12%, transparent); }
+.ai-text { margin: 0; white-space: pre-wrap; }
+.ai-text + .ai-text, .ai-text + .ai-code, .ai-code + .ai-text, .ai-code + .ai-code { margin-top: 8px; }
+.ai-thinking { color: var(--ui-muted); }
+.ai-code { border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-input-bg, transparent); overflow: hidden; }
+.ai-code-bar { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 2px 10px; border-bottom: 1px solid var(--ui-border); }
+.ai-code-language { font-size: 11px; color: var(--ui-muted); }
+.ai-code-actions { display: flex; gap: 2px; }
+.ai-code-text { margin: 0; padding: 8px 10px; max-height: 320px; overflow: auto; font: 12px/1.5 var(--ui-mono, ui-monospace, Consolas, monospace); white-space: pre; }
+
+.ai-form { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; border-top: 1px solid var(--ui-border); }
+.ai-context-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ai-context-label { font-size: 12px; color: var(--ui-muted); }
+.ai-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid var(--ui-border); border-radius: 999px; background: transparent; color: var(--ui-muted); font-size: 12px; cursor: pointer; }
+.ai-chip .ui-icon { flex: none; width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ai-chip:hover { color: var(--ui-text); background: var(--ui-hover); }
+.ai-chip.selected, .ai-chip[aria-pressed="true"] { color: var(--ui-text); border-color: var(--ui-accent); background: var(--ui-active); }
+.ai-input, .ai-edit-instruction { box-sizing: border-box; width: 100%; padding: 8px 10px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-input-bg, transparent); color: var(--ui-text); font: 13px/1.5 inherit; resize: vertical; min-height: 64px; max-height: 40vh; }
+.ai-input::placeholder, .ai-edit-instruction::placeholder { color: var(--ui-muted); opacity: 1; }
+.ai-form-row { display: flex; align-items: center; gap: 8px; }
+.ai-model-name { margin-right: auto; font-size: 11px; color: var(--ui-muted); }
+
+/* Flat buttons: a solid colour, no gradient, shadow or movement. */
+.ai-flat-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; min-width: 0; padding: 0 14px; border: 1px solid var(--ui-border); border-radius: 8px; background: transparent; color: var(--ui-text); font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; box-shadow: none; transform: none; }
+.ai-flat-button[hidden] { display: none; }
+.ai-flat-button .ui-icon, .ai-flat-button .button-icon { flex: none; width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.ai-flat-button span { display: block; line-height: 1; }
+.ai-flat-button:hover { background: var(--ui-hover); border-color: var(--ui-hover-border, var(--ui-border)); }
+.ai-flat-button.primary-flat { background: var(--ui-accent); border-color: var(--ui-accent); color: var(--ui-accent-contrast, #fff); }
+.ai-flat-button.primary-flat:hover { background: color-mix(in srgb, var(--ui-accent) 85%, #fff); border-color: color-mix(in srgb, var(--ui-accent) 85%, #fff); }
+.ai-flat-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- "Ask Claude" window ---- */
+dialog.ai-edit-dialog { width: min(720px, calc(100vw - 32px)); }
+.ai-edit-content { gap: 12px; }
+.ai-edit-info, .ai-edit-status { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ui-muted); }
+.ai-edit-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ai-edit-chips:empty { display: none; }
+.ai-edit-result { max-height: 46vh; overflow: auto; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-input-bg, transparent); font: 12px/1.55 var(--ui-mono, ui-monospace, Consolas, monospace); }
+.ai-edit-result[hidden] { display: none; }
+.ai-diff-line { display: flex; gap: 8px; padding: 0 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-diff-mark { flex: none; width: 1ch; color: var(--ui-muted); user-select: none; }
+.ai-diff-add { background: color-mix(in srgb, #2ea043 22%, transparent); }
+.ai-diff-del { background: color-mix(in srgb, var(--ui-danger) 20%, transparent); }
+.ai-diff-del .ai-diff-text { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--ui-danger) 70%, transparent); }
+html[data-theme="contrast"] .ai-diff-add { background: transparent; border-left: 3px solid #2ea043; }
+html[data-theme="contrast"] .ai-diff-del { background: transparent; border-left: 3px solid var(--ui-danger); }
+.ai-edit-actions { align-items: center; }
+.ai-edit-gap { flex: 1; }
+
+/* ---- Settings fields ---- */
+.settings-secret-row { display: flex; align-items: center; gap: 6px; }
+.settings-secret-row input { flex: 1; min-width: 0; }
+.settings-icon-button { display: grid; place-items: center; flex: none; width: 36px; height: 36px; padding: 0; border: 1px solid var(--ui-border); border-radius: 8px; background: transparent; color: var(--ui-muted); cursor: pointer; }
+.settings-icon-button .button-icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.settings-icon-button:hover { color: var(--ui-text); background: var(--ui-hover); }
+.settings-icon-button[aria-pressed="true"] { color: var(--ui-text); border-color: var(--ui-accent); background: var(--ui-active); }
+.settings-icon-button:focus-visible { outline: 2px solid var(--ui-focus-ring, var(--ui-accent)); outline-offset: 1px; }
+
+/* ---- Model chooser ---- */
+.ai-model-field { margin-right: auto; min-width: 0; flex: 1 1 auto; }
+.ai-model-field .tn-select { width: 100%; max-width: 200px; }
+.ai-edit-model { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ui-muted); }
+.ai-edit-model .tn-select { flex: 0 1 240px; }
+
+/* ---- "Claude options" window ---- */
+dialog.ai-options-dialog { width: min(520px, calc(100vw - 32px)); }
+.ai-options-content { gap: 16px; }
+.ai-options-lead, .ai-options-help { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ui-muted); }
+.ai-options-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.ai-options-field > label { font-size: 12px; font-weight: 650; color: var(--ui-text); }
+.ai-options-open { align-self: flex-start; }
+.ai-options-content .dialog-actions { margin-top: 4px; }
+
+/* The browser adds its own "show password" eye inside password fields; the field has its own button next to it. */
+/* The key field is a plain text field whose characters are masked (a password-type field behaves differently in some webviews). */
+.ai-secret:not(.revealed) { -webkit-text-security: disc; text-security: disc; }
+#aiApiKeyInput::-ms-reveal, #aiApiKeyInput::-ms-clear { display: none; }

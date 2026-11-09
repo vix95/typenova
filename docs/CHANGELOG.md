@@ -2,6 +2,18 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.121] - 2026-11-09
+
+### Added
+
+- Claude assistant, using your own Anthropic API key. The key (masked unless revealed, with a button that pastes it from the clipboard; Ctrl+V also falls back to reading the clipboard when the webview does not deliver the paste) and the model are set in a separate window, "Claude options", opened from Settings ("Claude assistant" section), from the chat pane or from the "Ask Claude" window. The model (Claude Opus 5.5 by default, also Sonnet 5.5, Haiku 5.5 and Fable 5.1) can also be changed directly in the chat pane and in the "Ask Claude" window. Requests go from the program straight to `api.anthropic.com` through the official SDK (`@anthropic-ai/sdk`) and are billed to your account.
+- A chat pane at the right edge of the window (the "Claude" button in the top bar, which looks like Preview when active, `Ctrl+Shift+M`, or the command palette) with its own splitter. The open document and the selection are sent as context ("Send to Claude" buttons with check marks switch each off; the selection button shows the number of selected characters and follows the selection), answers stream in as they are written, can be stopped, and code in an answer has buttons to copy it, insert it at the caret or replace the selection.
+- "Ask Claude" for the selection (`Ctrl+Shift+A`, the editor's context menu, the command palette): type an instruction or pick a ready-made one (fix mistakes, shorten, expand, simplify, translate), see the proposal as a line-by-line comparison and press Apply; one Undo reverts it. With nothing selected the result is inserted at the caret. Nothing in the document changes before you apply it.
+
+### Security
+
+- The Content Security Policy of the window now also allows connections to `https://api.anthropic.com`, and nothing else on the network. The API key is kept in the program's local data on this computer (not encrypted) and is sent only to that address; conversations are not stored.
+
 ## [0.5.120] - 2026-11-09
 
 ### Added

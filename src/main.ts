@@ -63,6 +63,8 @@ import { restoreOpenSessionAtStartup, offerRecovery } from "./documents/recovery
 import { initBookmarkMenu } from "./app/bookmark-menu";
 import { initBookmarkSidebar } from "./app/bookmark-sidebar";
 import { initWhitespaceToggle } from "./app/whitespace-toggle";
+import { initAiSettingsBindings } from "./app/ai-settings-bindings";
+import { initChatPanel } from "./ai/chat-panel";
 import { initBookmarks } from "./editor/bookmarks";
 
 // Boot sequence. The order below is the original top-level execution order of the
@@ -128,6 +130,8 @@ initEditMenuBindings();
 initBookmarkMenu();
 initBookmarkSidebar();
 initWhitespaceToggle();
+initAiSettingsBindings();
+initChatPanel();
 initProjectRestore();
 initSaveFindBindings();
 

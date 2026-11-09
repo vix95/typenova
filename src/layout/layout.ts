@@ -9,6 +9,8 @@ if (localStorage.getItem("typenova.layoutVersion") !== "2") {
   localStorage.setItem("typenova.layoutVersion", "2");
 }
 export const layoutState = {
+  /** Width taken from the right edge by the Claude chat pane (and its splitter); the three panes share the rest. */
+  reservedRight: 0,
   savedWidthRatios: { unit: "ratio", outline: .20, editor: .49, preview: .31 } as { unit?: string; outline: number; editor: number; preview: number } | null,
 };
 const storedWidths = readPreferenceJson("typenova.widths", isRecord, {});
@@ -31,7 +33,7 @@ if (storedWidths.unit === "ratio"
 }
 export function applyWidths() {
   const layout = $("layout") as HTMLElement;
-  const width = layout.getBoundingClientRect().width || window.innerWidth;
+  const width = (layout.getBoundingClientRect().width || window.innerWidth) - layoutState.reservedRight;
   const usable = Math.max(1, width - 10);
   if (layoutState.savedWidthRatios) {
     preferences.outline = Math.round(usable * layoutState.savedWidthRatios.outline);
@@ -52,7 +54,7 @@ export function applyWidths() {
   layout.style.setProperty("--preview-width", `${preferences.preview}px`);
 }
 export function saveWidths() {
-  const width = Math.max(1, ($("layout") as HTMLElement).getBoundingClientRect().width - 10);
+  const width = Math.max(1, ($("layout") as HTMLElement).getBoundingClientRect().width - layoutState.reservedRight - 10);
   localStorage.setItem("typenova.widths", JSON.stringify({ unit: "ratio", outline: preferences.outline / width, editor: preferences.editor / width, preview: preferences.preview / width }));
   layoutState.savedWidthRatios = { unit: "ratio", outline: preferences.outline / width, editor: preferences.editor / width, preview: preferences.preview / width };
 }

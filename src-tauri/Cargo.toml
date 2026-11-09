@@ -1,6 +1,6 @@
 [package]
 name = "typenova"
-version = "0.5.120"
+version = "0.5.121"
 description = "A fast, private Markdown workspace for writing, thinking and building knowledge."
 authors = ["itvix.pl"]
 edition = "2021"

@@ -29,6 +29,7 @@
 <div class="top-actions">
 <button id="saveButton" class="top-action" type="button" title="Save (Ctrl+S)"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h13l3 3v15H4z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg><span data-pl="Zapisz" data-en="Save">Save</span><kbd>Ctrl+S</kbd></button>
 <button id="togglePreview" class="top-action" type="button" title="Show or hide preview" aria-pressed="true"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span data-pl="Podgląd" data-en="Preview">Preview</span></button>
+<button id="toggleAi" class="top-action" type="button" aria-pressed="false" data-tooltip="Pokaż czat z Claude (Ctrl+Shift+M)" aria-label="Pokaż lub ukryj czat z Claude"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3l1.9 5.6L18.5 10.5 12.9 12.4 11 18l-1.9-5.6L3.5 10.5l5.6-1.9z"/><path d="M19 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg><span>Claude</span></button>
 <button id="toggleOutline" class="top-action" type="button" title="Show or hide table of contents"><svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h12M9 12h12M9 19h12"/><circle cx="4" cy="5" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="19" r="1"/></svg><span data-pl="Spis treści" data-en="Table of contents">Table of contents</span></button>
 
 </div>
@@ -78,6 +79,33 @@
   <div class="preview-toolbar"><div class="preview-toolbar-label" data-pl="Podgląd" data-en="Preview">Podgląd</div><div class="preview-tools"><span id="renderState" class="sr-only" role="status" aria-live="polite">Preview ready</span><button id="previewFullscreenButton" type="button" title="Toggle preview fullscreen" aria-label="Toggle preview fullscreen"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg></button><button id="refreshPreviewButton" type="button" title="Refresh preview" aria-label="Refresh preview"><svg class="toolbar-icon refresh-preview-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 1-2.34-5.66L20 8"/><path d="M20 3v5h-5"/></svg></button><button id="previewMoreButton" type="button" title="More preview actions" aria-label="More preview actions"><svg class="toolbar-icon more-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></button><div id="previewQuickMenu" class="preview-quick-menu" hidden><button id="previewExportButton" type="button">Export HTML…</button><button id="previewPrintButton" type="button">Print / PDF…</button><button id="previewHistoryButton" type="button">Version history…</button></div></div></div>
   <article id="preview" class="markdown-body"></article>
 </section>
+<div id="aiSplitter" class="ai-splitter" role="separator" aria-orientation="vertical" tabindex="0" hidden></div>
+<aside id="aiPane" class="ai-pane" aria-labelledby="aiPaneTitle" hidden>
+  <header class="ai-pane-head">
+    <h2 id="aiPaneTitle" class="ai-pane-title">Claude</h2>
+    <div class="ai-pane-actions">
+      <button id="aiNewChat" type="button" class="ai-icon-button" data-tooltip="Nowa rozmowa" aria-label="Nowa rozmowa"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button id="aiPaneClose" type="button" class="ai-icon-button" data-tooltip="Zamknij czat" aria-label="Zamknij czat"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    </div>
+  </header>
+  <div id="aiSetup" class="ai-setup" hidden>
+    <p id="aiSetupText" class="ai-setup-text"></p>
+    <button id="aiOpenSettings" type="button" class="ai-flat-button"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="3.5"/><path d="m10.5 12.5 9-9M16 7l2.5 2.5M13.5 9.5 15.5 11.5"/></svg><span></span></button>
+  </div>
+  <div id="aiMessages" class="ai-messages" role="log" aria-live="polite" tabindex="0"></div>
+  <form id="aiForm" class="ai-form" autocomplete="off">
+    <div id="aiContextRow" class="ai-context-row" role="group" aria-label="Wyślij do Claude"><span id="aiContextLabel" class="ai-context-label"></span>
+      <button id="aiUseDocument" type="button" class="ai-chip selected" aria-pressed="true"></button>
+      <button id="aiUseSelection" type="button" class="ai-chip selected" aria-pressed="true"></button>
+    </div>
+    <textarea id="aiInput" class="ai-input" rows="3" spellcheck="true"></textarea>
+    <div class="ai-form-row">
+      <div class="ai-model-field"><select id="aiModelQuick" class="ai-model-select"></select></div>
+      <button id="aiSend" type="submit" class="ai-flat-button primary-flat"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg><span></span></button>
+      <button id="aiStop" type="button" class="ai-flat-button" hidden><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg><span></span></button>
+    </div>
+  </form>
+</aside>
 </main>
 <section id="brainView" class="brain-view graph-workspace" role="region" aria-label="Section graph workspace" hidden>
   <header class="brain-workspace-header">
@@ -278,6 +306,15 @@
           </label>
         </div>
       </section>
+      <section class="settings-section" aria-labelledby="settingsAiHeading">
+        <div class="settings-section-heading">
+          <h2 id="settingsAiHeading" data-pl="Asystent Claude" data-en="Claude assistant">Asystent Claude</h2>
+          <p data-pl="Czat z Claude i poprawianie zaznaczonego tekstu bez wychodzenia z TypeNova. Wymaga własnego klucza API Anthropic." data-en="Chat with Claude and rewrite selected text without leaving TypeNova. Needs your own Anthropic API key.">Czat z Claude i poprawianie zaznaczonego tekstu bez wychodzenia z TypeNova. Wymaga własnego klucza API Anthropic.</p>
+        </div>
+        <div class="settings-field">
+          <button id="aiOpenOptions" type="button" class="ai-flat-button ai-options-open"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3l1.9 5.6L18.5 10.5 12.9 12.4 11 18l-1.9-5.6L3.5 10.5l5.6-1.9z"/><path d="M19 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg><span data-pl="Opcje Claude…" data-en="Claude options…">Opcje Claude…</span></button>
+        </div>
+      </section>
       <section class="settings-section settings-layout-section" aria-labelledby="settingsLayoutHeading">
         <div class="settings-reset-copy">
           <h2 id="settingsLayoutHeading" data-pl="Układ paneli" data-en="Panel layout">Układ paneli</h2>
@@ -290,6 +327,30 @@
       <span class="settings-footer-note" data-pl="Zmiany są stosowane od razu." data-en="Changes are applied immediately.">Zmiany są stosowane od razu.</span>
       <button id="settingsClose" class="primary" type="button" data-pl="Gotowe" data-en="Done">Gotowe</button>
     </footer>
+  </div>
+</dialog>
+<dialog id="aiOptionsDialog" class="ai-options-dialog" aria-labelledby="aiOptionsTitle">
+  <div class="dialog-content ai-options-content">
+    <div id="aiOptionsTitle" class="dialog-title" data-pl="Opcje Claude" data-en="Claude options">Opcje Claude</div>
+    <p class="ai-options-lead" data-pl="Połączenie z API Anthropic dla czatu i poprawiania tekstu. Zmiany są stosowane od razu." data-en="The connection to the Anthropic API for the chat and for rewriting text. Changes are applied immediately.">Połączenie z API Anthropic dla czatu i poprawiania tekstu. Zmiany są stosowane od razu.</p>
+    <div class="ai-options-field">
+      <label for="aiApiKeyInput" data-pl="Klucz API Anthropic" data-en="Anthropic API key">Klucz API Anthropic</label>
+      <div class="settings-secret-row">
+        <input id="aiApiKeyInput" class="ai-secret" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="sk-ant-…">
+        <button id="aiApiKeyPaste" type="button" class="settings-icon-button"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9.5 5V3.5h5V5M9.5 11h5M9.5 15h5"/></svg></button>
+        <button id="aiApiKeyReveal" type="button" class="settings-icon-button" aria-pressed="false"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button id="aiApiKeyClear" type="button" class="settings-icon-button"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l.9 12.5h9.2L17.5 7M10 11v5.5M14 11v5.5"/></svg></button>
+      </div>
+      <p class="ai-options-help" data-pl="Klucz jest zapisany tylko na tym komputerze, w danych programu (nieszyfrowany), i wysyłany wyłącznie do api.anthropic.com. Zapytania są płatne według zużycia na Twoim koncie Anthropic." data-en="The key is stored only on this computer, in the program's data (not encrypted), and sent only to api.anthropic.com. Requests are billed by usage to your Anthropic account.">Klucz jest zapisany tylko na tym komputerze, w danych programu (nieszyfrowany), i wysyłany wyłącznie do api.anthropic.com. Zapytania są płatne według zużycia na Twoim koncie Anthropic.</p>
+    </div>
+    <div class="ai-options-field">
+      <label for="aiModelSelect" data-pl="Model" data-en="Model">Model</label>
+      <select id="aiModelSelect"></select>
+      <p class="ai-options-help" data-pl="Model możesz też zmienić w czacie i w oknie „Zapytaj Claude”. Opus 5.5 jest najdokładniejszy, Haiku 5.5 najtańszy i najszybszy." data-en="You can also change the model in the chat and in the “Ask Claude” window. Opus 5.5 is the most capable, Haiku 5.5 the cheapest and fastest.">Model możesz też zmienić w czacie i w oknie „Zapytaj Claude”. Opus 5.5 jest najdokładniejszy, Haiku 5.5 najtańszy i najszybszy.</p>
+    </div>
+    <div class="dialog-actions">
+      <button id="aiOptionsClose" type="button" class="ai-flat-button primary-flat"><svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><span data-pl="Gotowe" data-en="Done">Gotowe</span></button>
+    </div>
   </div>
 </dialog>
 <dialog id="historyDialog"><div class="dialog-content help-content"><div class="dialog-title">Historia wersji lokalnych</div><p>TypeNova przechowuje do 20 poprzednich wersji przy zapisie zmian. Wersje są lokalne dla tego profilu aplikacji.</p><div id="historyList" class="history-list"></div><div class="dialog-actions"><button id="historyClose">Zamknij</button></div></div></dialog>
@@ -320,4 +381,4 @@ flowchart TD
 <dialog id="aboutDialog"><div class="dialog-content help-content about-content"><div class="about-brand"><img src="/typenova-128.png" alt="TypeNova"><div><div class="dialog-title">TypeNova</div><span data-pl="Środowisko Markdown" data-en="Markdown workspace">Środowisko Markdown</span></div></div><p data-pl="Szybkie, prywatne środowisko do pisania, porządkowania myśli i budowania bazy wiedzy." data-en="A fast, private workspace for writing, thinking and building knowledge.">Szybkie, prywatne środowisko do pisania, porządkowania myśli i budowania bazy wiedzy.</p><dl><dt data-pl="Autor" data-en="Author">Autor</dt><dd>Paweł Labuda</dd><dt data-pl="Strona internetowa" data-en="Website">Strona internetowa</dt><dd><a href="https://itvix.pl/" target="_blank" rel="noreferrer">itvix.pl <svg class="external-link-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg></a></dd><dt data-pl="Licencja" data-en="License">Licencja</dt><dd><a href="https://opensource.org/license/mit" target="_blank" rel="noreferrer" data-pl="MIT · oprogramowanie open source" data-en="MIT · open source software">MIT · open source software</a></dd><dt data-pl="Repozytorium" data-en="Repository">Repozytorium</dt><dd><a id="githubRepositoryLink" href="https://github.com/" target="_blank" rel="noreferrer" title="Uzupełnij adres repozytorium projektu" data-pl="GitHub (adres repozytorium do uzupełnienia)" data-en="GitHub (repository URL to be added)">GitHub (adres repozytorium do uzupełnienia)</a></dd><dt data-pl="Wersja" data-en="Version">Wersja</dt><dd id="appVersion">0.5.86</dd></dl><div class="dialog-actions"><button id="aboutClose" class="primary">Zamknij</button></div></div></dialog>
 <dialog id="appPromptDialog" class="app-prompt-dialog"><form method="dialog" class="dialog-content app-prompt-content"><div id="appPromptTitle" class="dialog-title">TypeNova</div><p id="appPromptMessage" class="app-prompt-message"></p><div class="dialog-actions"><button id="appPromptCancel" type="submit" value="cancel">Anuluj</button><button id="appPromptConfirm" type="submit" value="confirm" class="primary">Potwierdź</button></div></form></dialog>
 <dialog id="newProjectFileDialog" class="new-project-file-dialog"><form id="newProjectFileForm" class="dialog-content new-project-file-content"><div class="dialog-title" data-pl="Nowy plik" data-en="New file">Nowy plik</div><p id="newProjectFileLocation" class="new-project-file-location"></p><label for="newProjectFileName" data-pl="Nazwa pliku" data-en="File name">Nazwa pliku</label><input id="newProjectFileName" name="filename" type="text" value="Untitled.md" maxlength="255" autocomplete="off" autocapitalize="off" spellcheck="false" required aria-describedby="newProjectFileError"><p id="newProjectFileError" class="new-project-file-error" role="alert" hidden></p><div class="dialog-actions"><button id="newProjectFileCancel" type="button" data-pl="Anuluj" data-en="Cancel">Anuluj</button><button id="newProjectFileCreate" type="submit" value="create" class="primary" data-pl="Utwórz" data-en="Create">Utwórz</button></div></form></dialog>
-<div id="editorTabContextMenu" class="context-menu editor-tab-context-menu" role="menu" hidden><button type="button" role="menuitem" data-tab-action="close" data-pl="Zamknij kartę" data-en="Close tab">Zamknij kartę</button><button type="button" role="menuitem" data-tab-action="close-others" data-pl="Zamknij pozostałe karty" data-en="Close other tabs">Zamknij pozostałe karty</button><hr><button type="button" role="menuitem" data-tab-action="close-all" data-pl="Zamknij wszystkie karty" data-en="Close all tabs">Zamknij wszystkie karty</button></div><div id="editorContextMenu" class="context-menu" role="menu" hidden><button data-context="bold">Pogrubienie <kbd>Ctrl+B</kbd></button><button data-context="italic">Kursywa <kbd>Ctrl+I</kbd></button><button data-context="strike">Przekreślenie <kbd>Ctrl+Shift+X</kbd></button><hr><button data-context="h1">Nagłówek H1</button><button data-context="h2">Nagłówek H2</button><button data-context="h3">Nagłówek H3</button><button data-context="h4">Nagłówek H4</button><button data-context="h5">Nagłówek H5</button><button data-context="h6">Nagłówek H6</button><hr><button data-context="code">Kod inline</button><button data-context="fence">Blok kodu</button><button data-context="link">Wstaw link</button><button data-context="quote">Cytat</button><button data-context="list">Lista</button><hr><button data-context="bookmark" data-tooltip="Dodaj lub usuń zakładkę (Ctrl+F2)">Dodaj lub usuń zakładkę <kbd>Ctrl+F2</kbd></button><button data-context="bookmarkNote" data-tooltip="Zakładka: nazwa i notatka…">Zakładka: nazwa i notatka…</button><hr><button data-context="copy">Kopiuj <kbd>Ctrl+C</kbd></button><button data-context="cut">Wytnij <kbd>Ctrl+X</kbd></button><button data-context="paste">Wklej <kbd>Ctrl+V</kbd></button><button data-context="selectAll">Zaznacz wszystko <kbd>Ctrl+A</kbd></button></div><script type="module" src="/src/main.ts"></script></body></html>
+<div id="editorTabContextMenu" class="context-menu editor-tab-context-menu" role="menu" hidden><button type="button" role="menuitem" data-tab-action="close" data-pl="Zamknij kartę" data-en="Close tab">Zamknij kartę</button><button type="button" role="menuitem" data-tab-action="close-others" data-pl="Zamknij pozostałe karty" data-en="Close other tabs">Zamknij pozostałe karty</button><hr><button type="button" role="menuitem" data-tab-action="close-all" data-pl="Zamknij wszystkie karty" data-en="Close all tabs">Zamknij wszystkie karty</button></div><div id="editorContextMenu" class="context-menu" role="menu" hidden><button data-context="bold">Pogrubienie <kbd>Ctrl+B</kbd></button><button data-context="italic">Kursywa <kbd>Ctrl+I</kbd></button><button data-context="strike">Przekreślenie <kbd>Ctrl+Shift+X</kbd></button><hr><button data-context="h1">Nagłówek H1</button><button data-context="h2">Nagłówek H2</button><button data-context="h3">Nagłówek H3</button><button data-context="h4">Nagłówek H4</button><button data-context="h5">Nagłówek H5</button><button data-context="h6">Nagłówek H6</button><hr><button data-context="code">Kod inline</button><button data-context="fence">Blok kodu</button><button data-context="link">Wstaw link</button><button data-context="quote">Cytat</button><button data-context="list">Lista</button><hr><button data-context="bookmark" data-tooltip="Dodaj lub usuń zakładkę (Ctrl+F2)">Dodaj lub usuń zakładkę <kbd>Ctrl+F2</kbd></button><button data-context="bookmarkNote" data-tooltip="Zakładka: nazwa i notatka…">Zakładka: nazwa i notatka…</button><button data-context="askClaude" data-tooltip="Zapytaj Claude… (Ctrl+Shift+A)">Zapytaj Claude…</button><hr><button data-context="copy">Kopiuj <kbd>Ctrl+C</kbd></button><button data-context="cut">Wytnij <kbd>Ctrl+X</kbd></button><button data-context="paste">Wklej <kbd>Ctrl+V</kbd></button><button data-context="selectAll">Zaznacz wszystko <kbd>Ctrl+A</kbd></button></div><script type="module" src="/src/main.ts"></script></body></html>
