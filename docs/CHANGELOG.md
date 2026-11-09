@@ -2,6 +2,16 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.126] - 2026-11-10
+
+### Fixed
+
+- In a narrow sidebar the Graph tab was centred in a row of its own while Files and Table of contents were left-aligned. All three tabs now sit in their own rows, left-aligned and the same width.
+
+### Changed
+
+- The README describes the editor groups, the Mermaid and formula editors, bookmarks, highlights and the AI assistant (providers, encrypted keys, the list of what is sent), and its screenshots were retaken on the demo vault, including the new ones.
+
 ## [0.5.125] - 2026-11-10
 
 ### Added
