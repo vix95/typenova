@@ -1,4 +1,4 @@
-/** "Ask Claude" for the selected text: an instruction, a streamed proposal shown as a comparison, and an Apply button. Nothing changes before the user applies it. */
+/** "Ask" the assistant about the selected text: an instruction, a streamed proposal shown as a comparison, and an Apply button. Nothing changes before the user applies it. */
 import { button, el } from "../editor/bookmark-browser";
 import { view } from "../editor/editor-view";
 import { documentState } from "../documents/document-state";
@@ -6,8 +6,9 @@ import { basename } from "../filesystem/path-utils";
 import { langText } from "../i18n/language";
 import { showToast } from "../ui/toast";
 import { buildEditRequest, EDIT_SYSTEM, extractReplacement, hasChanges, lineDiff, type DiffLine } from "./ai-model";
-import { askClaude, describeAiError, isAiCancelled, refusalMessage } from "./ai-client";
-import { hasApiKey } from "./ai-settings";
+import { askAi, describeAiError, isAiCancelled, refusalMessage } from "./ai-client";
+import { isAiReady, providerReadiness, readProvider } from "./ai-settings";
+import { displayName, setupHint } from "./provider-texts";
 import { openAiOptions } from "./ai-options";
 import { bindModelSelect } from "./model-select";
 import { themeSelect } from "../ui/custom-select";
@@ -69,11 +70,12 @@ function quickChips(replacing: boolean, instruction: HTMLTextAreaElement): HTMLE
 
 /** Opens the window for the current selection (or the caret, to write something new there). */
 export function openAiEdit(): void {
-  if (!hasApiKey()) {
-    showToast(langText("Dodaj klucz API Anthropic w opcjach Claude, aby go używać.", "Add your Anthropic API key in the Claude options to use it."));
+  if (!isAiReady()) {
+    showToast(setupHint(readProvider(), providerReadiness(readProvider())));
     openAiOptions();
     return;
   }
+  const name = displayName(readProvider());
   const captured = captureTarget();
   if (!captured) return;
   const target: Target = captured;
@@ -81,7 +83,7 @@ export function openAiEdit(): void {
 
   const dialog = el("dialog", "ai-edit-dialog");
   const content = el("div", "dialog-content ai-edit-content");
-  const title = el("div", "dialog-title", langText("Zapytaj Claude", "Ask Claude")); title.id = "aiEditTitle";
+  const title = el("div", "dialog-title", langText(`Zapytaj ${name}`, `Ask ${name}`)); title.id = "aiEditTitle";
   dialog.setAttribute("aria-labelledby", title.id);
   const info = el("p", "ai-edit-info", replacing
     ? langText(`Zaznaczony tekst (${target.selection.length} znaków) zostanie zastąpiony po Twojej akceptacji.`, `The selected text (${target.selection.length} characters) is replaced only after you accept.`)
@@ -117,11 +119,11 @@ export function openAiEdit(): void {
     const wanted = instruction.value.trim();
     if (!wanted || controller) { if (!wanted) instruction.focus(); return; }
     controller = new AbortController();
-    proposal = null; apply.hidden = true; stop.hidden = false; generate.hidden = true; status.textContent = langText("Claude pisze…", "Claude is writing…");
+    proposal = null; apply.hidden = true; stop.hidden = false; generate.hidden = true; status.textContent = langText(`${name} pisze…`, `${name} is writing…`);
     const request = buildEditRequest({ instruction: wanted, selection: target.selection, before: target.before, after: target.after, documentName: documentState.currentPath ? basename(documentState.currentPath) : documentState.untitledLabel });
     let latest = "";
     try {
-      const answer = await askClaude({
+      const answer = await askAi({
         system: EDIT_SYSTEM, messages: [{ role: "user", content: request }], signal: controller.signal,
         onText: (_delta, full) => { latest = extractReplacement(full); show(latest); },
       });
@@ -129,7 +131,7 @@ export function openAiEdit(): void {
       latest = extractReplacement(answer.text);
       const diff = show(latest);
       if (answer.truncated) status.textContent = langText("Odpowiedź została przycięta (limit długości); sprawdź ją przed zastosowaniem.", "The answer was cut off (length limit); check it before applying.");
-      else status.textContent = hasChanges(diff) ? langText("Sprawdź zmiany i zastosuj je albo wygeneruj ponownie.", "Check the changes and apply them, or generate again.") : langText("Claude nie zaproponował zmian.", "Claude proposed no changes.");
+      else status.textContent = hasChanges(diff) ? langText("Sprawdź zmiany i zastosuj je albo wygeneruj ponownie.", "Check the changes and apply them, or generate again.") : langText(`${name} nie zaproponował zmian.`, `${name} proposed no changes.`);
       if (latest && hasChanges(diff)) { proposal = latest; apply.hidden = false; apply.focus(); }
     } catch (error) {
       if (isAiCancelled(error)) { status.textContent = langText("Zatrzymano.", "Stopped."); if (latest) { proposal = latest; apply.hidden = false; } }

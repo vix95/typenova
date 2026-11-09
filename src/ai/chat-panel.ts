@@ -1,4 +1,4 @@
-/** The Claude chat pane at the right edge of the window: a conversation about the open document, with its selection as context. */
+/** The chat pane at the right edge of the window (Claude or Ollama, whichever is on): a conversation about the open document, with its selection as context. */
 import { $ } from "../app/dom";
 import { documentState } from "../documents/document-state";
 import { button, el } from "../editor/bookmark-browser";
@@ -10,15 +10,17 @@ import { readPreferenceFlag, readPreferenceNumber, writePreferenceFlag } from ".
 import { ICONS } from "../ui/icons";
 import { showToast } from "../ui/toast";
 import { buildChatSystem, splitCodeBlocks, toApiMessages, type ChatTurn } from "./ai-model";
-import { askClaude, describeAiError, isAiCancelled, refusalMessage } from "./ai-client";
+import { displayName, setupHint } from "./provider-texts";
+import { askAi, describeAiError, isAiCancelled, refusalMessage } from "./ai-client";
+import { captureContext, renderContext } from "./chat-context";
 import { openAiOptions } from "./ai-options";
-import { hasApiKey } from "./ai-settings";
+import { isAiReady, providerReadiness, readProvider } from "./ai-settings";
 
 const OPEN_KEY = "typenova.ai.open";
 const WIDTH_KEY = "typenova.ai.width";
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 720;
-const SPLITTER_WIDTH = 6;
+const SPLITTER_WIDTH = 5;
 
 const turns: ChatTurn[] = [];
 let controller: AbortController | null = null;
@@ -32,6 +34,7 @@ const input = () => $("aiInput") as HTMLTextAreaElement;
 
 function documentName(): string { return documentState.currentPath ? basename(documentState.currentPath) : documentState.untitledLabel; }
 function selectedText(): string { const range = view.state.selection.main; return range.empty ? "" : view.state.sliceDoc(range.from, range.to); }
+const aiName = (): string => displayName(readProvider());
 
 /** The width of the pane, never more than the window can spare. */
 function paneWidth(): number {
@@ -123,17 +126,22 @@ function setBusy(busy: boolean): void {
 async function send(raw: string): Promise<void> {
   const text = raw.trim();
   if (!text || controller) return;
-  if (!hasApiKey()) { refreshSetup(); return; }
+  if (!isAiReady()) { refreshSetup(); return; }
+  // What is sent along is shown with the message, so that it is clear afterwards which document and passage the answer is about.
+  const context = captureContext(useDocument, useSelection);
   turns.push({ role: "user", text });
-  addBubble("user", text);
+  const userBubble = addBubble("user", text);
+  const sent = el("ul", "ai-context-list ai-context-sent");
+  renderContext(sent, context);
+  if (sent.childElementCount) userBubble.append(el("p", "ai-context-caption", langText(`Wysłano do ${aiName()} razem z wiadomością:`, `Sent to ${aiName()} with the message:`)), sent);
   const answerBubble = addBubble("assistant");
   input().value = "";
   controller = new AbortController();
   setBusy(true);
-  const system = buildChatSystem({ documentName: documentName(), documentText: useDocument ? view.state.doc.toString() : "", selection: useSelection ? selectedText() : "" });
+  const system = buildChatSystem({ documentName: documentName(), documentText: useDocument ? view.state.doc.toString() : "", selection: context.selection?.text ?? "" });
   let answer = "";
   try {
-    const result = await askClaude({
+    const result = await askAi({
       system, messages: toApiMessages(turns), signal: controller.signal,
       onText: (_delta, full) => { answer = full; renderAnswer(answerBubble, full); messages().scrollTop = messages().scrollHeight; },
     });
@@ -162,10 +170,10 @@ function newConversation(): void {
 }
 
 function refreshSetup(): void {
-  const missing = !hasApiKey();
+  const missing = !isAiReady();
   $("aiSetup").hidden = !missing;
-  $("aiSetupText").textContent = langText("Aby rozmawiać z Claude, dodaj swój klucz API Anthropic w opcjach Claude.", "To chat with Claude, add your Anthropic API key in the Claude options.");
-  $("aiOpenSettings").querySelector("span")!.textContent = langText("Opcje Claude…", "Claude options…");
+  $("aiSetupText").textContent = setupHint(readProvider(), providerReadiness(readProvider()));
+  $("aiOpenSettings").querySelector("span")!.textContent = langText("Opcje asystenta…", "Assistant options…");
   $("aiSend").toggleAttribute("disabled", missing);
 }
 
@@ -183,31 +191,44 @@ function labelChip(id: string, label: string, on: boolean): void {
   chip.append(el("span", "", label));
   chip.setAttribute("aria-pressed", String(on));
   chip.classList.toggle("selected", on);
-  chip.dataset.tooltip = on ? langText(`${label}: wysyłane do Claude. Kliknij, aby nie wysyłać.`, `${label}: sent to Claude. Click to stop sending it.`) : langText(`${label}: nie jest wysyłane. Kliknij, aby wysyłać.`, `${label}: not sent. Click to send it.`);
+  chip.dataset.tooltip = on ? langText(`${label}: wysyłane do ${aiName()}. Kliknij, aby nie wysyłać.`, `${label}: sent to ${aiName()}. Click to stop sending it.`) : langText(`${label}: nie jest wysyłane. Kliknij, aby wysyłać.`, `${label}: not sent. Click to send it.`);
 }
 
 /** All the texts of the pane in the interface language (called when it opens, when the language changes and when settings change). */
 function refreshLabels(): void {
-  $("aiPaneTitle").textContent = "Claude";
+  const name = aiName();
+  // The title and the top-bar button do not depend on the provider; the provider and model are shown in the chooser and in the texts.
+  const title = langText("Czat AI", "AI Chat");
+  $("aiPaneTitle").textContent = title;
+  $("toggleAi").querySelector("span")!.textContent = title;
   labelButton("aiNewChat", langText("Nowa rozmowa", "New conversation"));
   labelButton("aiPaneClose", langText("Zamknij czat", "Close the chat"));
-  labelButton("toggleAi", paneOpen ? langText("Ukryj czat z Claude (Ctrl+Shift+M)", "Hide the Claude chat (Ctrl+Shift+M)") : langText("Pokaż czat z Claude (Ctrl+Shift+M)", "Show the Claude chat (Ctrl+Shift+M)"));
+  labelButton("toggleAi", paneOpen ? langText("Ukryj czat AI (Ctrl+Shift+M)", "Hide the AI chat (Ctrl+Shift+M)") : langText("Pokaż czat AI (Ctrl+Shift+M)", "Show the AI chat (Ctrl+Shift+M)"));
   const selection = selectedText().length;
-  $("aiContextLabel").textContent = langText("Wyślij do Claude:", "Send to Claude:");
-  $("aiContextRow").setAttribute("aria-label", langText("Co wysłać do Claude", "What to send to Claude"));
+  $("aiContextLabel").textContent = langText(`Wyślij do ${name}:`, `Send to ${name}:`);
+  $("aiContextRow").setAttribute("aria-label", langText(`Co wysłać do ${name}`, `What to send to ${name}`));
+  $("aiContextList").setAttribute("aria-label", langText("Wysyłany kontekst", "Context that is sent"));
   labelChip("aiUseDocument", langText("Dokument", "Document"), useDocument);
   labelChip("aiUseSelection", selection ? langText(`Zaznaczenie (${selection})`, `Selection (${selection})`) : langText("Zaznaczenie", "Selection"), useSelection);
-  input().placeholder = langText("Napisz do Claude… (Enter wysyła, Shift+Enter nowy wiersz)", "Message Claude… (Enter sends, Shift+Enter for a new line)");
-  input().setAttribute("aria-label", langText("Wiadomość do Claude", "Message to Claude"));
+  input().placeholder = langText(`Napisz do ${name}… (Enter wysyła, Shift+Enter nowy wiersz)`, `Message ${name}… (Enter sends, Shift+Enter for a new line)`);
+  input().setAttribute("aria-label", langText(`Wiadomość do ${name}`, `Message to ${name}`));
   const sendLabel = langText("Wyślij", "Send");
   $("aiSend").querySelector("span")!.textContent = sendLabel; labelButton("aiSend", sendLabel);
   const stopLabel = langText("Zatrzymaj", "Stop");
   $("aiStop").querySelector("span")!.textContent = stopLabel; labelButton("aiStop", stopLabel);
-  const modelLabel = langText("Model Claude", "Claude model");
+  const modelLabel = langText(`Model ${name}`, `${name} model`);
   $("aiModelQuick").setAttribute("aria-label", modelLabel); $("aiModelQuick").dataset.tooltip = modelLabel;
-  $("aiPane").setAttribute("aria-label", langText("Czat z Claude", "Claude chat"));
+  $("aiPane").setAttribute("aria-label", langText(`Czat AI (${name})`, `AI chat (${name})`));
   if (!turns.length && !controller) showEmptyHint();
+  renderLiveContext();
   refreshSetup();
+}
+
+/** The list of what would be sent now (the document with its path, the selection with its section), above the message field. */
+function renderLiveContext(): void {
+  const list = $("aiContextList");
+  renderContext(list, captureContext(useDocument, useSelection));
+  list.hidden = list.childElementCount === 0;
 }
 
 let selectionRefreshQueued = false;
@@ -220,6 +241,7 @@ export function refreshSelectionContext(): void {
     if (!paneOpen) return;
     const count = selectedText().length;
     labelChip("aiUseSelection", count ? langText(`Zaznaczenie (${count})`, `Selection (${count})`) : langText("Zaznaczenie", "Selection"), useSelection);
+    renderLiveContext();
   });
 }
 

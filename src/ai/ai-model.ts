@@ -1,4 +1,4 @@
-/** Claude assistant: a pure model (no DOM, no network) for prompts, the text sent as context, the answer's shape and the preview of a change. */
+/** AI assistant: a pure model (no DOM, no network) for prompts, the text sent as context, the answer's shape and the preview of a change. */
 
 export interface AiModelInfo { id: string; label: string }
 
