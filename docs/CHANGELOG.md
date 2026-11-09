@@ -2,6 +2,25 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.124] - 2026-11-09
+
+### Added
+
+- The assistant works with more than one provider: Claude (Anthropic), OpenAI (GPT), Gemini (Google), Ollama (a model on your computer or in your network) and a "Custom API" for any service that speaks the OpenAI protocol (LM Studio, OpenRouter, a company gateway…). In "AI assistant options" you choose the provider on a card; exactly one is on, and only its settings are shown. Each card says what is still missing ("No key", "No address", "Choose a model") or "Ready". A provider has only the fields it needs: a key, an address, a model. The models of OpenAI, Gemini, Ollama and a custom service are asked for from the service itself, and a sensible one (for example `gpt-5`, `gemini-2.5-pro`) is chosen when you have not chosen yet.
+- "Check the connection" for every provider. It saves the key you typed, asks the service for its models and says in plain words whether it works or what is wrong (a rejected key, no credit left, the address cannot be reached, a missing path such as `/v1`), and whether the model you chose is on the list. The chat and the "Ask" window use the same words for their errors.
+- The chat lists what it sends along with a message: the open document with its full path and a button that opens it, and the selection with the section it lies in, its lines and a button that goes to it. The list is above the message field and is kept under every message sent, so it stays clear which document and passage an answer is about.
+
+### Changed
+
+- The assistant is named neutrally: the top-bar button, the pane title, the command palette and the context menu say "AI Chat" / "Ask AI" instead of a provider's name. Which provider is on still shows in the chat texts and the model chooser.
+- Each provider's API key is encrypted (AES-256-GCM) in the program's data folder, the same way on Windows and Linux, and the interface never receives it again: after you confirm with "Done" the key cannot be viewed, only its last characters are shown (with buttons to enter a new key or remove it). Keys are saved when the window is confirmed or closed, or when you press "Check the connection", not while they are typed. A Claude key kept in plain text by an earlier version is encrypted and removed from the settings the first time the program starts. If the files are copied to another computer or user a key cannot be read there and is asked for again.
+- The requests are made by the backend, which reads the key itself, instead of the webview, with one adapter per protocol (`src-tauri/src/ai/`). Claude and Gemini are always contacted at their own address, so their keys cannot be sent elsewhere; only OpenAI-compatible services and Ollama take an address from you. The Anthropic SDK dependency and the `connect-src` exception for `api.anthropic.com` in the Content Security Policy are gone.
+- The model, the address and the key are kept separately for each provider, so switching provider does not lose the others' settings.
+
+### Fixed
+
+- The dividing line next to the chat pane was not drawn. Its splitter now looks like the other splitters of the window.
+
 ## [0.5.123] - 2026-11-09
 
 ### Added
