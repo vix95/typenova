@@ -29,7 +29,7 @@ export function initPaneResize(): void {
     const drag = activeResize; if (!drag || event.pointerId !== drag.pointerId) return;
     event.preventDefault();
     const delta = event.clientX - drag.lastX; drag.lastX = event.clientX;
-    const layout = $("layout") as HTMLElement; const width = layout.getBoundingClientRect().width;
+    const layout = $("layout") as HTMLElement; const width = layout.getBoundingClientRect().width - layoutState.reservedRight;
     const visibleOutline = outlineState.outlineVisible, visiblePreview = previewState.previewVisible;
     const visibleSplitters = (visibleOutline ? 1 : 0) + (visiblePreview ? 1 : 0);
     const usable = Math.max(1, width - visibleSplitters * 5), minPane = usable >= 760 ? 260 : Math.max(120, Math.floor(usable / 3));

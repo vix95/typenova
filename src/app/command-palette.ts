@@ -16,6 +16,8 @@ import { toggleShowHiddenSections } from "../documents/section-visibility";
 import { editBookmarkAtCaret } from "../editor/bookmark-dialogs";
 import { showBookmarksPanel } from "./bookmark-sidebar";
 import { toggleShowWhitespace } from "./whitespace-toggle";
+import { openAiEdit } from "../ai/edit-dialog";
+import { toggleAiPane } from "../ai/chat-panel";
 import { goToNeighbourBookmark, toggleBookmark } from "../editor/bookmarks";
 
 type CommandItem = { labelPl: string; labelEn: string; shortcut?: string; run: () => void };
@@ -34,6 +36,8 @@ const commandItems: CommandItem[] = [
   { labelPl: "Zakładki: następna zakładka", labelEn: "Bookmarks: next bookmark", shortcut: "F2", run: () => goToNeighbourBookmark(1) },
   { labelPl: "Zakładki: poprzednia zakładka", labelEn: "Bookmarks: previous bookmark", shortcut: "Shift+F2", run: () => goToNeighbourBookmark(-1) },
   { labelPl: "Zakładki: pokaż panel zakładek", labelEn: "Bookmarks: show the bookmarks panel", run: () => showBookmarksPanel() },
+  { labelPl: "Claude: zapytaj o zaznaczenie lub wygeneruj tekst", labelEn: "Claude: ask about the selection or generate text", shortcut: "Ctrl+Shift+A", run: () => openAiEdit() },
+  { labelPl: "Claude: pokaż / ukryj czat", labelEn: "Claude: show / hide the chat", shortcut: "Ctrl+Shift+M", run: () => toggleAiPane() },
   { labelPl: "Pokaż / ukryj znaki białe (spacje, tabulatory, końce wierszy)", labelEn: "Show / hide white space (spaces, tabs, line ends)", run: () => toggleShowWhitespace() },
   { labelPl: "Pokaż / ukryj ukryte sekcje", labelEn: "Show / hide hidden sections", run: () => toggleShowHiddenSections() },
   { labelPl: "Drukuj / eksportuj PDF", labelEn: "Print / export PDF", run: () => void printDocument() },
