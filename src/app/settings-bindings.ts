@@ -2,6 +2,8 @@
 import { $ } from "./dom";
 import { documentState } from "../documents/document-state";
 import { autoSaveTimer, renderRecentFiles, scheduleAutoSave } from "../documents/file-actions";
+import { bookmarkFilesEnabled } from "../editor/bookmark-files";
+import { applyBookmarkFilesSetting } from "../editor/bookmarks";
 import { insertAtCursor } from "../editor/editing-commands";
 import { minimapState, scheduleMinimapDraw, updateMinimapLayout } from "../editor/minimap";
 import { scrollSyncIdleTimer, scrollSyncState, syncPreviewToEditor } from "../editor/scroll-sync";
@@ -39,6 +41,15 @@ export function initSettingsBindings(): void {
     $("statusText").textContent = enabled
       ? langText("Welcome.md pojawi się przy następnym uruchomieniu, jeśli nie będzie plików do przywrócenia.", "Welcome.md will appear on next launch if there are no files to restore.")
       : langText("Przy braku plików do przywrócenia otworzy się pusty Untitled.md.", "If there are no files to restore, a blank Untitled.md will open.");
+  });
+  const bookmarkFilesToggle = $<HTMLInputElement>("bookmarkFilesToggle");
+  bookmarkFilesToggle.checked = bookmarkFilesEnabled();
+  bookmarkFilesToggle.addEventListener("change", (event: Event) => {
+    const enabled = (event.target as HTMLInputElement).checked;
+    applyBookmarkFilesSetting(enabled);
+    $("statusText").textContent = enabled
+      ? langText("Zakładki będą zapisywane w pliku .bookmarks.json obok dokumentu Markdown.", "Bookmarks will be saved in a .bookmarks.json file next to the Markdown document.")
+      : langText("Zakładki zostają tylko w programie. Istniejące pliki .bookmarks.json nie są zmieniane.", "Bookmarks stay only in the program. Existing .bookmarks.json files are left unchanged.");
   });
   applyFontSize("editor", localStorage.getItem("typenova.editorFontSize") || "small", false);
   applyFontSize("preview", localStorage.getItem("typenova.previewFontSize") || "small", false);

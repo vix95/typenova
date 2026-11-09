@@ -60,6 +60,9 @@ import { applyWidths } from "./layout/layout";
 import { syncPreviewForActiveDocument, markStartupReady } from "./preview/preview-scheduler";
 import { $ } from "./app/dom";
 import { restoreOpenSessionAtStartup, offerRecovery } from "./documents/recovery";
+import { initBookmarkMenu } from "./app/bookmark-menu";
+import { initBookmarkSidebar } from "./app/bookmark-sidebar";
+import { initBookmarks } from "./editor/bookmarks";
 
 // Boot sequence. The order below is the original top-level execution order of the
 // pre-0.5.113 monolithic main.ts; event-listener registration order is behaviour.
@@ -96,6 +99,9 @@ window.setTimeout(() => {
   }
 }, 8000);
 
+// Bookmarks are loaded before any tab (or the restored session) is shown
+initBookmarks();
+
 // Document tabs
 initTabs();
 initTabInteractions();
@@ -118,6 +124,8 @@ initProjectBindings();
 initProjectTreeSync();
 initExternalDrop();
 initEditMenuBindings();
+initBookmarkMenu();
+initBookmarkSidebar();
 initProjectRestore();
 initSaveFindBindings();
 

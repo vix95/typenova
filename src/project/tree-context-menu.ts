@@ -23,6 +23,8 @@ import { isOpenProjectRoot, projectRootFor } from "./project-roots";
 import { refreshProjectTree } from "./project-tree-sync";
 import { appAlert, appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
+import { renameBookmarkPaths } from "../editor/bookmarks";
+import { bookmarkFilePath } from "../editor/bookmarks-model";
 
 export function treeContextMenuElement() {
   let menu = document.getElementById("treeContextMenu") as HTMLDivElement | null;
@@ -126,8 +128,13 @@ async function promptAndRenameProjectEntry(path: string, isDirectory: boolean): 
   if (!name || name === current) return;
   const oldConfig = `${path}.config.json`;
   const hadConfig = !isDirectory && await exists(oldConfig);
+  const oldBookmarkFile = bookmarkFilePath(path);
+  const hadBookmarkFile = !isDirectory && await exists(oldBookmarkFile);
   const renamed = await performTreeRename(path, name);
   if (hadConfig) { try { await rename(oldConfig, `${renamed}.config.json`); } catch { /* the sidecar stays under the old name */ } }
+  if (hadBookmarkFile) { try { await rename(oldBookmarkFile, bookmarkFilePath(renamed)); } catch { /* the bookmarks file stays under the old name */ } }
+  // After the files moved: the bookmarks follow the new path and read their file from its new place.
+  renameBookmarkPaths(path, renamed);
 }
 
 async function promptAndCreateProjectFolder(directoryPath: string): Promise<void> {

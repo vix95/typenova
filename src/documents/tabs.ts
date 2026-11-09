@@ -26,6 +26,7 @@ import { updateHeadingBreadcrumbs } from "../outline/breadcrumbs";
 import { outlineState } from "../outline/outline";
 import { clearPreviewCache, schedulePreview, syncPreviewForActiveDocument } from "../preview/preview-scheduler";
 import { appConfirm } from "../ui/dialogs";
+import { refreshBookmarkMarkers } from "../editor/bookmarks";
 
 let languageLoadSequence = 0;
 export function activeTab(): DocumentTab | undefined { return documentState.tabs.find(tab => tab.id === documentState.activeTabId); }
@@ -173,6 +174,7 @@ export function switchToTab(id: string) {
   documentState.dirty = target.dirty;
   updateHeadingBreadcrumbs();
   view.setState(target.state);
+  refreshBookmarkMarkers();
   restoreViewPosition(target.viewPosition);
   scheduleMinimapDraw();
   updateMinimapLayout();
@@ -268,6 +270,7 @@ export function adoptDocumentTab(doc: DetachedDocument, index?: number): void {
   const tab = createNewTab(doc.text, doc.label);
   tab.path = doc.path; tab.savedText = doc.savedText; tab.dirty = doc.dirty; tab.viewPosition = doc.position; tab.format = doc.format;
   documentState.currentPath = doc.path; documentState.savedText = doc.savedText; documentState.dirty = doc.dirty;
+  refreshBookmarkMarkers();
   // Dropped on the strip: open at the drop position instead of at the end.
   if (index !== undefined) documentState.tabs = moveItem(documentState.tabs, item => item.id === tab.id, index);
   updateDirtyUi(); renderTabs(); updateStats();

@@ -94,8 +94,8 @@ export function initDismissBindings(): void {
   document.addEventListener("click", (event) => { const target = event.target as HTMLElement; if (target.closest("#topbar .menubar .menu-direct")) { $("topbar").classList.remove("menu-open"); $("hamburgerButton").setAttribute("aria-expanded", "false"); } document.querySelectorAll("details.menu[open]").forEach((menu) => { if (!menu.contains(target)) menu.removeAttribute("open"); }); });
   document.querySelectorAll("dialog").forEach((dialog) => { dialog.addEventListener("click", (event) => { if (event.target === dialog) (dialog as HTMLDialogElement).close(); }); });
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && document.body.classList.contains("focus-mode")) { setFocusMode(false); } });
-  // Fallback tooltips for controls that do not declare a dedicated description.
-  document.querySelectorAll<HTMLButtonElement>("button").forEach(button => { if (!button.title) { const label = (button.getAttribute("aria-label") || button.textContent || "").trim().replace(/\s+/g, " "); if (label) button.title = label; } });
+  // Fallback tooltips for controls that do not declare a dedicated description (an explicit data-tooltip is never replaced: it is localized by its owner).
+  document.querySelectorAll<HTMLButtonElement>("button").forEach(button => { if (!button.title && !button.dataset.tooltip) { const label = (button.getAttribute("aria-label") || button.textContent || "").trim().replace(/\s+/g, " "); if (label) button.title = label; } });
 }
 
 /** Keys of the browser that the desktop application does not want: developer tools, reload, view source, zoom and so on. */

@@ -2,6 +2,22 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.119] - 2026-11-09
+
+### Added
+
+- Bookmarks: mark a place in a file and come back to it later. Click the column left of the line numbers or press `Ctrl+F2` to set or remove a bookmark on a line; `F2` and `Shift+F2` go to the next and previous bookmark, also across files. Bookmarks follow their text while the file is edited, find their line again by its text when the file changed while it was closed, and are kept between sessions.
+- Bookmarks have an optional name and an optional note. A bookmark without a name is called "Bookmark #1", "Bookmark #2", and so on (numbers are never reused).
+- A Bookmarks view in the left panel, next to the project tree, the table of contents and the graph, with search, go to, edit and delete. It is shown by the bookmark button in the row of project buttons (open folder, add, refresh, Git history) or by the "Bookmarks panel" command; a back button returns to the files.
+- A Bookmarks menu with the commands, entries in the editor's context menu and the command palette, and the shortcuts in the keyboard shortcut help.
+- Bookmarks file next to a Markdown document: the bookmarks of `notes.md` are also saved in `notes.md.bookmarks.json` in the same folder, in the same way the hidden sections of a document are kept in `notes.md.config.json`. The file holds the names, notes and places of the bookmarks but no folder path, so it can travel with the folder or be committed to a repository. It is read the first time a document is shown (what it says replaces the program's bookmarks of that document) and written whenever the bookmarks change; with no bookmarks left the file is removed. A file that is not a bookmarks file is never overwritten.
+- Setting "Bookmarks file next to a Markdown document" in the program settings. It is on by default; when it is off, bookmarks stay only in the program and existing files are left unchanged.
+- Renaming a file or folder in the project tree keeps its bookmarks, and renaming a Markdown file renames its bookmarks file along with it.
+
+### Fixed
+
+- The start-up fallback that gives buttons a tooltip from their label no longer replaces a tooltip that was set explicitly, so tooltips that are localized by their owner stay in the interface language.
+
 ## [0.5.118] - 2026-11-08
 
 Pull request [#2]. Also contains the work that was tracked internally as 0.5.116 and 0.5.117.

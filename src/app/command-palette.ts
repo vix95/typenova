@@ -13,6 +13,9 @@ import { applyTheme, setWrapping } from "../layout/appearance";
 import { toggleFocus } from "../layout/focus-mode";
 import { exportHtml, printDocument } from "../preview/export-print";
 import { toggleShowHiddenSections } from "../documents/section-visibility";
+import { editBookmarkAtCaret } from "../editor/bookmark-dialogs";
+import { showBookmarksPanel } from "./bookmark-sidebar";
+import { goToNeighbourBookmark, toggleBookmark } from "../editor/bookmarks";
 
 type CommandItem = { labelPl: string; labelEn: string; shortcut?: string; run: () => void };
 const commandItems: CommandItem[] = [
@@ -25,6 +28,11 @@ const commandItems: CommandItem[] = [
   { labelPl: "Formatuj dokument (JSON, YAML, XML, tabele)", labelEn: "Format document (JSON, YAML, XML, tables)", shortcut: "Shift+Alt+F", run: () => formatActiveDocument() },
   { labelPl: "Importuj dokument Word/HTML jako Markdown…", labelEn: "Import Word/HTML document as Markdown…", run: () => void import("../documents/import-document").then(module => module.importDocument()) },
   { labelPl: "Historia Git: commity i gałęzie", labelEn: "Git history: commits and branches", run: () => void openGitHistory() },
+  { labelPl: "Zakładki: dodaj lub usuń zakładkę", labelEn: "Bookmarks: toggle bookmark", shortcut: "Ctrl+F2", run: () => void toggleBookmark() },
+  { labelPl: "Zakładki: nazwa i notatka", labelEn: "Bookmarks: name and note", run: () => editBookmarkAtCaret() },
+  { labelPl: "Zakładki: następna zakładka", labelEn: "Bookmarks: next bookmark", shortcut: "F2", run: () => goToNeighbourBookmark(1) },
+  { labelPl: "Zakładki: poprzednia zakładka", labelEn: "Bookmarks: previous bookmark", shortcut: "Shift+F2", run: () => goToNeighbourBookmark(-1) },
+  { labelPl: "Zakładki: pokaż panel zakładek", labelEn: "Bookmarks: show the bookmarks panel", run: () => showBookmarksPanel() },
   { labelPl: "Pokaż / ukryj ukryte sekcje", labelEn: "Show / hide hidden sections", run: () => toggleShowHiddenSections() },
   { labelPl: "Drukuj / eksportuj PDF", labelEn: "Print / export PDF", run: () => void printDocument() },
   { labelPl: "Szukaj w dokumencie", labelEn: "Find in document", shortcut: "Ctrl+F", run: () => openSearchPanel(view) },

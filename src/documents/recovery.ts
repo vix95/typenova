@@ -21,6 +21,7 @@ import { updateHeadingBreadcrumbs } from "../outline/breadcrumbs";
 import { clearPreviewCache, schedulePreview, syncPreviewForActiveDocument } from "../preview/preview-scheduler";
 import { appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
+import { refreshBookmarkMarkers } from "../editor/bookmarks";
 
 export async function showVersionHistory() { const dialog = $("historyDialog") as HTMLDialogElement; const list = $("historyList"); list.replaceChildren(); const en = document.documentElement.lang === "en"; try { const items = await listDocumentVersions(); if (!items.length) { list.textContent = langText("Brak zapisanych wersji. Historia tworzy się przy zapisywaniu kolejnych wersji dokumentu.", "No saved versions yet. History is created as you save subsequent document versions."); } for (const item of items) { const row = document.createElement("div"); row.className = "history-row"; const label = document.createElement("span"); label.textContent = `${item.path ? basename(item.path) : langText("Dokument", "Document")} · ${new Date(item.updated).toLocaleString(en ? "en-US" : "pl-PL")} · ${(new TextEncoder().encode(item.text).length / 1024).toFixed(1)} KB`; const restore = document.createElement("button"); restore.textContent = langText("Przywróć", "Restore"); restore.addEventListener("click", async () => { if (documentState.dirty && !await appConfirm(langText("Zastąpić bieżącą treść wersją historyczną?", "Replace the current content with this historical version?"), { confirmLabel: langText("Zastąp", "Replace"), primaryAction: "cancel" })) return; const path = item.path || null; const recoveredLabel = path ? basename(path) : langText("Odzyskana wersja.md", "Recovered version.md"); createNewTab(item.text, recoveredLabel); documentState.currentPath = path; const tab = activeTab(); if (tab) { tab.path = path; tab.label = recoveredLabel; tab.savedText = ""; tab.dirty = true; } documentState.savedText = ""; documentState.dirty = true; updateDirtyUi(); schedulePreview(); dialog.close(); }); row.append(label, restore); list.append(row); } } catch (e) { list.textContent = `${langText("Nie udało się odczytać historii", "Could not read version history")}: ${String(e)}`; } dialog.showModal(); }
 let recoveryTimer = 0;
@@ -55,6 +56,7 @@ function activateRestoredTab(tab: DocumentTab): void {
   documentState.savedText = tab.savedText;
   documentState.dirty = false;
   view.setState(tab.state);
+  refreshBookmarkMarkers();
   documentState.performanceMode = tab.state.doc.length >= 1_000_000;
   view.dispatch({ effects: [performanceCompartment.reconfigure(performanceExtensions(tab.state.doc.length))] });
 }
@@ -198,12 +200,14 @@ export async function offerRecovery() {
         tab = matchingTab;
         tab.state = createEditorState(recovery.text);
         view.setState(tab.state);
+        refreshBookmarkMarkers();
       } else if (documentState.tabs.length === 1 && !documentState.tabs[0].path && !documentState.tabs[0].dirty) {
         // Reuse the clean startup placeholder so recovery does not leave an extra
         // Untitled.md tab next to the recovered document.
         tab = documentState.tabs[0];
         tab.state = createEditorState(recovery.text);
         view.setState(tab.state);
+        refreshBookmarkMarkers();
       } else {
         tab = createNewTab(recovery.text, recoveredLabel);
       }

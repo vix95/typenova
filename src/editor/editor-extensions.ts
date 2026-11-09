@@ -31,6 +31,8 @@ import { updateActiveOutline } from "../outline/outline";
 import { printDocument } from "../preview/export-print";
 import { schedulePreview } from "../preview/preview-scheduler";
 import { hiddenSectionsExtension } from "./hidden-sections";
+import { bookmarkExtension } from "./bookmark-field";
+import { goToNeighbourBookmark, syncBookmarksFromEditor, toggleBookmark } from "./bookmarks";
 
 // Preserve Markdown styling in large files, but avoid activating nested parsers
 // for fenced programming languages once the document reaches 2 MB. CodeMirror's
@@ -74,6 +76,7 @@ export function performanceExtensions(docLength: number) {
 }
 export const editorExtensions = [
   hiddenSectionsExtension,
+  bookmarkExtension,
   performanceCompartment.of(performanceExtensions(initialDocumentText.length)),
   lineNumbersCompartment.of(lineNumbersEnabled ? lineNumbers() : []), drawSelection(), history(),
   wrapping.of(localStorage.getItem("typenova.wrap") === "true" ? EditorView.lineWrapping : []),
@@ -120,12 +123,16 @@ export const editorExtensions = [
     { key: "Mod-b", run: () => wrapSelection("**", "**") },
     { key: "Mod-i", run: () => wrapSelection("*", "*") },
     { key: "Mod-Shift-x", run: () => wrapSelection("~~", "~~") },
+    { key: "Mod-F2", run: () => { void toggleBookmark(); return true; } },
+    { key: "F2", run: () => { goToNeighbourBookmark(1); return true; } },
+    { key: "Shift-F2", run: () => { goToNeighbourBookmark(-1); return true; } },
     ...Object.entries({ "'": "'", '"': '"', "~": "~", "`": "`", "(": ")", "[": "]", "{": "}" }).map(([open, close]) => ({ key: open, run: () => { const sel = view.state.selection.main; if (sel.empty) return false; wrapSelection(open, close); return true; } })),
     ...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap, indentWithTab
   ]),
   EditorView.updateListener.of((update: ViewUpdate) => {
     if (update.docChanged) {
       hideImageHoverPreview();
+      syncBookmarksFromEditor();
       scheduleMinimapDraw();
       documentState.docRevision++;
       markDirty();

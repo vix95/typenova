@@ -31,6 +31,14 @@ export const ICONS = {
   speed: svg('<path d="M2.5 11.5a5.5 5.5 0 1 1 11 0M8 11.5l2.5-4"/>'),
   fullscreen: svg('<path d="M3 6V3h3M10 3h3v3M13 10v3h-3M6 13H3v-3"/>'),
   wholeWord: svg('<path d="M3 3.5v9M13 3.5v9M5.5 8h5"/>'),
+  bookmark: svg('<path d="M4.5 2.5h7a1 1 0 0 1 1 1v10l-4.5-3-4.5 3v-10a1 1 0 0 1 1-1z"/>'),
+  bookmarkFilled: svg('<path d="M4.5 2.5h7a1 1 0 0 1 1 1v10l-4.5-3-4.5 3v-10a1 1 0 0 1 1-1z" fill="currentColor"/>'),
+  bookmarkAdd: svg('<path d="M4.5 2.5h7a1 1 0 0 1 1 1v10l-4.5-3-4.5 3v-10a1 1 0 0 1 1-1z"/><path d="M8 5v3.4M6.3 6.7h3.4"/>'),
+  arrowRight: svg('<path d="M3 8h9.5M9 4.5 12.5 8 9 11.5"/>'),
+  edit: svg('<path d="m10.5 3 2.5 2.5-7 7H3.5V10l7-7z"/><path d="m9 4.5 2.5 2.5"/>'),
+  trash: svg('<path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5M6.8 7v4M9.2 7v4"/>'),
+  note: svg('<path d="M3.5 2.5h9v11h-9z"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/>'),
+  search: svg('<circle cx="7" cy="7" r="4"/><path d="m10 10 3.5 3.5"/>'),
   regex: svg('<circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/><path d="M10 3.5v6M7.2 5l5.6 3M12.8 5 7.2 8"/>'),
 } as const;
 
