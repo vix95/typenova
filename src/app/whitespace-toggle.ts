@@ -2,7 +2,7 @@
 import { $ } from "./dom";
 import { documentState } from "../documents/document-state";
 import { whitespaceCompartment } from "../editor/compartments";
-import { view } from "../editor/editor-view";
+import { dispatchToAllViews } from "../editor/editor-view";
 import { WHITESPACE_KEY, whitespaceExtension } from "../editor/whitespace-extension";
 import { langText } from "../i18n/language";
 import { scheduleToolbarLayout } from "../layout/toolbar-layout";
@@ -29,7 +29,7 @@ export function setShowWhitespace(enabled: boolean): void {
   writePreferenceFlag(WHITESPACE_KEY, enabled);
   const effect = whitespaceCompartment.reconfigure(whitespaceExtension(enabled));
   for (const tab of documentState.tabs) tab.state = tab.state.update({ effects: effect }).state;
-  view.dispatch({ effects: effect });
+  dispatchToAllViews({ effects: effect });
   syncButton();
 }
 

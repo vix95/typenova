@@ -1,7 +1,7 @@
 /** Remembers where each document was scrolled to (editor line and preview anchor), in memory and in the saved session. */
 import { EditorView } from "@codemirror/view";
 import { preview } from "../app/workspace-dom";
-import { view } from "../editor/editor-view";
+import { registerViewSetup, view } from "../editor/editor-view";
 import { capturePreviewAnchor, hasQueuedPreviewAnchor, queuePreviewAnchorRestore } from "../preview/preview-scroll-memory";
 import { documentState, type DocumentTab } from "./document-state";
 import { persistOpenSession } from "./tabs";
@@ -43,6 +43,6 @@ export function initViewPositionPersistence(): void {
     rememberViewPosition(tab); persistOpenSession();
   };
   const schedule = () => { window.clearTimeout(timer); timer = window.setTimeout(capture, PERSIST_DELAY_MS); };
-  view.scrollDOM.addEventListener("scroll", schedule, { passive: true });
+  registerViewSetup(target => target.scrollDOM.addEventListener("scroll", schedule, { passive: true }));
   preview.addEventListener("scroll", schedule, { passive: true });
 }

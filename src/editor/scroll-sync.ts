@@ -1,6 +1,6 @@
 /** Synchronised scrolling between editor and preview, with gesture-ownership locking. */
 import { preview } from "../app/workspace-dom";
-import { view } from "./editor-view";
+import { registerViewSetup, view } from "./editor-view";
 import { updateMinimapViewport } from "./minimap";
 import { updateActiveOutline } from "../outline/outline";
 import { previewContentScrollTop, previewPaddingTop } from "../preview/preview-observers";
@@ -127,13 +127,17 @@ function attachScrollIntentListeners(element: HTMLElement, source: ScrollPane) {
 }
 
 export function initScrollSync(): void {
-  attachScrollIntentListeners(view.scrollDOM, "editor");
+  // Every editor is watched; only the one in use drives the preview and the outline.
+  registerViewSetup(target => {
+    attachScrollIntentListeners(target.scrollDOM, "editor");
+    target.scrollDOM.addEventListener("scroll", () => {
+      if (target !== view) return;
+      updateMinimapViewport();
+      updateActiveOutline();
+      handleSynchronizedScroll("editor");
+    }, { passive: true });
+  });
   attachScrollIntentListeners(preview, "preview");
-  view.scrollDOM.addEventListener("scroll", () => {
-    updateMinimapViewport();
-    updateActiveOutline();
-    handleSynchronizedScroll("editor");
-  }, { passive: true });
   preview.addEventListener("scroll", () => {
     scheduleVirtualRefresh();
     handleSynchronizedScroll("preview");

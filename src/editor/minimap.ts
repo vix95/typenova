@@ -10,10 +10,12 @@ export let minimapWrap: HTMLDivElement | null = null;
 let minimapCanvas: HTMLCanvasElement | null = null;
 let minimapViewport: HTMLDivElement | null = null;
 let minimapResizeObserver: ResizeObserver | null = null;
+let minimapHost: HTMLElement | null = null;
 let minimapDrawFrame = 0;
 let minimapDragging = false;
 export function initializeEditorMinimap() {
   const host = $("editor") as HTMLElement;
+  minimapHost = host;
   minimapWrap = document.createElement("div");
   minimapWrap.className = "editor-minimap";
   minimapWrap.setAttribute("role", "scrollbar");
@@ -76,8 +78,17 @@ export function initializeEditorMinimap() {
   updateMinimapLayout();
   scheduleMinimapDraw();
 }
+/** The minimap belongs to the editor of a single group: it moves into that group's editor, or away (null) while there are several groups. */
+export function setMinimapHost(host: HTMLElement | null): void {
+  if (!minimapWrap || host === minimapHost) return;
+  minimapResizeObserver?.disconnect();
+  minimapHost = host;
+  if (host) { host.append(minimapWrap); minimapResizeObserver?.observe(host); } else minimapWrap.remove();
+  updateMinimapLayout();
+  scheduleMinimapDraw();
+}
 export function updateMinimapLayout() {
-  const host = $("editor") as HTMLElement | null;
+  const host = minimapHost;
   if (!host || !minimapWrap) return;
   const hostWidth = host.clientWidth;
   const hostHeight = host.clientHeight;

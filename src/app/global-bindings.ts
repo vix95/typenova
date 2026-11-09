@@ -128,7 +128,7 @@ export function initNativeContextMenuGuard(): void {
     const isEditorSurface = target instanceof Element && target.closest(".cm-editor") !== null;
     const isProjectTree = target instanceof Element && (target.closest("#projectFiles .tree-entry") !== null || target.closest(".project-tree-head") !== null || target.closest("#projectFiles") !== null);
     const isPreviewSurface = target instanceof Element && target.closest("#preview") !== null;
-    const isEditorTabStrip = target instanceof Element && target.closest("#editorTabList") !== null;
+    const isEditorTabStrip = target instanceof Element && target.closest(".editor-tab-list") !== null;
     const isOutline = target instanceof Element && target.closest("#outline") !== null;
     const isMediaViewer = target instanceof Element && target.closest("#mediaViewer") !== null;
     if (isEditorSurface || isProjectTree || isPreviewSurface || isEditorTabStrip || isOutline || isMediaViewer) return;

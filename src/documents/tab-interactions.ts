@@ -1,37 +1,33 @@
-/** Editor tab strip interactions: mouse-wheel scrolling, reordering by dragging, and tearing a tab off into its own window. */
+/** Editor tab strip interactions: mouse-wheel scrolling, reordering by dragging, moving a tab to another group (or opening a new group beside one) and tearing a tab off into its own window. */
 import { invoke } from "@tauri-apps/api/core";
 import { $ } from "../app/dom";
 import { langText } from "../i18n/language";
 import { documentState } from "./document-state";
-import { insertionIndex, moveItem } from "./tab-order";
 import { endWindowHover, hoverOtherWindow, transferTabOut } from "./detach";
-import { renderTabs } from "./tabs";
+import { moveTabToGroup, reorderInGroup, splitWithTab } from "./groups";
+import { dropTargetAt, hideDropZone, showDropZone, type DropTarget } from "./groups-dom";
+import { groupById, groupOf } from "./groups-state";
 
 const DRAG_THRESHOLD_PX = 5;
 const EDGE_ZONE_PX = 40;
 const EDGE_SCROLL_STEP_PX = 14;
 const LINE_HEIGHT_PX = 16;
-// Like other editors: dragging a tab out of the tab strip (this far above or below it, or out of the window) and
-// releasing it there moves the document to the other TypeNova window under the cursor, or opens it in a window of its
-// own; dragging it back into the strip cancels that.
+// Like other editors: dragging a tab out of the tab strip, to somewhere that is neither a strip nor an editor group (this
+// far above or below it, in the sidebar or the preview, or out of the window), and releasing it there moves the document
+// to the other TypeNova window under the cursor, or opens it in a window of its own; dragging it back cancels that. Over
+// the editor groups a tab goes to a strip (a place among its tabs) or to a group (join it, or open a new group beside it).
 const DETACH_MARGIN_PX = 48;
 const WINDOW_PROBE_INTERVAL_MS = 60;
 
 type Drag = {
   pointerId: number; tabId: string; element: HTMLElement; startX: number; startY: number; startScroll: number;
-  active: boolean; pointerX: number; pointerY: number; slot: number; edgeTimer: number; detach: boolean; outside: boolean; targetWindow: string | null; probeAt: number; ghostHint: string | null; hovering: boolean;
+  active: boolean; pointerX: number; pointerY: number; slot: number; target: DropTarget | null; edgeTimer: number; detach: boolean; outside: boolean; targetWindow: string | null; probeAt: number; ghostHint: string | null; hovering: boolean;
 };
 
 type DragEnd = "reorder" | "detach" | "cancel";
 
 function tabElements(list: HTMLElement): HTMLElement[] { return Array.from(list.querySelectorAll<HTMLElement>(":scope > .editor-tab[data-tab-id]")); }
 
-function moveTab(tabId: string, insertAmongOthers: number): void {
-  const reordered = moveItem(documentState.tabs, tab => tab.id === tabId, insertAmongOthers);
-  if (reordered.every((tab, index) => tab === documentState.tabs[index])) return;
-  documentState.tabs = reordered;
-  renderTabs();
-}
 
 function installWheelScroll(list: HTMLElement): void {
   // Wheel: scroll the strip sideways. A vertical wheel (the common mouse) is mapped to horizontal movement.
@@ -45,11 +41,35 @@ function installWheelScroll(list: HTMLElement): void {
   }, { passive: false });
 }
 
-/** True while the pointer is far enough outside the strip (or the window) that releasing would leave this window. */
-function isOutsideStrip(list: HTMLElement, state: Drag): boolean {
+/** True while the pointer is out of the window, or far enough from the strip, over no strip and no editor group, that releasing would leave this window. */
+function isOutside(list: HTMLElement, state: Drag): boolean {
+  if (state.pointerX < 0 || state.pointerX > window.innerWidth || state.pointerY < 0 || state.pointerY > window.innerHeight) return true;
+  if (dropTargetAt(state.pointerX, state.pointerY, state.tabId)) return false;
   const rect = list.getBoundingClientRect();
-  return state.pointerY < rect.top - DETACH_MARGIN_PX || state.pointerY > rect.bottom + DETACH_MARGIN_PX
-    || state.pointerX < 0 || state.pointerX > window.innerWidth || state.pointerY < 0 || state.pointerY > window.innerHeight;
+  return state.pointerY < rect.top - DETACH_MARGIN_PX || state.pointerY > rect.bottom + DETACH_MARGIN_PX;
+}
+
+/** The place marks of every strip (a tab dragged over a strip shows where it would go). */
+function clearAllMarks(): void {
+  for (const tab of Array.from(document.querySelectorAll<HTMLElement>(".editor-tab.drop-before, .editor-tab.drop-after"))) tab.classList.remove("drop-before", "drop-after");
+}
+
+/** Marks the slot in the strip of a group that a tab dragged there would take. */
+function markSlot(groupId: string, slot: number, draggedId: string): void {
+  clearAllMarks();
+  const list = groupById(groupId)?.list;
+  if (!list) return;
+  const others = tabElements(list).filter(tab => tab.dataset.tabId !== draggedId);
+  if (!others.length) return;
+  if (slot < others.length) others[slot].classList.add("drop-before"); else others[others.length - 1].classList.add("drop-after");
+}
+
+/** What releasing the tab here would do, or null when nothing (over its own group's body, or where a group would be left empty). */
+function usableTarget(state: Drag, own: string): DropTarget | null {
+  const target = dropTargetAt(state.pointerX, state.pointerY, state.tabId);
+  if (!target || target.kind === "strip") return target;
+  if (target.groupId === own && (target.zone === "center" || (groupById(own)?.tabIds.length ?? 0) < 2)) return null;
+  return target;
 }
 
 /** Theme colours for the ghost window, which is a separate document and cannot read this page's CSS variables. */
@@ -101,17 +121,14 @@ function installTabDrag(list: HTMLElement): void {
   let drag: Drag | null = null;
   let suppressClick = false;
 
-  const clearMarks = () => {
-    for (const tab of tabElements(list)) tab.classList.remove("drop-before", "drop-after");
-  };
-  const updateSlot = (state: Drag) => {
-    const others = tabElements(list).filter(tab => tab !== state.element);
-    const middles = others.map(tab => { const rect = tab.getBoundingClientRect(); return rect.left + rect.width / 2; });
-    state.slot = insertionIndex(middles, state.pointerX);
-    clearMarks();
-    if (!others.length) return;
-    if (state.slot < others.length) others[state.slot].classList.add("drop-before");
-    else others[others.length - 1].classList.add("drop-after");
+  const own = () => list.dataset.group ?? "";
+  const clearMarks = () => { clearAllMarks(); hideDropZone(); };
+  /** Shows where the tab would land: a place in a strip, or a zone of a group. */
+  const updateTarget = (state: Drag) => {
+    state.target = usableTarget(state, own());
+    if (state.target?.kind === "strip") { hideDropZone(); markSlot(state.target.groupId, state.target.slot, state.tabId); return; }
+    clearAllMarks();
+    if (state.target) showDropZone(state.target.groupId, state.target.zone); else hideDropZone();
   };
   const follow = (state: Drag) => {
     const raw = state.pointerX - state.startX + (list.scrollLeft - state.startScroll);
@@ -132,7 +149,7 @@ function installTabDrag(list: HTMLElement): void {
     state.edgeTimer = window.setInterval(() => {
       const before = list.scrollLeft;
       list.scrollLeft += direction * EDGE_SCROLL_STEP_PX;
-      if (list.scrollLeft !== before) { follow(state); updateSlot(state); }
+      if (list.scrollLeft !== before) { follow(state); updateTarget(state); }
     }, 16);
   };
   const finish = (end: DragEnd) => {
@@ -144,15 +161,19 @@ function installTabDrag(list: HTMLElement): void {
     try { list.releasePointerCapture(state.pointerId); } catch { /* the capture may already be gone */ }
     if (state.active) { suppressClick = true; window.setTimeout(() => { suppressClick = false; }, 0); }
     if (!state.active) return;
-    if (end === "reorder") moveTab(state.tabId, state.slot);
-    else if (end === "detach") void transferTabOut(state.tabId);
+    const target = state.target;
+    if (end === "reorder" && target) {
+      if (target.kind === "strip") { if (target.groupId === own()) reorderInGroup(target.groupId, state.tabId, target.slot); else moveTabToGroup(state.tabId, target.groupId, target.slot); }
+      else if (target.zone === "center") moveTabToGroup(state.tabId, target.groupId);
+      else splitWithTab(state.tabId, target.groupId, target.zone);
+    } else if (end === "detach") void transferTabOut(state.tabId);
   };
 
   list.addEventListener("pointerdown", event => {
     if (event.button !== 0 || !(event.target instanceof Element) || event.target.closest("[data-close-tab]")) return;
     const element = event.target.closest<HTMLElement>(".editor-tab[data-tab-id]");
     if (!element?.dataset.tabId) return;
-    drag = { pointerId: event.pointerId, tabId: element.dataset.tabId, element, startX: event.clientX, startY: event.clientY, startScroll: list.scrollLeft, active: false, pointerX: event.clientX, pointerY: event.clientY, slot: 0, edgeTimer: 0, detach: false, outside: false, targetWindow: null, probeAt: 0, ghostHint: null, hovering: false };
+    drag = { pointerId: event.pointerId, tabId: element.dataset.tabId, element, startX: event.clientX, startY: event.clientY, startScroll: list.scrollLeft, active: false, pointerX: event.clientX, pointerY: event.clientY, slot: 0, target: null, edgeTimer: 0, detach: false, outside: false, targetWindow: null, probeAt: 0, ghostHint: null, hovering: false };
   });
   // Listening on the document (not the strip) keeps a quick pull out of the strip tracked from its first pixel.
   document.addEventListener("pointermove", event => {
@@ -163,16 +184,16 @@ function installTabDrag(list: HTMLElement): void {
       state.active = true; list.setPointerCapture(event.pointerId);
       list.classList.add("is-reordering"); state.element.classList.add("is-dragging");
     }
-    state.outside = isOutsideStrip(list, state);
+    state.outside = isOutside(list, state);
     if (state.outside) probeWindowUnder(state, () => drag === state);
     else { if (state.hovering) { state.hovering = false; endWindowHover(); } state.targetWindow = null; }
-    // Outside the strip the document can go to another window, or (with other tabs left here) to a new one.
+    // Outside, the document can go to another window, or (with other tabs left here) to a new one.
     state.detach = state.outside && (!!state.targetWindow || documentState.tabs.length > 1);
     state.element.classList.toggle("will-detach", state.detach);
     if (state.detach) { clearMarks(); stopEdgeScroll(state); follow(state); showGhost(state); return; }
     hideGhost(state);
     if (state.outside) { clearMarks(); stopEdgeScroll(state); follow(state); return; }
-    follow(state); updateSlot(state); syncEdgeScroll(state);
+    follow(state); updateTarget(state); syncEdgeScroll(state);
   });
   document.addEventListener("pointerup", event => { if (drag?.pointerId === event.pointerId) finish(drag.outside ? "detach" : "reorder"); });
   document.addEventListener("pointercancel", event => { if (drag?.pointerId === event.pointerId) finish("cancel"); });
@@ -188,18 +209,21 @@ function installKeyboardMove(list: HTMLElement): void {
     if (!event.altKey || event.ctrlKey || event.metaKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
     const element = (event.target instanceof Element ? event.target : null)?.closest<HTMLElement>(".editor-tab[data-tab-id]");
     const tabId = element?.dataset.tabId; if (!tabId) return;
-    const index = documentState.tabs.findIndex(tab => tab.id === tabId);
+    const group = groupOf(tabId);
+    const index = group ? group.tabIds.indexOf(tabId) : -1;
     const target = index + (event.key === "ArrowLeft" ? -1 : 1);
-    if (index < 0 || target < 0 || target >= documentState.tabs.length) return;
+    if (!group || index < 0 || target < 0 || target >= group.tabIds.length) return;
     event.preventDefault();
-    moveTab(tabId, target);
+    reorderInGroup(group.id, tabId, target);
     list.querySelector<HTMLElement>(`.editor-tab[data-tab-id="${CSS.escape(tabId)}"] .editor-tab-main`)?.focus();
   });
 }
 
-export function initTabInteractions(): void {
-  const list = $("editorTabList") as HTMLElement;
+/** Wheel scrolling, dragging and keyboard moves for a strip (the page's strip and the strip of every group). */
+export function installTabStripInteractions(list: HTMLElement): void {
   installWheelScroll(list);
   installTabDrag(list);
   installKeyboardMove(list);
 }
+
+export function initTabInteractions(): void { installTabStripInteractions($("editorTabList")); }

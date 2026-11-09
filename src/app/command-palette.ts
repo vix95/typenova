@@ -23,6 +23,7 @@ import { editHighlightAtSelection } from "../editor/highlight-dialogs";
 import { copyHighlightsAsMarkdown, getHighlights, goToNeighbourHighlight, toggleHighlight } from "../editor/highlights";
 import { openAiEdit } from "../ai/edit-dialog";
 import { toggleAiPane } from "../ai/chat-panel";
+import { focusNeighborGroup, toggleSplit } from "../documents/groups";
 import { goToNeighbourBookmark, toggleBookmark } from "../editor/bookmarks";
 
 type CommandItem = { labelPl: string; labelEn: string; shortcut?: string; run: () => void };
@@ -41,6 +42,9 @@ const commandItems: CommandItem[] = [
   { labelPl: "Zakładki: następna zakładka", labelEn: "Bookmarks: next bookmark", shortcut: "F2", run: () => goToNeighbourBookmark(1) },
   { labelPl: "Zakładki: poprzednia zakładka", labelEn: "Bookmarks: previous bookmark", shortcut: "Shift+F2", run: () => goToNeighbourBookmark(-1) },
   { labelPl: "Zakładki: pokaż panel zakładek", labelEn: "Bookmarks: show the bookmarks panel", run: () => showBookmarksPanel() },
+  { labelPl: "Edytor: podziel w prawo / scal grupy", labelEn: "Editor: split to the right / merge the groups", shortcut: "Ctrl+\\", run: () => toggleSplit() },
+  { labelPl: "Edytor: przejdź do następnej grupy", labelEn: "Editor: go to the next group", run: () => focusNeighborGroup(1) },
+  { labelPl: "Edytor: przejdź do poprzedniej grupy", labelEn: "Editor: go to the previous group", run: () => focusNeighborGroup(-1) },
   { labelPl: "Asystent AI: zapytaj o zaznaczenie lub wygeneruj tekst", labelEn: "AI assistant: ask about the selection or generate text", shortcut: "Ctrl+Shift+A", run: () => openAiEdit() },
   { labelPl: "Asystent AI: pokaż / ukryj czat", labelEn: "AI assistant: show / hide the chat", shortcut: "Ctrl+Shift+M", run: () => toggleAiPane() },
   { labelPl: "Wyróżnienia: wyróżnij zaznaczenie lub usuń wyróżnienie", labelEn: "Highlights: highlight the selection or remove the highlight", shortcut: "Ctrl+Shift+H", run: () => void toggleHighlight() },

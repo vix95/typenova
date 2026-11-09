@@ -5,7 +5,7 @@ import { EditorView, lineNumbers } from "@codemirror/view";
 import { $ } from "../app/dom";
 import { documentState } from "../documents/document-state";
 import { editorThemeCompartment, lineNumbersCompartment, syntaxThemeCompartment, wrapping } from "../editor/compartments";
-import { view } from "../editor/editor-view";
+import { dispatchToAllViews, view } from "../editor/editor-view";
 import { scheduleMinimapDraw } from "../editor/minimap";
 import { renderGraphTree } from "../graph-ui/tree-renderer";
 import { refreshMermaidTheme } from "../preview/mermaid";
@@ -55,7 +55,7 @@ export function applyTheme(theme: string) {
       ]
     }).state;
   }
-  if (view) view.dispatch({ effects: [editorThemeCompartment.reconfigure(editorThemeFor(selected)), syntaxThemeCompartment.reconfigure(syntaxThemeFor(selected))] });
+  dispatchToAllViews({ effects: [editorThemeCompartment.reconfigure(editorThemeFor(selected)), syntaxThemeCompartment.reconfigure(syntaxThemeFor(selected))] });
   const selector = $("themeSelect") as HTMLSelectElement; if (selector) selector.value = selected;
   syncCustomSelectControl(selector);
   const meta = document.querySelector('meta[name="color-scheme"]'); if (meta) meta.setAttribute("content", ["light", "newsprint"].includes(selected) ? "light" : "dark");
@@ -69,7 +69,7 @@ export function setWrapping(enabled: boolean) {
   localStorage.setItem("typenova.wrap", String(enabled));
   const toggle = $("wrapToggle") as HTMLInputElement; if (toggle) toggle.checked = enabled;
   for (const tab of documentState.tabs) tab.state = tab.state.update({ effects: wrapping.reconfigure(enabled ? EditorView.lineWrapping : []) }).state;
-  view.dispatch({ effects: wrapping.reconfigure(enabled ? EditorView.lineWrapping : []) });
+  dispatchToAllViews({ effects: wrapping.reconfigure(enabled ? EditorView.lineWrapping : []) });
 }
 export function setLineNumbers(enabled: boolean) {
   lineNumbersEnabled = enabled;
@@ -80,5 +80,5 @@ export function setLineNumbers(enabled: boolean) {
   for (const tab of documentState.tabs) {
     tab.state = tab.state.update({ effects: lineNumbersCompartment.reconfigure(extension) }).state;
   }
-  view.dispatch({ effects: lineNumbersCompartment.reconfigure(extension) });
+  dispatchToAllViews({ effects: lineNumbersCompartment.reconfigure(extension) });
 }

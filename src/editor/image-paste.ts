@@ -7,7 +7,7 @@ import { rootContaining } from "../filesystem/project-roots";
 import { langText } from "../i18n/language";
 import { refreshProjectTree } from "../project/project-tree-sync";
 import { showToast } from "../ui/toast";
-import { view } from "./editor-view";
+import { registerViewSetup, view } from "./editor-view";
 import { encodeMarkdownImagePath, parentDirectoryPath, relativeImagePath } from "./image-insert";
 import { askImagePasteDestination } from "./image-paste-dialog";
 
@@ -65,10 +65,10 @@ async function handlePastedImage(file: File): Promise<void> {
 
 export function initImagePaste(): void {
   // In the capture phase so it runs before the editor's own paste handling.
-  view.contentDOM.addEventListener("paste", event => {
+  registerViewSetup(target => target.contentDOM.addEventListener("paste", event => {
     const file = imageFromClipboard(event.clipboardData);
     if (!file) return;
     event.preventDefault(); event.stopPropagation();
     void handlePastedImage(file);
-  }, true);
+  }, true));
 }

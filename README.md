@@ -16,7 +16,7 @@ Everything runs locally. There's no account, no sync service, no telemetry and n
 
 ## What you get
 
-**An editor you can live in.** CodeMirror 6 with a formatting toolbar, a breadcrumb that follows the section you're in, a minimap, visible white space, Polish and English spell checking with suggestions and a personal dictionary, an optional AI assistant (your own key for Claude, OpenAI or Gemini, a local Ollama model, or any OpenAI-compatible service) for chat and rewriting a selection, find, bookmarks with notes (`Ctrl+F2`, `F2`), coloured highlights with groups and notes (`Ctrl+Shift+H`, `F4`) that can also live in a file next to your Markdown, and a command palette on `Ctrl+K`. The interface comes in English and Polish.
+**An editor you can live in.** CodeMirror 6 with a formatting toolbar, a breadcrumb that follows the section you're in, a minimap, visible white space, editor groups with their own tabs, side by side or stacked, and tabs you drag between them (`Ctrl+\`), Polish and English spell checking with suggestions and a personal dictionary, an optional AI assistant (your own key for Claude, OpenAI or Gemini, a local Ollama model, or any OpenAI-compatible service) for chat and rewriting a selection, find, bookmarks with notes (`Ctrl+F2`, `F2`), coloured highlights with groups and notes (`Ctrl+Shift+H`, `F4`) that can also live in a file next to your Markdown, and a command palette on `Ctrl+K`. The interface comes in English and Polish.
 
 **A live preview that handles the usual hard parts.** Tables, task lists, KaTeX math, Mermaid diagrams and highlighted code blocks with a copy button. Rendering happens in web workers, so typing stays smooth in big documents. Local images work too, including ones that live outside the opened folder.
 

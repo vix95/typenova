@@ -6,6 +6,7 @@ import { initWorkspaceDom } from "./app/workspace-dom";
 import { initEditorView, view } from "./editor/editor-view";
 import { initTabInteractions } from "./documents/tab-interactions";
 import { initTabDropTarget } from "./documents/tab-drop-target";
+import { initGroups, restoreGroupsAtStartup } from "./documents/groups";
 import { initSectionVisibility } from "./documents/section-visibility";
 import { initAppVersion } from "./app/app-version";
 import { initTabs, renderTabs, configureLanguageForTab, persistOpenSession } from "./documents/tabs";
@@ -77,11 +78,8 @@ import { initHighlights } from "./editor/highlights";
 initWorkspaceDom();
 // Editor
 initEditorView();
-// Initial document, tab and layout bootstrap
-view.contentDOM.setAttribute("spellcheck", "false");
 initializeEditorMinimap();
 setupImageHoverPreview();
-view.contentDOM.setAttribute("lang", "pl-PL");
 document.documentElement.lang = "pl";
 documentState.savedText = view.state.doc.toString();
 documentState.tabs = [{ id: `tab-${documentState.tabSequence++}`, path: null, label: documentState.untitledLabel, state: view.state, savedText: documentState.savedText, dirty: false }];
@@ -110,6 +108,7 @@ initHighlights();
 initTabs();
 initTabInteractions();
 initTabDropTarget();
+initGroups();
 
 // Preview
 initPreviewObservers();
@@ -138,7 +137,6 @@ initChatPanel();
 initSpellSettings();
 initProjectRestore();
 initSaveFindBindings();
-// Project tree keyboard target
 initProjectTreeFocus();
 // Section graph
 initGraphState();
@@ -174,6 +172,7 @@ initGlobalBindings();
 // Session restore and unload handling
 void (async () => {
   await restoreOpenSessionAtStartup();
+  restoreGroupsAtStartup();
   await offerRecovery();
 })();
 window.addEventListener("beforeunload", event => {
