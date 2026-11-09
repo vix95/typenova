@@ -13,7 +13,7 @@ import { documentState } from "./document-state";
 import { updateStats } from "./document-stats";
 import { activeFormat, LINE_ENDING_LABELS, updateFormatStatus } from "./format-display";
 import { activeTab, configureLanguageForTab, createEditorState, renderTabs } from "./tabs";
-import { refreshBookmarkMarkers } from "../editor/bookmarks";
+import { refreshDocumentMarks } from "../editor/document-marks";
 
 let menu: HTMLDivElement | null = null;
 function hideMenu(): void { if (menu) menu.hidden = true; }
@@ -62,7 +62,7 @@ async function reopenWithEncoding(encoding: TextEncodingName): Promise<void> {
     const loaded = await loadTextFile(path, encoding);
     tab.format = loaded; tab.state = createEditorState(loaded.text); tab.savedText = loaded.text;
     view.setState(tab.state);
-    refreshBookmarkMarkers();
+    refreshDocumentMarks();
     documentState.savedText = loaded.text; documentState.docRevision++;
     setClean(); updateStats(); updateFormatStatus(); renderTabs(); syncPreviewForActiveDocument(); void configureLanguageForTab(tab);
   } catch (error) { showToast(`${langText("Nie udało się otworzyć pliku", "Could not open the file")}: ${String(error)}`); }

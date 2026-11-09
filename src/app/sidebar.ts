@@ -11,7 +11,7 @@ import { updateGraphWorkspaceTop } from "../graph-ui/workspace-layout";
 import { applyWidths } from "../layout/layout";
 import { outlineState, renderOutlineWindow } from "../outline/outline";
 
-type SidebarTab = "files" | "outline" | "brain" | "bookmarks";
+type SidebarTab = "files" | "outline" | "brain" | "bookmarks" | "highlights";
 export let activeSidebarTab: SidebarTab = "files";
 export let previousSidebarTab: "files" | "outline" = "files";
 export function setSidebarTab(tab: SidebarTab) {
@@ -20,7 +20,7 @@ export function setSidebarTab(tab: SidebarTab) {
   if (tab === "brain" && activeSidebarTab !== "brain") { previousSidebarTab = activeSidebarTab === "outline" ? "outline" : "files"; graphUi.graphAutoFitNextRender = true; graphUi.graphAnimateNextRender = true; }
   activeSidebarTab = tab;
   for (const [id, key] of [["sidebarFilesTab", "files"], ["sidebarOutlineTab", "outline"], ["sidebarBrainTab", "brain"]] as const) { $(id).classList.toggle("active", tab === key); $(id).setAttribute("aria-selected", String(tab === key)); }
-  $("filesView").hidden = tab !== "files"; $("outlineView").hidden = tab !== "outline"; $("brainView").hidden = tab !== "brain"; $("bookmarksView").hidden = tab !== "bookmarks";
+  $("filesView").hidden = tab !== "files"; $("outlineView").hidden = tab !== "outline"; $("brainView").hidden = tab !== "brain"; $("bookmarksView").hidden = tab !== "bookmarks"; $("highlightsView").hidden = tab !== "highlights";
   const graphOpen = tab === "brain";
   document.body.classList.toggle("graph-mode", graphOpen);
   if (graphOpen) $("layout").setAttribute("aria-hidden", "true"); else $("layout").removeAttribute("aria-hidden");

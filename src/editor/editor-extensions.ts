@@ -22,6 +22,8 @@ import { configureLanguageForTab } from "../documents/tabs";
 import { editorThemeCompartment, languageCompartment, lineNumbersCompartment, performanceCompartment, syntaxThemeCompartment, whitespaceCompartment, wrapping } from "./compartments";
 import { WHITESPACE_KEY, whitespaceExtension } from "./whitespace-extension";
 import { openAiEdit } from "../ai/edit-dialog";
+import { highlightExtension } from "./highlight-field";
+import { goToNeighbourHighlight, syncHighlightsFromEditor, toggleHighlight } from "./highlights";
 import { refreshSelectionContext } from "../ai/chat-panel";
 import { readPreferenceFlag } from "../settings/preferences";
 import { completions } from "./completions";
@@ -81,6 +83,7 @@ export function performanceExtensions(docLength: number) {
 export const editorExtensions = [
   hiddenSectionsExtension,
   bookmarkExtension,
+  highlightExtension,
   performanceCompartment.of(performanceExtensions(initialDocumentText.length)),
   lineNumbersCompartment.of(lineNumbersEnabled ? lineNumbers() : []), drawSelection(), history(),
   wrapping.of(localStorage.getItem("typenova.wrap") === "true" ? EditorView.lineWrapping : []),
@@ -130,6 +133,9 @@ export const editorExtensions = [
     { key: "Mod-Shift-x", run: () => wrapSelection("~~", "~~") },
     { key: "Mod-F2", run: () => { void toggleBookmark(); return true; } },
     { key: "Mod-Shift-a", run: () => { openAiEdit(); return true; } },
+    { key: "Mod-Shift-h", run: () => { void toggleHighlight(); return true; } },
+    { key: "F4", run: () => { goToNeighbourHighlight(1); return true; } },
+    { key: "Shift-F4", run: () => { goToNeighbourHighlight(-1); return true; } },
     { key: "F2", run: () => { goToNeighbourBookmark(1); return true; } },
     { key: "Shift-F2", run: () => { goToNeighbourBookmark(-1); return true; } },
     ...Object.entries({ "'": "'", '"': '"', "~": "~", "`": "`", "(": ")", "[": "]", "{": "}" }).map(([open, close]) => ({ key: open, run: () => { const sel = view.state.selection.main; if (sel.empty) return false; wrapSelection(open, close); return true; } })),
@@ -139,6 +145,7 @@ export const editorExtensions = [
     if (update.docChanged) {
       hideImageHoverPreview();
       syncBookmarksFromEditor();
+      syncHighlightsFromEditor();
       scheduleMinimapDraw();
       documentState.docRevision++;
       markDirty();

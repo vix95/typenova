@@ -1,8 +1,7 @@
 /** Hiding sections of a document: state, the sidecar config file next to the Markdown file, and applying it to editor, preview and outline. */
-import { exists, readTextFile, remove, writeTextFile } from "@tauri-apps/plugin-fs";
+import { exists, readTextFile } from "@tauri-apps/plugin-fs";
 import { hiddenSectionsInState, setHiddenSections } from "../editor/hidden-sections";
 import { view } from "../editor/editor-view";
-import { basename } from "../filesystem/path-utils";
 import { normalizedFsPath } from "../filesystem/project-tree-operations";
 import { langText } from "../i18n/language";
 import { outlineHeadings, refreshOutlineHiddenMarks } from "../outline/outline";
@@ -11,7 +10,9 @@ import { previewState } from "../preview/preview-state";
 import { readPreferenceFlag } from "../settings/preferences";
 import { showToast } from "../ui/toast";
 import { documentState } from "./document-state";
-import { type HiddenRange, focusRangesFor, hiddenRangesFor, keysInsideRanges, parseFocusedSection, parseSectionConfig, sectionConfigPath, serializeSectionConfig } from "./section-ranges";
+import { DocConfigUnreadable, updateDocConfig } from "./doc-config";
+import { withDocConfigParts } from "./doc-config-model";
+import { type HiddenRange, focusRangesFor, hiddenRangesFor, keysInsideRanges, parseFocusedSection, parseSectionConfig, sectionConfigPath, storedFocusOf, storedSectionsOf } from "./section-ranges";
 
 const SHOW_ALL_KEY = "typenova.showHiddenSections";
 
@@ -40,12 +41,12 @@ async function readConfig(path: string): Promise<StoredVisibility> {
 }
 
 async function writeConfig(path: string, keys: ReadonlySet<string>, focusKey: string | null): Promise<void> {
-  const configPath = sectionConfigPath(path);
   try {
-    if (keys.size || focusKey) await writeTextFile(configPath, serializeSectionConfig(basename(path), keys, focusKey));
-    else if (await exists(configPath)) await remove(configPath);
+    // Only the hidden sections are changed; bookmarks and highlights in the same file stay as they are.
+    await updateDocConfig(path, config => withDocConfigParts(config, { hiddenSections: storedSectionsOf(keys), focusedSection: storedFocusOf(focusKey) }));
   } catch (error) {
-    showToast(`${langText("Nie udało się zapisać pliku konfiguracji ukrytych sekcji", "Could not save the hidden sections config file")}: ${String(error)}`);
+    const reason = error instanceof DocConfigUnreadable ? langText("Plik konfiguracji obok dokumentu jest uszkodzony i nie został nadpisany", "The config file next to the document is damaged and was not overwritten") : String(error);
+    showToast(`${langText("Nie udało się zapisać ukrytych sekcji", "Could not save the hidden sections")}: ${reason}`);
   }
 }
 

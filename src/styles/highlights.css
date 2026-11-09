@@ -1,0 +1,60 @@
+/* Highlights: coloured background in the editor and the preview, the Highlights panel and the highlight window. Yellow is the default colour. */
+
+/* ---- Colours ---- */
+.tn-hl-yellow { --hl: rgba(250, 204, 21, 0.30); --hl-solid: #facc15; }
+.tn-hl-green  { --hl: rgba(74, 222, 128, 0.26); --hl-solid: #4ade80; }
+.tn-hl-blue   { --hl: rgba(96, 165, 250, 0.30); --hl-solid: #60a5fa; }
+.tn-hl-pink   { --hl: rgba(244, 114, 182, 0.30); --hl-solid: #f472b6; }
+.tn-hl-orange { --hl: rgba(251, 146, 60, 0.32); --hl-solid: #fb923c; }
+html[data-theme="light"] .tn-hl-yellow, html[data-theme="newsprint"] .tn-hl-yellow { --hl: rgba(250, 204, 21, 0.55); }
+html[data-theme="light"] .tn-hl-green, html[data-theme="newsprint"] .tn-hl-green { --hl: rgba(74, 222, 128, 0.45); }
+html[data-theme="light"] .tn-hl-blue, html[data-theme="newsprint"] .tn-hl-blue { --hl: rgba(96, 165, 250, 0.42); }
+html[data-theme="light"] .tn-hl-pink, html[data-theme="newsprint"] .tn-hl-pink { --hl: rgba(244, 114, 182, 0.42); }
+html[data-theme="light"] .tn-hl-orange, html[data-theme="newsprint"] .tn-hl-orange { --hl: rgba(251, 146, 60, 0.45); }
+
+/* ---- In the text ---- */
+.cm-highlight, mark.tn-highlight { background: var(--hl); color: inherit; border-radius: 2px; padding: 0; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+/* The high-contrast theme does not rely on colour alone: the passage is also underlined. */
+html[data-theme="contrast"] .cm-highlight, html[data-theme="contrast"] mark.tn-highlight { background: color-mix(in srgb, var(--hl-solid) 40%, transparent); text-decoration: underline; text-decoration-thickness: 2px; text-decoration-color: var(--hl-solid); text-underline-offset: 3px; }
+
+/* ---- Panel ---- */
+.highlight-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.highlight-switch .ai-context-label { margin-right: 2px; }
+.highlight-copy { align-self: flex-start; height: 32px; font-size: 12px; }
+.highlight-row { display: flex; align-items: stretch; gap: 4px; border: 1px solid transparent; border-radius: 8px; }
+.highlight-row:hover, .highlight-row:focus-within { background: var(--ui-hover); border-color: var(--ui-hover-border, var(--ui-border)); }
+.highlight-row.is-missing { opacity: 0.6; }
+.highlight-go { display: flex; flex: 1; align-items: flex-start; gap: 10px; min-width: 0; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--ui-text); text-align: left; cursor: pointer; font: inherit; }
+.highlight-go:focus-visible, .highlight-color:focus-visible { outline: 2px solid var(--ui-focus-ring, var(--ui-accent)); outline-offset: 1px; }
+.highlight-dot { flex: none; width: 10px; height: 10px; margin-top: 4px; border-radius: 3px; background: var(--hl-solid); }
+.highlight-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.highlight-quote { font-size: 13px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; background: var(--hl); border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.highlight-note-preview { font-size: 12px; color: var(--ui-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.highlight-meta { font-size: 11px; color: var(--ui-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.highlight-row-actions { display: flex; align-items: center; gap: 2px; padding-right: 2px; }
+.highlights-view .bookmark-icon-button { width: 26px; height: 26px; }
+
+/* ---- Highlight window ---- */
+.highlight-quote-box { margin: 0; padding: 8px 12px; border-left: 3px solid var(--ui-accent); border-radius: 4px; background: var(--ui-panel2); font-size: 13px; line-height: 1.5; max-height: 140px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.highlight-colors { display: flex; gap: 8px; }
+.highlight-color { width: 28px; height: 28px; padding: 0; border: 2px solid transparent; border-radius: 50%; background: var(--hl-solid); cursor: pointer; box-shadow: none; }
+.highlight-color:hover { border-color: var(--ui-muted); }
+.highlight-color.selected, .highlight-color[aria-checked="true"] { border-color: var(--ui-text); }
+/* The global style of selected buttons must not repaint the colour swatches. */
+.highlight-colors .highlight-color, .highlight-colors .highlight-color.selected { background: var(--hl-solid) !important; }
+.highlight-colors .highlight-color.selected { border-color: var(--ui-text) !important; }
+
+/* The highlight window has four buttons in a row: it is a little wider and the row does not wrap. */
+dialog.highlight-dialog { width: min(640px, calc(100vw - 32px)); }
+.highlight-dialog .bookmark-actions { flex-wrap: nowrap; }
+.highlight-group-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: -6px; }
+.highlight-group-chips[hidden] { display: none; }
+.highlight-group-chip { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
+/* Many groups: the area scrolls instead of making the window taller. */
+.highlight-group-chips.is-scrolling { max-height: 92px; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+
+/* The note icon after a highlight that has a note (editor and preview). */
+.cm-highlight-note, .tn-highlight-note { display: inline-block; width: 13px; height: 13px; margin: 0 2px 0 3px; vertical-align: -2px; color: var(--hl-solid); cursor: pointer; user-select: none; }
+.cm-highlight-note .ui-icon, .tn-highlight-note .ui-icon { display: block; width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.cm-highlight-note:hover, .tn-highlight-note:hover { filter: brightness(1.2); }
+html[data-theme="contrast"] .cm-highlight-note, html[data-theme="contrast"] .tn-highlight-note { color: var(--ui-text); }

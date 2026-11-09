@@ -3,6 +3,7 @@ import { preview, previewBottomSpacer, previewContent, previewTopSpacer } from "
 import { graphPreviewOwnsPreview } from "../graph-ui/preview-host";
 import { decorateCodeBlocks, resolveLocalImages } from "./code-blocks";
 import { observeMermaid } from "./mermaid";
+import { applyBlockHighlights } from "./preview-highlights";
 import { previewContentScrollTop, resizeObserver } from "./preview-observers";
 import { blockElements, blockIndex, heightCache, htmlCache, pendingRenderIndices, previewState } from "./preview-state";
 import { pumpWorker } from "./preview-worker-client";
@@ -48,7 +49,7 @@ export function renderVirtualWindow(force = false) {
       element.dataset.index = String(i); element.dataset.startLine = String(block.startLine); element.dataset.endLine = String(block.endLine);
       const html = htmlCache.get(block.key);
       if (html !== undefined) {
-        if (element.dataset.htmlHash !== block.hash) { element.innerHTML = html; element.dataset.htmlHash = block.hash; decorateCodeBlocks(element); resolveLocalImages(element); observeMermaid(element); }
+        if (element.dataset.htmlHash !== block.hash) { element.innerHTML = html; element.dataset.htmlHash = block.hash; decorateCodeBlocks(element); resolveLocalImages(element); observeMermaid(element); applyBlockHighlights(element, block.startLine, block.endLine); }
         element.style.minHeight = "0px";
       } else {
         if (element.dataset.htmlHash) { element.replaceChildren(); delete element.dataset.htmlHash; }

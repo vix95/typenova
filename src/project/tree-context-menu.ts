@@ -24,6 +24,7 @@ import { refreshProjectTree } from "./project-tree-sync";
 import { appAlert, appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
 import { renameBookmarkPaths } from "../editor/bookmarks";
+import { renameHighlightPaths } from "../editor/highlights";
 import { bookmarkFilePath } from "../editor/bookmarks-model";
 
 export function treeContextMenuElement() {
@@ -135,6 +136,7 @@ async function promptAndRenameProjectEntry(path: string, isDirectory: boolean): 
   if (hadBookmarkFile) { try { await rename(oldBookmarkFile, bookmarkFilePath(renamed)); } catch { /* the bookmarks file stays under the old name */ } }
   // After the files moved: the bookmarks follow the new path and read their file from its new place.
   renameBookmarkPaths(path, renamed);
+  renameHighlightPaths(path, renamed);
 }
 
 async function promptAndCreateProjectFolder(directoryPath: string): Promise<void> {
