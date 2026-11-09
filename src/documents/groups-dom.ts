@@ -139,6 +139,8 @@ export function renderLayout(): void {
   const scrolls = new Map(groups.map(group => [group.id, group.view?.scrollDOM.scrollTop ?? 0]));
   for (const group of groups) ensureGroupElement(group);
   const root = buildNode(layout);
+  // The top element fills the whole area. A group that was a child of a split keeps the share it had there (an inline flex), which left only half of the area used after the groups were merged.
+  root.style.flex = "1 1 0";
   const container = $("editorGroups");
   const ownerId = groupIds(layout)[0];
   for (const group of groups) {
