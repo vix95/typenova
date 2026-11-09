@@ -187,8 +187,18 @@ export function bookmarkFilePath(documentPath: string): string { return `${docum
  * working when the folder is moved or opened on another computer), and lists bookmarks in the order of the document.
  */
 export function serializeBookmarkFile(documentName: string, bookmarks: readonly Bookmark[]): string {
-  const entries = [...bookmarks].sort((a, b) => a.line - b.line || a.column - b.column).map(({ path: _path, ...rest }) => rest);
-  return JSON.stringify({ version: 1, document: documentName, bookmarks: entries }, null, 2) + "\n";
+  return JSON.stringify({ version: 1, document: documentName, bookmarks: bookmarkEntries(bookmarks) }, null, 2) + "\n";
+}
+
+/** The bookmarks of one document as they are written in its config file: without a path, in the order of the document. */
+export function bookmarkEntries(bookmarks: readonly Bookmark[]): Omit<Bookmark, "path">[] {
+  return [...bookmarks].sort((a, b) => a.line - b.line || a.column - b.column).map(({ path: _path, ...rest }) => rest);
+}
+
+/** The bookmarks in a list read from a config file, placed in the document at `path`; malformed entries are dropped. */
+export function parseBookmarkList(list: unknown, path: string): Bookmark[] {
+  if (!Array.isArray(list)) return [];
+  return parseStoredBookmarks(JSON.stringify(list.map(item => (typeof item === "object" && item !== null ? { ...item, path } : item))));
 }
 
 /**
@@ -200,7 +210,7 @@ export function parseBookmarkFile(raw: string | null | undefined, path: string):
   let list: unknown;
   try { list = (JSON.parse(raw) as { bookmarks?: unknown } | null)?.bookmarks; } catch { return null; }
   if (!Array.isArray(list)) return null;
-  return parseStoredBookmarks(JSON.stringify(list.map(item => (typeof item === "object" && item !== null ? { ...item, path } : item))));
+  return parseBookmarkList(list, path);
 }
 
 /** True when two lists hold the same bookmarks of a document (the order and the path do not matter). */

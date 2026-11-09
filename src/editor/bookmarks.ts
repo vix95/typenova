@@ -82,7 +82,7 @@ async function writeBookmarkFiles(): Promise<void> {
     if (text === state.text) continue;
     try { await writeBookmarkFile(state.path, group?.items ?? []); state.text = text; }
     catch {
-      if (!writeProblemShown) { writeProblemShown = true; showToast(langText("Nie udało się zapisać pliku zakładek obok dokumentu. Zakładki zostają w programie.", "Could not save the bookmarks file next to the document. The bookmarks stay in the program.")); }
+      if (!writeProblemShown) { writeProblemShown = true; showToast(langText("Nie udało się zapisać zakładek w pliku obok dokumentu. Zostają w programie.", "Could not save the bookmarks in the file next to the document. They stay in the program.")); }
     }
   }
 }
@@ -100,10 +100,11 @@ async function importBookmarkFile(path: string): Promise<void> {
   if (found.kind === "unavailable") { unreadableFiles.add(key); return; }
   if (found.kind === "unreadable") {
     unreadableFiles.add(key);
-    showToast(langText(`Plik zakładek obok „${basename(path)}” jest uszkodzony, więc go nie wczytano i nie nadpisano.`, `The bookmarks file next to “${basename(path)}” is damaged, so it was neither read nor overwritten.`));
+    showToast(langText(`Plik konfiguracji obok „${basename(path)}” jest uszkodzony, więc go nie wczytano i nie nadpisano.`, `The config file next to “${basename(path)}” is damaged, so it was neither read nor overwritten.`));
     return;
   }
-  fileStates.set(key, { path, text: found.kind === "found" ? serializeBookmarkFile(basename(path), found.bookmarks) : "" });
+  // Bookmarks read from the old separate file count as not yet written, so the config file is written (and the old file removed) at once.
+  fileStates.set(key, { path, text: found.kind === "found" && !found.fromLegacy ? serializeBookmarkFile(basename(path), found.bookmarks) : "" });
   // If the user changed this document's bookmarks while the file was being read, their version is the newer one.
   if (found.kind === "found" && snapshot() === before && !sameBookmarkContent(bookmarksOfFile(bookmarks, path), found.bookmarks)) {
     commit(replaceFileBookmarks(bookmarks, path, found.bookmarks, newId));

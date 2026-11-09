@@ -62,20 +62,20 @@ import { $ } from "./app/dom";
 import { restoreOpenSessionAtStartup, offerRecovery } from "./documents/recovery";
 import { initBookmarkMenu } from "./app/bookmark-menu";
 import { initBookmarkSidebar } from "./app/bookmark-sidebar";
+import { initHighlightMenu } from "./app/highlight-menu";
+import { initHighlightSidebar } from "./app/highlight-sidebar";
 import { initWhitespaceToggle } from "./app/whitespace-toggle";
 import { initAiSettingsBindings } from "./app/ai-settings-bindings";
 import { initChatPanel } from "./ai/chat-panel";
 import { initBookmarks } from "./editor/bookmarks";
+import { initHighlights } from "./editor/highlights";
 
 // Boot sequence. The order below is the original top-level execution order of the
 // pre-0.5.113 monolithic main.ts; event-listener registration order is behaviour.
-
 // DOM scaffolding
 initWorkspaceDom();
-
 // Editor
 initEditorView();
-
 // Initial document, tab and layout bootstrap
 view.contentDOM.setAttribute("spellcheck", "false");
 initializeEditorMinimap();
@@ -102,9 +102,9 @@ window.setTimeout(() => {
   }
 }, 8000);
 
-// Bookmarks are loaded before any tab (or the restored session) is shown
+// Bookmarks and highlights are loaded before any tab (or the restored session) is shown
 initBookmarks();
-
+initHighlights();
 // Document tabs
 initTabs();
 initTabInteractions();
@@ -129,6 +129,8 @@ initExternalDrop();
 initEditMenuBindings();
 initBookmarkMenu();
 initBookmarkSidebar();
+initHighlightMenu();
+initHighlightSidebar();
 initWhitespaceToggle();
 initAiSettingsBindings();
 initChatPanel();

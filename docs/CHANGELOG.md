@@ -2,6 +2,20 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.122] - 2026-11-09
+
+### Added
+
+- Highlights: mark a passage of a document as important. Select text and press `Ctrl+Shift+H`, use the marker button in the formatting toolbar, the editor's context menu or the Highlights menu. The passage is drawn on a yellowish background in the editor and in the preview (the preview finds it again inside the rendered text, also when it contains Markdown formatting); the high-contrast theme underlines it as well. Highlights follow their text while the document is edited, find it again when the file changed while it was closed, and are kept between sessions.
+- A colour (yellow, green, blue, pink, orange), an optional group and an optional note for each highlight, set in the highlight window (the Highlights menu, the context menu or the edit button of the list). A tooltip over a highlight shows its group and note.
+- A Highlights view in the left panel (the marker button in the row of project buttons, the Highlights menu or the command palette): search, a switch between sections per file and per group, go to, edit and delete, and "Copy all as Markdown" (headings per file or group, passages as quotations with their notes). `F4` and `Shift+F4` go to the next and previous highlight, also across files.
+- Highlights are saved in the program and in the config file next to a Markdown document, like bookmarks. Renaming a file or folder in the project tree keeps them.
+
+### Changed
+
+- One config file per document: `notes.md.config.json` now holds the hidden sections, the bookmarks and the highlights together. Bookmarks that earlier versions kept in `notes.md.bookmarks.json` are moved into it the first time the document is shown, and the old file is removed. Each part is saved without touching the others, and a file that is not a config file is never overwritten.
+- The setting "Config file next to a Markdown document" (before: "Bookmarks file next to a Markdown document") turns the config file off for bookmarks and highlights; hidden sections are always saved in it, because they have no other place.
+
 ## [0.5.121] - 2026-11-09
 
 ### Added

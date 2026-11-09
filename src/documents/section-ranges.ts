@@ -76,7 +76,7 @@ export function removeHiddenLines(text: string, ranges: readonly HiddenRange[]):
 /** Name of the config file next to a Markdown file: the file's own name plus `.config.json`. */
 export function sectionConfigPath(documentPath: string): string { return `${documentPath}.config.json`; }
 
-interface StoredSection { level: number; title: string; occurrence: number }
+export interface StoredSection { level: number; title: string; occurrence: number }
 
 /** The hidden section keys stored in a config file's text; anything malformed is ignored. */
 export function parseSectionConfig(raw: string | null | undefined): string[] {
@@ -99,6 +99,16 @@ function storedFromKey(key: string): StoredSection | null {
   const match = /^(\d+):([\s\S]*):(\d+)$/.exec(key);
   return match ? { level: Number(match[1]), title: match[2], occurrence: Number(match[3]) } : null;
 }
+
+/** The hidden sections as they are written in the config file (`level`, `title`, `occurrence`). */
+export function storedSectionsOf(keys: Iterable<string>): StoredSection[] {
+  const sections: StoredSection[] = [];
+  for (const key of keys) { const stored = storedFromKey(key); if (stored) sections.push(stored); }
+  return sections;
+}
+
+/** The "show only this section" choice as it is written in the config file; undefined when there is none. */
+export function storedFocusOf(key: string | null): StoredSection | undefined { return key ? storedFromKey(key) ?? undefined : undefined; }
 
 /** The section kept as the only visible one, as stored in a config file's text; null when there is none. */
 export function parseFocusedSection(raw: string | null | undefined): string | null {

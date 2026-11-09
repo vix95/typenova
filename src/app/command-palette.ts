@@ -16,6 +16,9 @@ import { toggleShowHiddenSections } from "../documents/section-visibility";
 import { editBookmarkAtCaret } from "../editor/bookmark-dialogs";
 import { showBookmarksPanel } from "./bookmark-sidebar";
 import { toggleShowWhitespace } from "./whitespace-toggle";
+import { showHighlightsPanel } from "./highlight-sidebar";
+import { editHighlightAtSelection } from "../editor/highlight-dialogs";
+import { copyHighlightsAsMarkdown, getHighlights, goToNeighbourHighlight, toggleHighlight } from "../editor/highlights";
 import { openAiEdit } from "../ai/edit-dialog";
 import { toggleAiPane } from "../ai/chat-panel";
 import { goToNeighbourBookmark, toggleBookmark } from "../editor/bookmarks";
@@ -38,6 +41,12 @@ const commandItems: CommandItem[] = [
   { labelPl: "Zakładki: pokaż panel zakładek", labelEn: "Bookmarks: show the bookmarks panel", run: () => showBookmarksPanel() },
   { labelPl: "Claude: zapytaj o zaznaczenie lub wygeneruj tekst", labelEn: "Claude: ask about the selection or generate text", shortcut: "Ctrl+Shift+A", run: () => openAiEdit() },
   { labelPl: "Claude: pokaż / ukryj czat", labelEn: "Claude: show / hide the chat", shortcut: "Ctrl+Shift+M", run: () => toggleAiPane() },
+  { labelPl: "Wyróżnienia: wyróżnij zaznaczenie lub usuń wyróżnienie", labelEn: "Highlights: highlight the selection or remove the highlight", shortcut: "Ctrl+Shift+H", run: () => void toggleHighlight() },
+  { labelPl: "Wyróżnienia: kolor, grupa i notatka", labelEn: "Highlights: colour, group and note", run: () => editHighlightAtSelection() },
+  { labelPl: "Wyróżnienia: następne wyróżnienie", labelEn: "Highlights: next highlight", shortcut: "F4", run: () => goToNeighbourHighlight(1) },
+  { labelPl: "Wyróżnienia: poprzednie wyróżnienie", labelEn: "Highlights: previous highlight", shortcut: "Shift+F4", run: () => goToNeighbourHighlight(-1) },
+  { labelPl: "Wyróżnienia: pokaż panel wyróżnień", labelEn: "Highlights: show the highlights panel", run: () => showHighlightsPanel() },
+  { labelPl: "Wyróżnienia: skopiuj wszystkie jako Markdown", labelEn: "Highlights: copy all as Markdown", run: () => void copyHighlightsAsMarkdown(getHighlights(), "file") },
   { labelPl: "Pokaż / ukryj znaki białe (spacje, tabulatory, końce wierszy)", labelEn: "Show / hide white space (spaces, tabs, line ends)", run: () => toggleShowWhitespace() },
   { labelPl: "Pokaż / ukryj ukryte sekcje", labelEn: "Show / hide hidden sections", run: () => toggleShowHiddenSections() },
   { labelPl: "Drukuj / eksportuj PDF", labelEn: "Print / export PDF", run: () => void printDocument() },

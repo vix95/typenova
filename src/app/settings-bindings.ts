@@ -4,6 +4,7 @@ import { documentState } from "../documents/document-state";
 import { autoSaveTimer, renderRecentFiles, scheduleAutoSave } from "../documents/file-actions";
 import { bookmarkFilesEnabled } from "../editor/bookmark-files";
 import { applyBookmarkFilesSetting } from "../editor/bookmarks";
+import { applyHighlightFilesSetting } from "../editor/highlights";
 import { insertAtCursor } from "../editor/editing-commands";
 import { minimapState, scheduleMinimapDraw, updateMinimapLayout } from "../editor/minimap";
 import { scrollSyncIdleTimer, scrollSyncState, syncPreviewToEditor } from "../editor/scroll-sync";
@@ -47,9 +48,10 @@ export function initSettingsBindings(): void {
   bookmarkFilesToggle.addEventListener("change", (event: Event) => {
     const enabled = (event.target as HTMLInputElement).checked;
     applyBookmarkFilesSetting(enabled);
+    applyHighlightFilesSetting(enabled);
     $("statusText").textContent = enabled
-      ? langText("Zakładki będą zapisywane w pliku .bookmarks.json obok dokumentu Markdown.", "Bookmarks will be saved in a .bookmarks.json file next to the Markdown document.")
-      : langText("Zakładki zostają tylko w programie. Istniejące pliki .bookmarks.json nie są zmieniane.", "Bookmarks stay only in the program. Existing .bookmarks.json files are left unchanged.");
+      ? langText("Zakładki i wyróżnienia będą zapisywane w pliku .config.json obok dokumentu Markdown.", "Bookmarks and highlights will be saved in a .config.json file next to the Markdown document.")
+      : langText("Zakładki i wyróżnienia zostają tylko w programie. Istniejące pliki .config.json nie są zmieniane.", "Bookmarks and highlights stay only in the program. Existing .config.json files are left unchanged.");
   });
   applyFontSize("editor", localStorage.getItem("typenova.editorFontSize") || "small", false);
   applyFontSize("preview", localStorage.getItem("typenova.previewFontSize") || "small", false);

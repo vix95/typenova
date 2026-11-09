@@ -39,6 +39,7 @@ export const ICONS = {
   insertText: svg('<path d="M8 2.5v7M5 7l3 3 3-3M3 13h10"/>'),
   replaceText: svg('<path d="M3 5.5h9l-2.5-2.5M13 10.5H4l2.5 2.5"/>'),
   sparkle: svg('<path d="M7 2.5l1.3 3.7 3.7 1.3-3.7 1.3L7 12.5 5.7 8.8 2 7.5l3.7-1.3z"/><path d="M12.5 10.5l.5 1.4 1.4.5-1.4.5-.5 1.4-.5-1.4-1.4-.5 1.4-.5z"/>'),
+  highlighter: svg('<path d="m6 7.5-3.5 3.5V13h5L9 11.5M14 8l-3 3a1.3 1.3 0 0 1-1.8 0L6 7.8a1.3 1.3 0 0 1 0-1.8L9 3"/>'),
   edit: svg('<path d="m10.5 3 2.5 2.5-7 7H3.5V10l7-7z"/><path d="m9 4.5 2.5 2.5"/>'),
   trash: svg('<path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5M6.8 7v4M9.2 7v4"/>'),
   note: svg('<path d="M3.5 2.5h9v11h-9z"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/>'),
