@@ -1307,10 +1307,10 @@ html[data-theme="contrast"] .typenova-tooltip-shortcut { border-width: 2px; colo
   .sidebar-tabs {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) 26px;
-    grid-template-rows: 32px 32px;
+    grid-template-rows: 32px 32px 32px;
     gap: 3px !important;
     padding: 5px 6px !important;
-    min-height: 75px;
+    min-height: 107px;
     height: auto !important;
     flex: 0 0 auto !important;
     align-items: stretch !important;
@@ -1325,6 +1325,14 @@ html[data-theme="contrast"] .typenova-tooltip-shortcut { border-width: 2px; colo
   #sidebarOutlineTab {
     grid-column: 1 / 3;
     grid-row: 2;
+    width: 100% !important;
+    min-width: 0 !important;
+    justify-content: flex-start !important;
+  }
+  /* The Graph tab takes its own row like the other two; without a place of its own it was auto-placed and centred. */
+  #sidebarBrainTab {
+    grid-column: 1 / 3;
+    grid-row: 3;
     width: 100% !important;
     min-width: 0 !important;
     justify-content: flex-start !important;

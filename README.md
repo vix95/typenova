@@ -12,15 +12,39 @@ I write a lot of long Markdown documents: design notes, study material, project 
 
 TypeNova takes the other route. Every heading is a node. A document can be as long as it needs to be, and you can still see its structure and the links between its sections.
 
-Everything runs locally. There's no account, no sync service, no telemetry and no AI involved. Your `.md` files are the only source of truth.
+Everything runs locally. There's no account, no sync service and no telemetry. The AI assistant is optional and does nothing until you give it your own key or point it at a model on your own machine. Your `.md` files are the only source of truth.
 
 ## What you get
 
-**An editor you can live in.** CodeMirror 6 with a formatting toolbar, a breadcrumb that follows the section you're in, a minimap, visible white space, editor groups with their own tabs, side by side or stacked, and tabs you drag between them (`Ctrl+\`), Polish and English spell checking with suggestions and a personal dictionary, an optional AI assistant (your own key for Claude, OpenAI or Gemini, a local Ollama model, or any OpenAI-compatible service) for chat and rewriting a selection, find, bookmarks with notes (`Ctrl+F2`, `F2`), coloured highlights with groups and notes (`Ctrl+Shift+H`, `F4`) that can also live in a file next to your Markdown, and a command palette on `Ctrl+K`. The interface comes in English and Polish.
+**An editor you can live in.** CodeMirror 6 with a formatting toolbar, a breadcrumb that follows the section you're in, a minimap, visible white space, Polish and English spell checking with suggestions and a personal dictionary, find, and a command palette on `Ctrl+K`. The interface comes in English and Polish.
+
+**Editor groups.** Split the editor into up to four groups, side by side or stacked, and give each its own tabs (`Ctrl+\`, or **Open to the right** / **Open below** in a tab's menu). Drag a tab onto another group's tab strip to move it, onto a group to join it, or onto an edge of a group to open a new group on that side; a zone shows where it will land. The group you work in decides what the outline, the preview and the status bar show, and the layout of saved files comes back when you restart.
+
+![Three editor groups with their own tabs: one on the left, two stacked on the right](docs/screenshots/typenova-editor-groups.png)
 
 **A live preview that handles the usual hard parts.** Tables, task lists, KaTeX math, Mermaid diagrams and highlighted code blocks with a copy button. Rendering happens in web workers, so typing stays smooth in big documents. Local images work too, including ones that live outside the opened folder.
 
 ![Live preview with a Mermaid diagram and a rendered formula](docs/screenshots/typenova-live-preview.png)
+
+**Diagrams and formulas without memorising the syntax.** The Mermaid editor offers templates, a flowchart builder for nodes and links, and a live preview you can zoom, pan and click to edit an element. The formula editor has a palette of structures, matrices, accents, Greek letters, operators and relations, ready-made formulas and matrix tools, and keeps the LaTeX code and the rendered result in step in both directions. Both put their result into the document with `Ctrl+Enter`.
+
+![The Mermaid editor: code, flowchart builder and live preview](docs/screenshots/typenova-mermaid-editor.png)
+
+![The formula editor: symbol palette, LaTeX code and rendered formula](docs/screenshots/typenova-math-editor.png)
+
+**Bookmarks and highlights.** `Ctrl+F2` bookmarks a line, and each bookmark can have a name and a note; they're listed in the sidebar and `F2` / `Shift+F2` walk through them. `Ctrl+Shift+H` highlights the selected passage in one of five colours; each highlight can have a note and a group, shows in the preview too, and the panel lists them by file or by group and copies them all as Markdown. Both live in the program's settings by default and can be kept in a file next to your Markdown instead, so they travel with the document.
+
+![The bookmarks panel with named, annotated bookmarks and their markers in the editor](docs/screenshots/typenova-bookmarks.png)
+
+![The highlights panel with coloured, grouped and annotated passages, also shown in the preview](docs/screenshots/typenova-highlights.png)
+
+**An AI assistant you control.** It's off until you set it up. Pick one provider in the assistant options: Claude, OpenAI, Gemini, a model running in Ollama on your computer, or any service that speaks the OpenAI protocol (LM Studio, OpenRouter, a company gateway). **Check the connection** lists the models the service offers and says plainly what's wrong if it doesn't work. API keys are encrypted on disk (AES-256-GCM, the same way on Windows and Linux), requests are made by the Rust side so the interface never holds a key, and once saved a key is shown only by its last characters.
+
+![The assistant options: provider cards, a stored key shown by its last characters, the model and the connection check](docs/screenshots/typenova-ai-options.png)
+
+The chat (`Ctrl+Shift+M`) works on the document you have open and on your selection, and it lists exactly what is sent with each message: the document with its full path, and the selected passage with its section and lines, each with a button that takes you there. **Ask AI** (`Ctrl+Shift+A`) proposes a rewrite of the selection as a comparison and changes the text only after you accept it. The answer in the screenshot below is an illustrative example.
+
+![The AI chat next to a document, listing the file and the selected section that are sent](docs/screenshots/typenova-ai-chat.png)
 
 **More than Markdown.** Markdown (`md`, `markdown`, `mdx`, `rmd`, `qmd`, ...) gets the full treatment. About 340 text and code formats open in the editor with syntax highlighting, and unknown extensions are tried as text. Files keep their encoding (UTF-8, UTF-16, Windows-1250, ISO-8859-2 and more) and line endings (CRLF/LF) when saved; the status bar shows both. CSV/TSV files preview as tables, Mermaid files (`.mmd`) as diagrams, and **Format document** (`Shift+Alt+F`) tidies JSON, JSON Lines, YAML, XML and Markdown tables. Pictures (including TIFF), PDF, audio and video open in built-in viewers, and Word and HTML files can be imported as Markdown.
 
@@ -42,7 +66,7 @@ Select a node and the section is rendered in a side panel next to a list of rela
 
 ## Try it on the demo vault
 
-The repository ships with a small, interlinked project in [`examples/demo-vault`](examples/demo-vault): a handbook on machine-learning systems with math, diagrams, code and cross-references. It's the vault used in the screenshots above. Open that folder in TypeNova and the graph fills up straight away.
+The repository ships with a small, interlinked project in [`examples/demo-vault`](examples/demo-vault): a handbook on machine-learning systems with math, diagrams, code and cross-references. It's the vault used in the screenshots in this README. Open that folder in TypeNova and the graph fills up straight away.
 
 ## Getting started
 
