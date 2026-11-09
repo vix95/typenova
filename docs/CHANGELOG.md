@@ -7,10 +7,11 @@ All notable changes to TypeNova are recorded here, newest first. Every entry cor
 ### Fixed
 
 - In a narrow sidebar the Graph tab was centred in a row of its own while Files and Table of contents were left-aligned. All three tabs now sit in their own rows, left-aligned and the same width.
+- After the editor groups were merged back into one, the editor kept the width it had as part of a split and filled only half of the editor area (the rest stayed empty). The remaining group now fills the whole area.
 
 ### Changed
 
-- The README describes the editor groups, the Mermaid and formula editors, bookmarks, highlights and the AI assistant (providers, encrypted keys, the list of what is sent), and its screenshots were retaken on the demo vault, including the new ones.
+- The README describes the editor groups, the Mermaid and formula editors, bookmarks, highlights and the AI assistant (providers, encrypted keys, the list of what is sent), and its screenshots were retaken on the demo vault, including the new ones. A two-minute demo video (`docs/media/typenova-demo.mp4`) and a short animated tour (`typenova-demo.gif`) show the features at work.
 
 ## [0.5.125] - 2026-11-10
 

@@ -8,6 +8,10 @@
 
 ![TypeNova: project tree, Markdown source and live preview side by side](docs/screenshots/typenova-interface.png)
 
+![A short tour of TypeNova: the section graph and tree, editor groups with drag-to-split, the Mermaid editor and the AI chat](docs/media/typenova-demo.gif)
+
+[Watch the full demo (MP4, about 2 minutes)](docs/media/typenova-demo.mp4): live preview, the section graph, editor groups, the Mermaid and formula editors, bookmarks, highlights and the optional AI assistant.
+
 I write a lot of long Markdown documents: design notes, study material, project handbooks. Editors are fine at that part. What they're bad at is helping me find my way around a 2,000-line file, and the graph views in most note-taking tools only connect whole files, which pushes you into splitting everything into tiny notes just to see a picture.
 
 TypeNova takes the other route. Every heading is a node. A document can be as long as it needs to be, and you can still see its structure and the links between its sections.
@@ -32,7 +36,7 @@ Everything runs locally. There's no account, no sync service and no telemetry. T
 
 ![The formula editor: symbol palette, LaTeX code and rendered formula](docs/screenshots/typenova-math-editor.png)
 
-**Bookmarks and highlights.** `Ctrl+F2` bookmarks a line, and each bookmark can have a name and a note; they're listed in the sidebar and `F2` / `Shift+F2` walk through them. `Ctrl+Shift+H` highlights the selected passage in one of five colours; each highlight can have a note and a group, shows in the preview too, and the panel lists them by file or by group and copies them all as Markdown. Both live in the program's settings by default and can be kept in a file next to your Markdown instead, so they travel with the document.
+**Bookmarks and highlights.** `Ctrl+F2` bookmarks a line, and each bookmark can have a name and a note; they're listed in the sidebar and `F2` / `Shift+F2` walk through them. `Ctrl+Shift+H` highlights the selected passage in one of five colours; each highlight can have a note and a group, shows in the preview too, and the panel lists them by file or by group and copies them all as Markdown. By default they are saved in a `.config.json` file next to the document, so they travel with it; you can switch that off in Settings.
 
 ![The bookmarks panel with named, annotated bookmarks and their markers in the editor](docs/screenshots/typenova-bookmarks.png)
 
