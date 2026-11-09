@@ -1,7 +1,7 @@
 {
   "name": "typenova",
   "private": true,
-  "version": "0.5.118",
+  "version": "0.5.119",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -10,7 +10,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "audit:dependencies": "npm audit --omit=dev",
-    "test": "tsc src/graph/section-model.ts src/graph/workspace-controller.ts src/graph/spatial-query.ts src/filesystem/path-utils.ts src/filesystem/file-types.ts src/filesystem/language-map.ts src/editor/format-document.ts src/preview/preview-source.ts src/preview/structured-preview.ts src/preview/media-format.ts src/documents/session.ts src/documents/tab-order.ts src/filesystem/project-roots.ts src/documents/section-ranges.ts src/filesystem/file-names.ts src/editor/formula-block.ts src/editor/flowchart-edit.ts src/editor/text-history.ts src/editor/line-edit.ts src/git-ui/git-graph.ts src/filesystem/text-codec.ts src/documents/recovery-store.ts src/settings/storage.ts src/filesystem/project-tree-operations.ts src/filesystem/project-filter-tree.ts src/filesystem/project-tree-state.ts src/filesystem/project-tree-controller.ts --target ES2022 --module ES2022 --moduleResolution bundler --outDir .test-build --skipLibCheck && node --test tests/*.test.mjs",
+    "test": "tsc src/graph/section-model.ts src/graph/workspace-controller.ts src/graph/spatial-query.ts src/filesystem/path-utils.ts src/filesystem/file-types.ts src/filesystem/language-map.ts src/editor/format-document.ts src/preview/preview-source.ts src/preview/structured-preview.ts src/preview/media-format.ts src/documents/session.ts src/documents/tab-order.ts src/filesystem/project-roots.ts src/documents/section-ranges.ts src/filesystem/file-names.ts src/editor/formula-block.ts src/editor/flowchart-edit.ts src/editor/text-history.ts src/editor/line-edit.ts src/editor/bookmarks-model.ts src/git-ui/git-graph.ts src/filesystem/text-codec.ts src/documents/recovery-store.ts src/settings/storage.ts src/filesystem/project-tree-operations.ts src/filesystem/project-filter-tree.ts src/filesystem/project-tree-state.ts src/filesystem/project-tree-controller.ts --target ES2022 --module ES2022 --moduleResolution bundler --outDir .test-build --skipLibCheck && node --test tests/*.test.mjs",
     "benchmark:graph": "tsc src/graph/section-model.ts --target ES2022 --module ES2022 --outDir .benchmark-build --skipLibCheck && node benchmarks/graph-indexing.mjs",
     "benchmark:graph:small": "tsc src/graph/section-model.ts --target ES2022 --module ES2022 --outDir .benchmark-build --skipLibCheck && node benchmarks/graph-indexing.mjs 100 1000",
     "typecheck": "tsc --noEmit"
