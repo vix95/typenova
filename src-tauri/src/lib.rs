@@ -1,6 +1,7 @@
 mod clipboard_files;
 mod git;
 mod page_server;
+mod spell;
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -411,7 +412,7 @@ pub fn run() {
         }
       }
     })
-    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
+    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, spell::spell_check, spell::spell_suggest, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
     .run(tauri::generate_context!())
     .expect("error while running TypeNova");
 }

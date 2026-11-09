@@ -1,0 +1,25 @@
+/* Spell checking: the wavy underline of misspelled words, the spelling part of the editor's context menu and the personal dictionary window. Colours come from the theme tokens. */
+
+/* ---- In the text ---- */
+.cm-misspelled { text-decoration: underline wavy var(--ui-danger); text-decoration-thickness: 1.5px; text-underline-offset: 3px; text-decoration-skip-ink: none; }
+/* The high-contrast theme draws the line thicker and in the text colour, so it does not rely on a colour that may be hard to tell apart. */
+html[data-theme="contrast"] .cm-misspelled { text-decoration-color: var(--ui-text); text-decoration-thickness: 2.5px; }
+
+/* ---- Context menu ---- */
+.spell-menu-section[hidden] { display: none; }
+.spell-menu-item { display: block; width: 100%; text-align: left; }
+.spell-menu-item.spell-suggestion { font-weight: 650; }
+
+/* ---- Personal dictionary window ---- */
+dialog.spell-words-dialog { width: min(480px, calc(100vw - 32px)); }
+.spell-word-add { display: flex; gap: 8px; align-items: center; }
+.spell-word-add .bookmark-input { flex: 1; min-width: 0; }
+.spell-words-dialog .bookmark-list { max-height: min(46vh, 360px); }
+.spell-word-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 4px 2px 10px; border: 1px solid transparent; border-radius: 8px; }
+.spell-word-row:hover, .spell-word-row:focus-within { background: var(--ui-hover); border-color: var(--ui-hover-border, var(--ui-border)); }
+.spell-word { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* A settings section made of several blocks (a switch, fields, a button): one column with an equal gap between them, and a switch as wide as the fields. */
+.settings-stack { display: flex; flex-direction: column; gap: 14px; }
+.settings-stack > .settings-section-heading { margin: 0; }
+.settings-stack > .settings-option-grid { grid-template-columns: minmax(0, 1fr); }

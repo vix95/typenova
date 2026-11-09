@@ -2,6 +2,15 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.123] - 2026-11-09
+
+### Added
+
+- Spell checking for Polish and English. Misspelled words are underlined with a wavy line in Markdown and text documents (not in code files); code, fenced code blocks, inline code, addresses, e-mails, link targets, HTML, formulas, front matter, acronyms in capitals and names like `iPhone` or `TypeNova` are not checked. The word being typed is left alone until the typing pauses.
+- Right-clicking a misspelled word shows suggestions (a click replaces the word), "Add to the dictionary" and "Ignore"; `Ctrl+.` opens the same menu for the word at the caret, and `F8` / `Shift+F8` go to the next and previous mistake. The command palette has the same commands and "Spelling: personal dictionary".
+- Settings: "Spell checking" (on by default), the languages (Polish and English, Polish, or English; a word is right if it is right in any chosen language) and a personal dictionary window to add and remove words. The personal dictionary is stored only on this computer.
+- The dictionaries are the Hunspell dictionaries `pl` and `en_US`, built into the program and read by a spell checker in the backend (`spellbook`, Rust), so nothing is sent anywhere. They keep their own licenses (`src-tauri/dictionaries/README.md`; the Polish one is used under the Mozilla Public License). The program grows by about 5 MB.
+
 ## [0.5.122] - 2026-11-09
 
 ### Added

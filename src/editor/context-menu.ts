@@ -1,5 +1,6 @@
 /** Custom editor context menu. */
 import { openAiEdit } from "../ai/edit-dialog";
+import { prepareSpellSection } from "../spelling/spell-menu";
 import { editHighlightAtSelection } from "./highlight-dialogs";
 import { toggleHighlight } from "./highlights";
 import { $ } from "../app/dom";
@@ -12,7 +13,32 @@ import { toggleBookmark } from "./bookmarks";
 
 // Custom context menu aligned with the app's theme and editor commands.
 const contextMenu = $("editorContextMenu") as HTMLElement;
-const showEditorContextMenu = (event: MouseEvent) => { event.preventDefault(); event.stopPropagation(); contextMenu.hidden = false; contextMenu.style.visibility = "hidden"; contextMenu.style.left = "0px"; contextMenu.style.top = "0px"; requestAnimationFrame(() => { const w = contextMenu.offsetWidth, h = contextMenu.offsetHeight; contextMenu.style.left = Math.max(8, Math.min(event.clientX, window.innerWidth - w - 8)) + "px"; contextMenu.style.top = Math.max(8, Math.min(event.clientY, window.innerHeight - h - 8)) + "px"; contextMenu.style.visibility = "visible"; }); };
+/** Where the menu was asked to open, so that it can be placed again when its content changes. */
+let menuPoint = { x: 0, y: 0 };
+
+/** Puts the menu with its top left corner at the point, moved inside the window if it would not fit. */
+function placeContextMenu(): void {
+  const w = contextMenu.offsetWidth, h = contextMenu.offsetHeight;
+  contextMenu.style.left = Math.max(8, Math.min(menuPoint.x, window.innerWidth - w - 8)) + "px";
+  contextMenu.style.top = Math.max(8, Math.min(menuPoint.y, window.innerHeight - h - 8)) + "px";
+  contextMenu.style.visibility = "visible";
+}
+
+/** Places the menu again after its content changed (the spelling suggestions arrive after the menu opened). */
+export function relayoutEditorContextMenu(): void { placeContextMenu(); }
+
+/** Shows the menu near a point (a mouse click, or a word when the menu is opened from the keyboard). */
+export function openEditorContextMenuAt(x: number, y: number): void {
+  menuPoint = { x, y };
+  contextMenu.hidden = false; contextMenu.style.visibility = "hidden"; contextMenu.style.left = "0px"; contextMenu.style.top = "0px";
+  requestAnimationFrame(placeContextMenu);
+}
+
+const showEditorContextMenu = (event: MouseEvent) => {
+  event.preventDefault(); event.stopPropagation();
+  prepareSpellSection(event.target, event.clientX, event.clientY, placeContextMenu);
+  openEditorContextMenuAt(event.clientX, event.clientY);
+};
 
 export function initEditorContextMenu(): void {
   view.contentDOM.addEventListener("contextmenu", showEditorContextMenu, true);

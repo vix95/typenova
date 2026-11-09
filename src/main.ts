@@ -67,6 +67,7 @@ import { initHighlightSidebar } from "./app/highlight-sidebar";
 import { initWhitespaceToggle } from "./app/whitespace-toggle";
 import { initAiSettingsBindings } from "./app/ai-settings-bindings";
 import { initChatPanel } from "./ai/chat-panel";
+import { initSpellSettings } from "./spelling/spell-options";
 import { initBookmarks } from "./editor/bookmarks";
 import { initHighlights } from "./editor/highlights";
 
@@ -134,12 +135,11 @@ initHighlightSidebar();
 initWhitespaceToggle();
 initAiSettingsBindings();
 initChatPanel();
+initSpellSettings();
 initProjectRestore();
 initSaveFindBindings();
-
 // Project tree keyboard target
 initProjectTreeFocus();
-
 // Section graph
 initGraphState();
 initFilterPanel();
