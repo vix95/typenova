@@ -2,6 +2,19 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.125] - 2026-11-10
+
+### Added
+
+- Editor groups: the editor area can be split into up to four groups, side by side or stacked, and each group has its own tab strip and its own editor. The split button at the end of the tab strip, **View → Split the editor right**, the command palette and `Ctrl+\` split off the next tab (or a new empty document) to the right and merge the groups again; a tab's context menu has **Open to the right**, **Open below** and **Merge the groups into one**, and a group's `+` opens a new document in that group.
+- Dragging a tab: onto another group's strip it takes a place there; onto the middle of a group's editor it joins that group; onto the left, right, top or bottom edge of a group's editor it opens a new group on that side (a zone shows where it would land). The dividers between groups are dragged, or moved with the arrow keys, and each group's strip has an accent line while it is the one in use. Groups and their sizes are restored with the open documents when the program starts again.
+- The group in use is the active document: typing, saving, search, the outline, the breadcrumbs, the statistics and the preview all follow it. A document belongs to exactly one group, so there is one editor state per document: opening a tab that is in another group moves to that group instead of loading it twice. Closing the last tab of a group removes the group.
+
+### Changed
+
+- Theme, wrapping, line numbers and white space are applied to every group. The minimap is shown only while there is a single group, and the Ctrl+hover image preview works over the group in use.
+- Dragging a tab out of the strip still opens it in a window of its own (or moves it to another TypeNova window) when it is released above or below the strip over the sidebar, the preview or the toolbar, or outside the window; over the editor groups it is dropped on a strip or a group instead.
+
 ## [0.5.124] - 2026-11-09
 
 ### Added

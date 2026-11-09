@@ -5,5 +5,6 @@
 @import "./styles/bookmarks.css";
 @import "./styles/whitespace.css";
 @import "./styles/ai.css";
+@import "./styles/editor-split.css";
 @import "./styles/highlights.css";
 @import "./styles/spelling.css";

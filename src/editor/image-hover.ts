@@ -1,9 +1,8 @@
 /** Ctrl+hover preview for Markdown image syntax and links to images. */
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { normalizePath } from "../filesystem/path-utils";
-import { $ } from "../app/dom";
 import { documentState } from "../documents/document-state";
-import { view } from "./editor-view";
+import { registerViewSetup, view } from "./editor-view";
 import { langText } from "../i18n/language";
 
 let leftCtrlHeld = false;
@@ -51,7 +50,7 @@ export function hideImageHoverPreview() {
 }
 function positionImageHoverPreview() {
   if (!imageHoverPreview || !lastEditorPointer) return;
-  const editorRect = ($("editor") as HTMLElement).getBoundingClientRect();
+  const editorRect = view.dom.getBoundingClientRect();
   if (editorRect.width < 190 || editorRect.height < 120) return;
   const width = Math.min(420, editorRect.width - 16);
   const height = Math.min(340, editorRect.height - 16);
@@ -119,12 +118,16 @@ function updateImageHoverAt(x: number, y: number) {
   if (image.complete && image.naturalWidth > 0) revealPreview();
 }
 export function setupImageHoverPreview() {
-  view.dom.addEventListener("pointermove", (event: PointerEvent) => {
-    lastEditorPointer = { x: event.clientX, y: event.clientY };
-    if (leftCtrlHeld) updateImageHoverAt(event.clientX, event.clientY);
-    else hideImageHoverPreview();
+  // The preview works over the editor in use: the other pane of a split editor shows another document.
+  registerViewSetup(target => {
+    target.dom.addEventListener("pointermove", (event: PointerEvent) => {
+      if (target !== view) { hideImageHoverPreview(); return; }
+      lastEditorPointer = { x: event.clientX, y: event.clientY };
+      if (leftCtrlHeld) updateImageHoverAt(event.clientX, event.clientY);
+      else hideImageHoverPreview();
+    });
+    target.dom.addEventListener("pointerleave", () => { lastEditorPointer = null; hideImageHoverPreview(); });
   });
-  view.dom.addEventListener("pointerleave", () => { lastEditorPointer = null; hideImageHoverPreview(); });
   document.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.code === "ControlLeft" && !leftCtrlHeld) {
       leftCtrlHeld = true;

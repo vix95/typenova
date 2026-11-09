@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { $ } from "../app/dom";
 import { takeDetachedDocument } from "../app/detached-window";
 import { view } from "../editor/editor-view";
+import { focusedGroup } from "./groups-state";
 import { documentState } from "./document-state";
 import { insertionIndex } from "./tab-order";
 import { adoptDocumentTab, removeTabWithoutPrompt } from "./tabs";
@@ -22,7 +23,7 @@ function tabElements(list: HTMLElement): HTMLElement[] {
 
 /** Slot in the strip for a point in this window's client coordinates, or null when the point is not over the strip. */
 function slotAt(point: Point): number | null {
-  const list = $("editorTabList") as HTMLElement;
+  const list = focusedGroup().list ?? $("editorTabList") as HTMLElement;
   const rect = list.getBoundingClientRect();
   const over = point.x >= rect.left && point.x <= rect.right && point.y >= rect.top - STRIP_SLACK_PX && point.y <= rect.bottom + STRIP_SLACK_PX;
   if (!over) return null;
@@ -32,7 +33,7 @@ function slotAt(point: Point): number | null {
 
 /** Shows (or moves) the translucent placeholder tab: at the slot under the cursor, or at the end when the cursor is elsewhere in the window. */
 function showSkeleton(title: string, point: Point): void {
-  const list = $("editorTabList") as HTMLElement;
+  const list = focusedGroup().list ?? $("editorTabList") as HTMLElement;
   if (!skeleton) {
     skeleton = document.createElement("div");
     skeleton.className = "editor-tab tab-skeleton"; skeleton.setAttribute("aria-hidden", "true");
