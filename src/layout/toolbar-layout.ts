@@ -26,7 +26,7 @@ function layoutToolbarActions() {
     const source = button.getAttribute("aria-label") || button.title || button.textContent?.trim() || "Action";
     const clean = source.replace(/\s*\([^)]*\)\s*$/, '');
     const pair = labels[clean] || labels[source];
-    button.dataset.overflowLabel = pair ? pair[document.documentElement.lang === "en" ? 1 : 0] : source;
+    button.dataset.overflowLabel = button.dataset.overflowText || (pair ? pair[document.documentElement.lang === "en" ? 1 : 0] : source);
     formattingOverflowMenu.append(button);
     overflowed = formattingToolbar.scrollWidth > formattingToolbar.clientWidth + 2;
   }
@@ -37,7 +37,7 @@ export function scheduleToolbarLayout() { if (toolbarLayoutQueued) return; toolb
 export function initToolbarLayout(): void {
   if (formattingToolbar && formattingOverflow && formattingOverflowMenu) {
     for (const node of Array.from(formattingToolbar.children)) {
-      if (!(node instanceof HTMLElement) || !node.matches('button[data-wrap],button[data-prefix],#insertImage,#insertTable,#insertRule,#insertMath,#insertMermaid')) continue;
+      if (!(node instanceof HTMLElement) || !node.matches('button[data-wrap],button[data-prefix],#insertImage,#insertTable,#insertRule,#insertMath,#insertMermaid,#toggleWhitespace')) continue;
       const slot = document.createComment("toolbar-action-slot"); node.before(slot); toolbarSlots.set(node, slot); movableToolbarButtons.push(node);
     }
   }

@@ -62,6 +62,7 @@ import { $ } from "./app/dom";
 import { restoreOpenSessionAtStartup, offerRecovery } from "./documents/recovery";
 import { initBookmarkMenu } from "./app/bookmark-menu";
 import { initBookmarkSidebar } from "./app/bookmark-sidebar";
+import { initWhitespaceToggle } from "./app/whitespace-toggle";
 import { initBookmarks } from "./editor/bookmarks";
 
 // Boot sequence. The order below is the original top-level execution order of the
@@ -126,6 +127,7 @@ initExternalDrop();
 initEditMenuBindings();
 initBookmarkMenu();
 initBookmarkSidebar();
+initWhitespaceToggle();
 initProjectRestore();
 initSaveFindBindings();
 
