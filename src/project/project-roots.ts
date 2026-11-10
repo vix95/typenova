@@ -16,9 +16,14 @@ export function hasSingleProjectRoot(): boolean { return documentState.projectRo
 /** Identifies the current set of folders for the graph's remembered file selection. */
 export function projectRootsKey(roots: readonly string[] = documentState.projectRoots): string { return roots.join("|"); }
 
+const rootListeners = new Set<(roots: readonly string[]) => void>();
+/** Calls `listener` whenever the set of open folders is set (the terminal panel loads what each folder saved). */
+export function onProjectRootsChanged(listener: (roots: readonly string[]) => void): void { rootListeners.add(listener); }
+
 export function setProjectRoots(roots: readonly string[]): void {
   documentState.projectRoots = [...roots];
   documentState.projectRoot = roots[0] ?? null;
+  for (const listener of rootListeners) listener(documentState.projectRoots);
   try {
     if (roots.length) {
       localStorage.setItem(ROOTS_STORAGE_KEY, JSON.stringify(roots));

@@ -42,6 +42,8 @@ export function initGlobalBindings(): void {
     if (!target.closest(".toolbar-overflow")) { const overflow = document.querySelector<HTMLDetailsElement>(".toolbar-overflow"); if (overflow) overflow.open = false; }
   });
   document.addEventListener("keydown", (event: KeyboardEvent) => {
+    // Keys typed into a terminal belong to its shell (Ctrl+K, Ctrl+S, Ctrl+N… must not reach the program).
+    if ((event.target as HTMLElement | null)?.closest?.("#terminalPanel")) return;
     const projectShortcutModifier = event.ctrlKey || event.metaKey;
     const projectTarget = event.target instanceof Element ? event.target : null;
     const editingTarget = !!projectTarget?.closest("input,textarea,select,dialog[open],.command-center,#treeContextMenu");
@@ -130,7 +132,8 @@ export function initNativeContextMenuGuard(): void {
     const isEditorTabStrip = target instanceof Element && target.closest(".editor-tab-list") !== null;
     const isOutline = target instanceof Element && target.closest("#outline") !== null;
     const isMediaViewer = target instanceof Element && target.closest("#mediaViewer") !== null;
-    if (isEditorSurface || isProjectTree || isPreviewSurface || isEditorTabStrip || isOutline || isMediaViewer) return;
+    const isTerminal = target instanceof Element && target.closest("#terminalPanel") !== null;
+    if (isEditorSurface || isProjectTree || isPreviewSurface || isEditorTabStrip || isOutline || isMediaViewer || isTerminal) return;
     event.preventDefault();
     event.stopPropagation();
   }, true);

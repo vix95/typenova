@@ -25,6 +25,7 @@ import { openAiEdit } from "../ai/edit-dialog";
 import { toggleAiPane } from "../ai/chat-panel";
 import { focusNeighborGroup, toggleSplit } from "../documents/groups";
 import { goToNeighbourBookmark, toggleBookmark } from "../editor/bookmarks";
+import { closeActiveTerminal, newTerminal, openTerminalSettings, renameActiveTerminal, restartActiveTerminal, splitActiveTerminal, toggleTerminalFullscreen, toggleTerminalPanel } from "../terminal/terminal-panel";
 
 type CommandItem = { labelPl: string; labelEn: string; shortcut?: string; run: () => void };
 const commandItems: CommandItem[] = [
@@ -38,6 +39,15 @@ const commandItems: CommandItem[] = [
   { labelPl: "Importuj dokument Word/HTML jako Markdown…", labelEn: "Import Word/HTML document as Markdown…", run: () => void import("../documents/import-document").then(module => module.importDocument()) },
   { labelPl: "Historia Git: commity i gałęzie", labelEn: "Git history: commits and branches", run: () => void openGitHistory() },
   { labelPl: "Linki: zamień [[Tytuł]] na [[plik#Tytuł]] w projekcie", labelEn: "Links: write [[Title]] as [[file#Title]] across the project", run: () => void import("../documents/link-rename-apply").then(module => module.qualifyProjectLinks()) },
+  { labelPl: "Terminal: pokaż lub ukryj panel", labelEn: "Terminal: show or hide the panel", shortcut: "Ctrl+`", run: () => toggleTerminalPanel() },
+  { labelPl: "Terminal: nowy terminal", labelEn: "Terminal: new terminal", shortcut: "Ctrl+Shift+`", run: () => newTerminal() },
+  { labelPl: "Terminal: podziel w prawo (nowy terminal obok)", labelEn: "Terminal: split right (a new terminal beside)", shortcut: "Ctrl+Shift+5", run: () => splitActiveTerminal("columns") },
+  { labelPl: "Terminal: podziel w dół (nowy terminal poniżej)", labelEn: "Terminal: split down (a new terminal below)", shortcut: "Ctrl+Shift+6", run: () => splitActiveTerminal("rows") },
+  { labelPl: "Terminal: tryb pełnoekranowy", labelEn: "Terminal: full screen", shortcut: "F11", run: () => toggleTerminalFullscreen() },
+  { labelPl: "Terminal: zmień nazwę aktywnego terminala", labelEn: "Terminal: rename the active terminal", run: () => renameActiveTerminal() },
+  { labelPl: "Terminal: uruchom ponownie aktywny terminal", labelEn: "Terminal: restart the active terminal", run: () => restartActiveTerminal() },
+  { labelPl: "Terminal: zamknij aktywny terminal", labelEn: "Terminal: close the active terminal", run: () => closeActiveTerminal() },
+  { labelPl: "Terminal: ustawienia i własne powłoki", labelEn: "Terminal: settings and your own shells", run: () => openTerminalSettings() },
   { labelPl: "Zakładki: dodaj lub usuń zakładkę", labelEn: "Bookmarks: toggle bookmark", shortcut: "Ctrl+F2", run: () => void toggleBookmark() },
   { labelPl: "Zakładki: nazwa i notatka", labelEn: "Bookmarks: name and note", run: () => editBookmarkAtCaret() },
   { labelPl: "Zakładki: następna zakładka", labelEn: "Bookmarks: next bookmark", shortcut: "F2", run: () => goToNeighbourBookmark(1) },

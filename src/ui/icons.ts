@@ -45,6 +45,17 @@ export const ICONS = {
   note: svg('<path d="M3.5 2.5h9v11h-9z"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/>'),
   search: svg('<circle cx="7" cy="7" r="4"/><path d="m10 10 3.5 3.5"/>'),
   regex: svg('<circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/><path d="M10 3.5v6M7.2 5l5.6 3M12.8 5 7.2 8"/>'),
+  terminal: svg('<rect x="2" y="3" width="12" height="10" rx="2"/><path d="m5 6.4 2 1.6-2 1.6M8.6 10h2.4"/>'),
+  chevronDown: svg('<path d="m3.5 6 4.5 4.5L12.5 6"/>'),
+  chevronUp: svg('<path d="m3.5 10 4.5-4.5 4.5 4.5"/>'),
+  restart: svg('<path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.8v3h-3"/>'),
+  folder: svg('<path d="M2 4.5h4l1.4 1.6H14v6.4H2z"/>'),
+  settings: svg('<circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.7M8 12.5v1.7M1.8 8h1.7M12.5 8h1.7M3.6 3.6l1.2 1.2M11.2 11.2l1.2 1.2M12.4 3.6l-1.2 1.2M4.8 11.2l-1.2 1.2"/>'),
+  splitRight: svg('<rect x="2" y="3" width="12" height="10" rx="2"/><path d="M8 3v10"/>'),
+  splitDown: svg('<rect x="2" y="3" width="12" height="10" rx="2"/><path d="M2 8h12"/>'),
+  unsplit: svg('<rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 8h4"/>'),
+  exitFullscreen: svg('<path d="M6 2.5v3.5H2.5M10 2.5v3.5h3.5M6 13.5V10H2.5M10 13.5V10h3.5"/>'),
+  stop: svg('<rect x="4" y="4" width="8" height="8" rx="1.5"/>'),
 } as const;
 
 export type IconName = keyof typeof ICONS;

@@ -2,6 +2,14 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.129] - 2026-11-11
+
+### Added
+
+- Integrated terminal. Ctrl+` (or the terminal button in the status bar, View > Toggle terminal, the command palette) opens a panel under the editor with real shells running in a pseudo terminal (ConPTY on Windows): Windows PowerShell, PowerShell 7, Command Prompt, Git Bash, WSL, bash, zsh, fish, Nushell and any other found on the computer, plus shells you add yourself in Settings. You can have up to 24 terminals at once, each in its own tab; double-click a tab or press F2 to give it a name, right-click it for Properties (shell, project folder, subfolder, startup command), Duplicate, Restart, Stop the process, Close, Close the others and Close all (one question when some of them are in use). A terminal whose shell ended shows its exit code and starts again on Enter. Copy and paste work as in any terminal (Ctrl+C copies a selection, Ctrl+V pastes), the panel can be dragged to any height or enlarged, and the colours follow the theme of the program.
+- Terminals can be split like a split editor: the Split button opens a new terminal beside the one in focus, and its menu has Split right (Ctrl+Shift+5), Split down (Ctrl+Shift+6) and Show only the active terminal. The focused terminal is the one that is split, so a split right followed by a split down gives one terminal on the left and two stacked on the right, and so on (up to four on screen). "Show beside" and "Show below" in a tab's menu put an existing terminal there. Every pane has a small bar with its name and status and a button that takes it off the screen without closing it; the splitters between panes are dragged (or moved with the arrow keys) and each shell gets the size of its own pane. The panel can also take the whole window: the full screen button or F11 (Escape leaves it from the tabs, Ctrl+` returns to the normal size).
+- The terminals of a project are saved in the project: names, shells, folders and startup commands go to `typenova.config.json` in the project folder (each open folder keeps its own) and come back when the project is opened (their shells start when they are first shown). A config file never names a program, only a shell of this computer by id, and a startup command from a project runs only after you allow it: the program asks once for the commands it does not know and asks again when one changes. Saving can be turned off in Settings.
+
 ## [0.5.128] - 2026-11-10
 
 ### Changed

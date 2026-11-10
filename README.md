@@ -61,6 +61,8 @@ The chat (`Ctrl+Shift+M`) works on the document you have open and on your select
 - a 3D globe when the project gets large.
 
 
+**A terminal inside the editor.** Press Ctrl+` for a panel under the editor with real shells — PowerShell, Command Prompt, Git Bash, WSL, bash and any other you add. Keep several terminals open at once, give each a name, and have them saved in the project (`typenova.config.json`): they come back when you open it, and a startup command from someone else's project runs only after you allow it.
+
 **Links work, and follow the headings.** Every link names its file and its header, `[[06-Monitoring.md#Drift Detection]]` (type `[[` and pick the file, then the section; the preview shows just the section and names the file in a tooltip). Click it in the preview (or Ctrl+click it in the editor) to jump to that section. Rename a heading and the `[[links]]` that point at it are rewritten for you — in the open documents and in the other Markdown files of the project — with a toast that offers Undo. It can be turned off in Settings.
 Select a node and the section is rendered in a side panel next to a list of related sections. When you've found what you wanted, one click opens the editor at that exact heading.
 

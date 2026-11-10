@@ -1,0 +1,12 @@
+{
+  "terminals": [
+    {
+      "id": "tmwb87hmq3rb4",
+      "name": "Command Prompt (3)",
+      "shell": "cmd",
+      "cwd": ""
+    }
+  ],
+  "activeTerminal": "tmwb87hmq3rb4",
+  "version": 1
+}
