@@ -1,6 +1,7 @@
 /** Highlights: the list the user keeps, its storage (the program's memory and the config file next to a Markdown document), marking and unmarking passages, and going to a highlight. */
 import { EditorView } from "@codemirror/view";
 import { Transaction } from "@codemirror/state";
+import { isolateHistory } from "@codemirror/commands";
 import { DocConfigUnreadable } from "../documents/doc-config";
 import { documentState } from "../documents/document-state";
 import { showFileTab } from "../documents/file-navigation";
@@ -13,6 +14,7 @@ import { showToast } from "../ui/toast";
 import { bookmarkFilesEnabled, hasBookmarkFile } from "./bookmark-files";
 import { view } from "./editor-view";
 import { highlightPositions, setHighlightMarks, type HighlightMark } from "./highlight-field";
+import { highlightApplied, highlightChanged, highlightsAdded, highlightsRemoved, onHighlightHistory, type HighlightOperation } from "./highlight-history";
 import { readHighlightFile, writeHighlightFile } from "./highlight-files";
 import {
   addHighlight, editHighlight, highlightEntries, highlightsOfFile, highlightsToMarkdown, highlightsTouching, MAX_HIGHLIGHT_TEXT, MAX_HIGHLIGHTS, moveHighlight,
@@ -142,6 +144,25 @@ function trimmedSelection(): { from: number; to: number } | null {
   return lead + trail >= text.length ? null : { from: range.from + lead, to: range.to - trail };
 }
 
+/** Whether the highlight is in the document the editor shows (only those are in its undo history). */
+const isInOpenDocument = (item: Highlight): boolean => !!documentState.currentPath && normalizeSessionPath(item.path) === normalizeSessionPath(documentState.currentPath);
+
+/** Puts a change of the highlights into the editor's undo history as an event of its own: Ctrl+Z takes it back and Ctrl+Y brings it again. The list is already changed, so this transaction is marked as applied. */
+function recordInHistory(effect: ReturnType<typeof highlightsAdded.of> | ReturnType<typeof highlightsRemoved.of> | ReturnType<typeof highlightChanged.of>): void {
+  view.dispatch({ effects: effect, annotations: [highlightApplied.of(true), isolateHistory.of("full")] });
+}
+
+/** What undo and redo bring back: the same changes of the list, applied the other way round. */
+function applyHistoryOperations(operations: readonly HighlightOperation[]): void {
+  let next = highlights;
+  for (const operation of operations) {
+    if (operation.kind === "add") { const ids = new Set(operation.items.map(item => item.id)); next = [...next.filter(item => !ids.has(item.id)), ...operation.items]; }
+    else if (operation.kind === "remove") next = removeHighlights(next, new Set(operation.items.map(item => item.id)));
+    else next = next.map(item => (item.id === operation.change.after.id ? operation.change.after : item));
+  }
+  if (next !== highlights) commit(next);
+}
+
 /** Marks the selected passage. Returns the highlight, or null when it cannot be added (and says why). */
 export function addHighlightFromSelection(color: HighlightColor = defaultHighlightColor()): Highlight | null {
   const path = documentState.currentPath;
@@ -152,7 +173,9 @@ export function addHighlightFromSelection(color: HighlightColor = defaultHighlig
   if (highlightsTouching(highlights, path, place.from, place.to).length) { showToast(langText("Ten fragment zachodzi na istniejące wyróżnienie.", "This passage overlaps an existing highlight.")); return null; }
   const id = newId();
   commit(addHighlight(highlights, { path, from: place.from, to: place.to, text: view.state.sliceDoc(place.from, place.to), color, id, now: Date.now() }));
-  return highlights.find(item => item.id === id) ?? null;
+  const added = highlights.find(item => item.id === id) ?? null;
+  if (added) recordInHistory(highlightsAdded.of([added]));
+  return added;
 }
 
 /** Deletes highlights; one with a note or a group asks first, because it holds something the user wrote. */
@@ -164,6 +187,8 @@ export async function deleteHighlights(ids: readonly string[], ask = true): Prom
     if (!confirmed) return false;
   }
   commit(removeHighlights(highlights, new Set(targets.map(item => item.id))));
+  const here = targets.filter(item => isInOpenDocument(item));
+  if (here.length) recordInHistory(highlightsRemoved.of(here));
   return true;
 }
 
@@ -185,7 +210,10 @@ export async function toggleHighlight(): Promise<void> {
 
 export function updateHighlight(id: string, changes: { note?: string; group?: string; color?: HighlightColor }): void {
   if (changes.color) { try { localStorage.setItem(COLOR_KEY, changes.color); } catch { /* storage unavailable */ } }
+  const before = highlights.find(item => item.id === id);
   commit(editHighlight(highlights, id, changes));
+  const after = highlights.find(item => item.id === id);
+  if (before && after && isInOpenDocument(after) && !sameHighlightContent([before], [after])) recordInHistory(highlightChanged.of({ before, after }));
 }
 
 /** Opens the highlight's file (if it is not open) and selects the highlighted passage. */
@@ -305,6 +333,7 @@ export function renameHighlightPaths(from: string, to: string): void {
 
 /** Loads the saved highlights. */
 export function initHighlights(): void {
+  onHighlightHistory(applyHistoryOperations);
   highlights = parseStoredHighlights(localStorage.getItem(STORAGE_KEY));
   document.addEventListener("typenova:language-changed", () => { refreshHighlightMarks(); notify(); });
   window.addEventListener("pagehide", persist);
