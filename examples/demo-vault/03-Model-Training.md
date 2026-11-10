@@ -1,6 +1,6 @@
 # Model Training
 
-Training fits parameters $\theta$ so that the loss $L(\theta)$ defined in [[Notation]] becomes small on unseen data.
+Training fits parameters $\theta$ so that the loss $L(\theta)$ defined in [[00-Index.md#Notation]] becomes small on unseen data.
 
 ## Optimisation
 
@@ -24,7 +24,7 @@ Regularisation limits model capacity. L2 regularisation adds $\lambda \lVert\the
 
 ### Cross-validation
 
-Split the data into $k$ folds, train on $k-1$ and validate on the remaining one; the average score estimates generalisation. Metrics are defined in [[Evaluation]].
+Split the data into $k$ folds, train on $k-1$ and validate on the remaining one; the average score estimates generalisation. Metrics are defined in [[04-Evaluation.md#Evaluation]].
 
 ## Hyperparameter search
 

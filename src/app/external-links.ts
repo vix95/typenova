@@ -2,6 +2,7 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { langText } from "../i18n/language";
 import { showToast } from "../ui/toast";
+import { listenForWikiLinks } from "./wiki-link-navigation";
 
 // Route every external hyperlink from Help, About, Markdown, notebook Markdown,
 // and other dynamically rendered content to the OS default application. Listen
@@ -35,4 +36,5 @@ function openExternalAnchor(event: MouseEvent): void {
 export function initExternalLinks(): void {
   window.addEventListener("click", openExternalAnchor, true);
   window.addEventListener("auxclick", openExternalAnchor, true);
+  listenForWikiLinks();
 }

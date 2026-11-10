@@ -8,11 +8,11 @@ Roll out gradually and keep the previous version one command away.
 
 ### Shadow mode
 
-The new model scores real traffic but its answers are not used. Compare it with the live model before exposing users, using the slices from [[Slice analysis]].
+The new model scores real traffic but its answers are not used. Compare it with the live model before exposing users, using the slices from [[04-Evaluation.md#Slice analysis]].
 
 ### Canary release
 
-Route a small share of traffic to the new version and watch the guardrail metrics from [[Monitoring]].
+Route a small share of traffic to the new version and watch the guardrail metrics from [[06-Monitoring.md#Monitoring]].
 
 ## Serving architecture
 
@@ -46,4 +46,4 @@ Use batch scoring when predictions can be precomputed; use real-time serving onl
 
 ## Packaging
 
-Containerise the model with pinned dependencies so that the environment in production is the environment that was tested. Reproducibility rules from [[Reproducibility]] apply here too.
+Containerise the model with pinned dependencies so that the environment in production is the environment that was tested. Reproducibility rules from [[01-Data-Pipelines.md#Reproducibility]] apply here too.

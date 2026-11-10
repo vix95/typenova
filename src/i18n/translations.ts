@@ -243,4 +243,6 @@ export const translations: Record<string, string> = {
   "Środowisko Markdown": "Markdown workspace",
   "Repozytorium": "Repository",
   "GitHub (adres repozytorium do uzupełnienia)": "GitHub (repository URL to be added)",
+  "Ctrl+klik, aby przejść do sekcji": "Ctrl+click to go to the section",
+  "Cmd+klik, aby przejść do sekcji": "Cmd+click to go to the section",
 };

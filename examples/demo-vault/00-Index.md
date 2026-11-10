@@ -4,7 +4,7 @@ A small, self-contained knowledge base used to demonstrate TypeNova. Every note 
 
 ## How to read this vault
 
-Start with [[Data Pipelines]], continue through [[Feature Engineering]] and [[Model Training]], then see how a model reaches users in [[Deployment]] and stays healthy in [[Monitoring]].
+Start with [[01-Data-Pipelines.md#Data Pipelines]], continue through [[02-Feature-Engineering.md#Feature Engineering]] and [[03-Model-Training.md#Model Training]], then see how a model reaches users in [[05-Deployment.md#Deployment]] and stays healthy in [[06-Monitoring.md#Monitoring]].
 
 ### Notation
 
@@ -12,7 +12,7 @@ Vectors are written in bold, for example $\mathbf{x} \in \mathbb{R}^d$, and the 
 
 ### Conventions
 
-- Notes link to **sections**, not only to files: `[[Drift Detection]]` points at one heading.
+- Notes link to **sections**, not only to files: `[[06-Monitoring.md#Drift Detection]]` names the file and the header it points at. Type `[[` to pick the file, then the section. Rename a header and every such link follows it.
 - Every figure lives in `assets/`.
 
 ## Map of the vault
@@ -29,4 +29,4 @@ Vectors are written in bold, for example $\mathbf{x} \in \mathbb{R}^d$, and the 
 
 ## Further reading
 
-Advanced topics live in the `advanced/` folder: [[Embedding Drift]] and [[Causal Overlap]].
+Advanced topics live in the `advanced/` folder: [[Embedding-Drift.md#Embedding Drift]] and [[Causal-Overlap.md#Causal Overlap]].

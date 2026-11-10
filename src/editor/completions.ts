@@ -8,6 +8,7 @@ import { EditorView } from "@codemirror/view";
 import { documentState } from "../documents/document-state";
 import { encodeMarkdownImagePath, parentDirectoryPath } from "./image-insert";
 import { langText } from "../i18n/language";
+import { completeWikiLink } from "./link-completion";
 import { rootContaining } from "../filesystem/project-roots";
 
 type ImagePathCompletionContext = {
@@ -113,6 +114,8 @@ async function completeImagePath(context: CompletionContext, pathContext: ImageP
   return { from: pathContext.from, options, filter: false };
 }
 export const completions = (context: CompletionContext) => {
+  const wikiLine = context.state.doc.lineAt(context.pos);
+  if (/(?<!!)\[\[[^\]\n|]*$/.test(wikiLine.text.slice(0, context.pos - wikiLine.from))) return completeWikiLink(context);
   const imagePath = imagePathCompletionContext(context);
   if (imagePath) return completeImagePath(context, imagePath);
 

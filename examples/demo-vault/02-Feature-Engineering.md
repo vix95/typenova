@@ -1,6 +1,6 @@
 # Feature Engineering
 
-Features are where domain knowledge enters a model. They are computed from the Gold layer described in [[Storage layout]].
+Features are where domain knowledge enters a model. They are computed from the Gold layer described in [[01-Data-Pipelines.md#Storage layout]].
 
 ## Numeric features
 
@@ -20,7 +20,7 @@ Low-cardinality columns are one-hot encoded. High-cardinality columns use target
 
 ### Leakage
 
-A feature is leaky when it contains information that is not available at prediction time. Leakage is the most common reason why offline metrics in [[Evaluation]] do not survive [[Deployment]].
+A feature is leaky when it contains information that is not available at prediction time. Leakage is the most common reason why offline metrics in [[04-Evaluation.md#Evaluation]] do not survive [[05-Deployment.md#Deployment]].
 
 ## Time-based features
 
@@ -33,4 +33,4 @@ def rolling_mean(series, window="7D"):
 
 ## Feature store
 
-Shared definitions are served consistently to training and to online prediction, which removes training/serving skew. Freshness is monitored in [[Freshness checks]].
+Shared definitions are served consistently to training and to online prediction, which removes training/serving skew. Freshness is monitored in [[01-Data-Pipelines.md#Freshness checks]].

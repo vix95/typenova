@@ -62,11 +62,11 @@ const yieldTask = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 
 /** Files are processed in batches before yielding, so thousands of small files do not flood the task queue. */
 const YIELD_EVERY_FILES = 32;
-const FENCE_PATTERN = /^ {0,3}(`{3,}|~{3,})(.*)$/;
-const HEADING_PATTERN = /^ {0,3}(#{1,6})\s+(.+?)\s*#*\s*$/;
-const WIKI_LINK_PATTERN = /\[\[([^\]|#]+)?(?:#([^\]|]+))?(?:\|[^\]]+)?\]\]/g;
+export const FENCE_PATTERN = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+export const HEADING_PATTERN = /^ {0,3}(#{1,6})\s+(.+?)\s*#*\s*$/;
+export const WIKI_LINK_PATTERN = /\[\[([^\]|#]+)?(?:#([^\]|]+))?(?:\|[^\]]+)?\]\]/g;
 
-const normalizeFileKey = (value: string) => value.replace(/\\\\/g, "/").replace(/^\.\//, "").toLocaleLowerCase();
+export const normalizeFileKey = (value: string) => value.replace(/\\\\/g, "/").replace(/^\.\//, "").toLocaleLowerCase();
 
 function pushIndexed<K>(index: Map<K, SectionNode[]>, key: K, section: SectionNode): void {
   const bucket = index.get(key);
@@ -75,13 +75,13 @@ function pushIndexed<K>(index: Map<K, SectionNode[]>, key: K, section: SectionNo
 }
 
 /** Tracks whether a line sits inside a fenced code block (``` or ~~~, closed by a matching, long-enough fence). */
-interface FenceState {
+export interface FenceState {
   marker: "`" | "~" | null;
   length: number;
 }
 
 /** Feeds one line to the tracker; returns true when the line is itself a fence delimiter. */
-function consumeFenceLine(state: FenceState, line: string): boolean {
+export function consumeFenceLine(state: FenceState, line: string): boolean {
   const match = FENCE_PATTERN.exec(line);
   if (!match) return false;
   const marker = match[1][0] as "`" | "~";
