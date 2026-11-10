@@ -21,8 +21,10 @@ A calibrated model's predicted probabilities match observed frequencies. Check i
 | Aspect | Offline | Online |
 |---|---|---|
 | Data | Historical snapshot | Live traffic |
-| Risk | Leakage, see [[Leakage]] | User impact |
+| Risk | Leakage, see [[02-Feature-Engineering.md#Leakage]] | User impact |
 | Speed | Minutes | Days |
+
+[[01-Data-Pipelines.md#Data Pipelines]]
 
 ## Evaluation workflow
 

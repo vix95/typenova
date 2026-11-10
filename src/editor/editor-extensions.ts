@@ -22,6 +22,7 @@ import { configureLanguageForTab } from "../documents/tabs";
 import { editorThemeCompartment, languageCompartment, lineNumbersCompartment, performanceCompartment, syntaxThemeCompartment, whitespaceCompartment, wrapping } from "./compartments";
 import { WHITESPACE_KEY, whitespaceExtension } from "./whitespace-extension";
 import { openAiEdit } from "../ai/edit-dialog";
+import { wikiLinkExtension } from "./wiki-link-extension";
 import { goToMisspelling, openSpellSuggestionsAtCaret } from "../spelling/spell-commands";
 import { spellExtension } from "../spelling/spellcheck";
 import { highlightExtension } from "./highlight-field";
@@ -40,6 +41,7 @@ import { printDocument } from "../preview/export-print";
 import { schedulePreview } from "../preview/preview-scheduler";
 import { hiddenSectionsExtension } from "./hidden-sections";
 import { bookmarkExtension } from "./bookmark-field";
+import { headingRenameTracking } from "./heading-rename";
 import { goToNeighbourBookmark, syncBookmarksFromEditor, toggleBookmark } from "./bookmarks";
 
 // Preserve Markdown styling in large files, but avoid activating nested parsers
@@ -83,6 +85,8 @@ export function performanceExtensions(docLength: number) {
   return docLength >= 1_000_000 ? [markdownFoldGutter] : [highlightActiveLine(), markdownFoldGutter];
 }
 export const editorExtensions = [
+  headingRenameTracking,
+  wikiLinkExtension,
   hiddenSectionsExtension,
   bookmarkExtension,
   highlightExtension,

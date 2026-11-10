@@ -2,6 +2,29 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.128] - 2026-11-10
+
+### Changed
+
+- The More (⋯) menu of the formatting toolbar no longer has the "Command palette" item (the palette stays on the search bar and Ctrl+K / Ctrl+Shift+P), and every action in it has an icon: Snippet, Image snippet, Focus, Find, and the ones that move there when the toolbar is narrow (Mermaid, White space, Highlight selection, formatting). The Mermaid toolbar button is an icon like the others.
+
+### Fixed
+
+- `[[Section name]]` links were only drawn as edges in the graph; in the preview they stayed plain text and in the editor nothing happened. In the preview they are now links that open the section they lead to; in the editor they are underlined and Ctrl+click (Cmd+click on macOS) follows them. A link with no matching section says so. Links resolve like the graph does (by title, by `file#Section`, preferring the current file); `![[image]]` embeds and links in code are left alone.
+- Renaming a heading updates the links the moment the edit settles (the caret leaves the heading, or two seconds pass without typing): the links in the document at once, those in other files through the link index (below). A file that changed on disk in the meantime is read again before it is touched. Following a link to a section of the document it is written in does not look at the project at all.
+- In the editor a `[[link]]` shows a tooltip ("Ctrl+click to go to the section", in Polish and English; Cmd on macOS), and while Ctrl (Cmd) is held the pointer over a link turns into a hand.
+- Renaming a heading no longer misses the update when the title is erased completely before the new one is typed, or when typing pauses halfway: renames are processed one after another (and merged when the same heading is edited again), so the links end up pointing at the final title.
+- Every `[[link]]` can now name its file and its header, `[[06-Monitoring.md#Drift Detection]]`. Typing `[[` offers the project's files, and after the file the sections of that file. In the preview such a link shows only the section's name, and the file is named in the tooltip. A link that names its file opens by reading that one file; one that names only a title is looked up in the index.
+- The project has a link index (the files, their sections and what their links name). It is read in the background when a Markdown document is shown, kept on disk between sessions (only files that changed are read again), refreshed on each save, and checked against the disk again when it is older than half a minute. Following a link and renaming a heading use it, so only the files concerned are read, however large the project is. The index is stored in the application data folder, never in the project.
+- Renaming a heading rewrites the links to it in the full form, `[[File.md#New title]]`, also those written as `[[Old title]]` (their alias stays). The command "Links: write [[Title]] as [[file#Title]] across the project" does the same for every link that names only a title (a title that several files share is left, and counted); it can be undone.
+- When no link is found after a rename, or no section after a click, the message says how many files were searched and the first read error, if any. The demo vault is written with the new links.
+
+## [0.5.127] - 2026-11-10
+
+### Added
+
+- Renaming a heading now updates the `[[Section name]]` links that point at it, automatically: in the open documents (as editor edits) and in the other Markdown files of the project (on disk). A toast reports how many links changed and offers Undo. Links that could mean another section with the same title, links inside code, and titles containing `[ ] | #` are left unchanged (the last two cases are reported). The behaviour can be turned off in Settings ("Update links when a heading is renamed").
+
 ## [0.5.126] - 2026-11-10
 
 ### Fixed

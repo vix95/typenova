@@ -12,14 +12,14 @@ Compare distributions, not points. Project to a lower dimension, then apply a tw
 
 ### Practical thresholds
 
-Calibrate alert levels on historical windows, so that normal seasonality does not trigger pages. See [[Alerting]].
+Calibrate alert levels on historical windows, so that normal seasonality does not trigger pages. See [[06-Monitoring.md#Alerting]].
 
 ## Causes
 
 - The embedding model was upgraded without re-indexing.
-- Tokenisation or cleaning changed upstream; compare with [[Validation]].
+- Tokenisation or cleaning changed upstream; compare with [[01-Data-Pipelines.md#Validation]].
 - The user population shifted.
 
 ## Mitigation
 
-Re-embed the corpus when the encoder changes, keep the old and new indexes side by side until quality is confirmed, and gate the switch on the checks in [[Retrieval]].
+Re-embed the corpus when the encoder changes, keep the old and new indexes side by side until quality is confirmed, and gate the switch on the checks in [[07-Retrieval-and-RAG.md#Retrieval]].

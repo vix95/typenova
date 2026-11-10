@@ -32,11 +32,11 @@ where $p_i$ and $q_i$ are the shares of bin $i$ in production and in training.
 
 ### Concept drift
 
-The relationship between inputs and the target changes. It can only be confirmed with fresh labels; see [[Offline versus online]].
+The relationship between inputs and the target changes. It can only be confirmed with fresh labels; see [[04-Evaluation.md#Offline versus online]].
 
 ### Embedding-based drift
 
-For text and images, monitor the distribution of embeddings as described in [[Embedding Drift]].
+For text and images, monitor the distribution of embeddings as described in [[Embedding-Drift.md#Embedding Drift]].
 
 ## Alerting
 
@@ -50,4 +50,4 @@ Alert on symptoms users feel, and keep every alert actionable.
 
 ## Retraining
 
-Retrain on a schedule or when a trigger fires, and always compare the new model with the current one through the process in [[Evaluation workflow]].
+Retrain on a schedule or when a trigger fires, and always compare the new model with the current one through the process in [[04-Evaluation.md#Evaluation workflow]].

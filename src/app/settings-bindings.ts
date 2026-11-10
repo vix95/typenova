@@ -3,6 +3,7 @@ import { $ } from "./dom";
 import { documentState } from "../documents/document-state";
 import { autoSaveTimer, renderRecentFiles, scheduleAutoSave } from "../documents/file-actions";
 import { bookmarkFilesEnabled } from "../editor/bookmark-files";
+import { autoRenameLinksEnabled, setAutoRenameLinks } from "../documents/link-rename-apply";
 import { applyBookmarkFilesSetting } from "../editor/bookmarks";
 import { applyHighlightFilesSetting } from "../editor/highlights";
 import { insertAtCursor } from "../editor/editing-commands";
@@ -42,6 +43,15 @@ export function initSettingsBindings(): void {
     $("statusText").textContent = enabled
       ? langText("Welcome.md pojawi się przy następnym uruchomieniu, jeśli nie będzie plików do przywrócenia.", "Welcome.md will appear on next launch if there are no files to restore.")
       : langText("Przy braku plików do przywrócenia otworzy się pusty Untitled.md.", "If there are no files to restore, a blank Untitled.md will open.");
+  });
+  const autoRenameLinksToggle = $<HTMLInputElement>("autoRenameLinksToggle");
+  autoRenameLinksToggle.checked = autoRenameLinksEnabled();
+  autoRenameLinksToggle.addEventListener("change", (event: Event) => {
+    const enabled = (event.target as HTMLInputElement).checked;
+    setAutoRenameLinks(enabled);
+    $("statusText").textContent = enabled
+      ? langText("Linki do nagłówka będą zmieniane automatycznie, gdy zmienisz jego nazwę.", "Links to a heading will be changed automatically when you rename it.")
+      : langText("Linki nie będą zmieniane po zmianie nagłówka.", "Links will not be changed when a heading is renamed.");
   });
   const bookmarkFilesToggle = $<HTMLInputElement>("bookmarkFilesToggle");
   bookmarkFilesToggle.checked = bookmarkFilesEnabled();

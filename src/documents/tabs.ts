@@ -16,6 +16,8 @@ import { OPEN_SESSION_STORAGE_KEY, documentState, type DocumentTab } from "./doc
 import { updateQuickStats, updateStats } from "./document-stats";
 import { editorThemeCompartment, languageCompartment, lineNumbersCompartment, performanceCompartment, syntaxThemeCompartment, wrapping } from "../editor/compartments";
 import { LARGE_SOURCE_THRESHOLD, editorExtensions, markdownSupportForSize, performanceExtensions } from "../editor/editor-extensions";
+import { flushHeadingRename } from "../editor/heading-rename";
+import { warmProject } from "./project-index";
 import { view } from "../editor/editor-view";
 import { queuePreviewAnchorRestore } from "../preview/preview-scroll-memory";
 import { focusedGroup, groupOf, groupsState, tabIdInView } from "./groups-state";
@@ -183,6 +185,8 @@ async function closeTabsInBatch(ids: string[], desiredActiveId: string | null = 
 }
 /** Remembers what the editor in use holds (text, selection, undo history, saved state) on the tab of the document it shows. */
 export function saveActiveTab(): void {
+  // The document is about to be swapped or closed: a heading rename that is still pending is taken as finished.
+  flushHeadingRename();
   const current = activeTab();
   if (current) { current.state = view.state; current.path = documentState.currentPath; current.savedText = documentState.savedText; current.dirty = documentState.dirty; current.label = documentState.currentPath ? basename(documentState.currentPath) : documentState.untitledLabel; }
 }
@@ -206,6 +210,7 @@ export function switchToTab(id: string) {
 export function showTab(target: DocumentTab, loadState: boolean): void {
   documentState.activeTabId = target.id;
   noteTabShown(target.id);
+  if (isMarkdownPath(target.path || target.label)) warmProject();
   outlineState.outlineTabId = ""; outlineState.lastHeadingBreadcrumbSignature = "";
   documentState.currentPath = target.path;
   documentState.untitledLabel = target.label;

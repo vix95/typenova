@@ -2,6 +2,8 @@
 
 Reliable models start with reliable data. This note describes the ingestion path and the checks that protect it.
 
+[[01-Data-Pipelines.md#Freshness checks]]
+
 ## Ingestion
 
 Raw events arrive from services, files and third-party APIs. They are validated at the edge so that bad records never reach storage.
@@ -30,7 +32,7 @@ def validate(batch, schema):
 
 ### Freshness checks
 
-A table is *fresh* when its newest partition is younger than the agreed limit. Stale inputs are the most common silent failure; see [[Drift Detection]] for the downstream symptom.
+A table is *fresh* when its newest partition is younger than the agreed limit. Stale inputs are the most common silent failure; see [[06-Monitoring.md#Drift Detection]] for the downstream symptom.
 
 ## Storage layout
 
@@ -38,7 +40,7 @@ A table is *fresh* when its newest partition is younger than the agreed limit. S
 |---|---|---|
 | Bronze | Raw, immutable events | 1 year |
 | Silver | Cleaned and deduplicated | 2 years |
-| Gold | Aggregates used by [[Feature Engineering]] | 3 years |
+| Gold | Aggregates used by [[02-Feature-Engineering.md#Feature Engineering]] | 3 years |
 
 ## Reproducibility
 

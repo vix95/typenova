@@ -14,7 +14,7 @@ Split documents along their structure (headings first, then paragraphs) so that 
 
 ### Embedding
 
-Each chunk becomes a vector. The same model must embed queries, otherwise distances are meaningless; see [[Embedding Drift]] for what happens when it changes.
+Each chunk becomes a vector. The same model must embed queries, otherwise distances are meaningless; see [[Embedding-Drift.md#Embedding Drift]] for what happens when it changes.
 
 ## Retrieval
 
@@ -24,7 +24,7 @@ $$\text{score}(q, d) = \alpha \cos(\mathbf{q}, \mathbf{d}) + (1 - \alpha)\,\text
 
 ### Evaluating retrieval
 
-Measure recall@k on questions with known source passages before judging the generated answers, using the methodology in [[Evaluation]].
+Measure recall@k on questions with known source passages before judging the generated answers, using the methodology in [[04-Evaluation.md#Evaluation]].
 
 ## Generation
 
@@ -38,4 +38,4 @@ Give the model the retrieved passages, ask it to answer only from them and to ci
 
 ## Operations
 
-Version the index together with the embedding model, and monitor retrieval quality with the signals from [[Data quality]].
+Version the index together with the embedding model, and monitor retrieval quality with the signals from [[06-Monitoring.md#Data quality]].

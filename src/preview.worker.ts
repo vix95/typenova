@@ -2,6 +2,7 @@ import MarkdownIt from "markdown-it";
 import anchor from "markdown-it-anchor";
 import taskLists from "markdown-it-task-lists";
 import texmath from "markdown-it-texmath";
+import { wikiLinks } from "./preview/wiki-link-plugin";
 import katex from "katex";
 import hljs from "highlight.js/lib/common";
 
@@ -56,6 +57,7 @@ const md: MarkdownIt = new MarkdownIt({
   }
 }).use(anchor, { permalink: false })
   .use(taskLists, { enabled: true, label: true })
+  .use(wikiLinks)
   .use(texmath, { engine: katex, delimiters: "dollars", katexOptions: { throwOnError: false, strict: "ignore", trust: false } });
 
 let cachedTokens: any[] = [];

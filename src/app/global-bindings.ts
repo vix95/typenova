@@ -75,7 +75,6 @@ export function initGlobalBindings(): void {
   $("menuSettingsOpen").addEventListener("click", () => ($("settingsDialog") as HTMLDialogElement).showModal());
   $("settingsClose").addEventListener("click", () => ($("settingsDialog") as HTMLDialogElement).close());
   $("settingsDismiss").addEventListener("click", () => ($("settingsDialog") as HTMLDialogElement).close());
-  $("commandOpenToolbar").addEventListener("click", openCommandPalette);
   $("commandButton").addEventListener("click", openCommandPalette);
   $("focusButton").addEventListener("click", toggleFocus);
   $("commandClose").addEventListener("click", () => ($("commandDialog") as HTMLDialogElement).close());

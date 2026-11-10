@@ -8,7 +8,7 @@ For every covariate profile $x$, the probability of receiving treatment must be 
 
 ### Propensity scores
 
-Estimate $e(x)$ with a well-calibrated classifier; a poorly calibrated score hides violations. Calibration is discussed in [[Calibration]].
+Estimate $e(x)$ with a well-calibrated classifier; a poorly calibrated score hides violations. Calibration is discussed in [[04-Evaluation.md#Calibration]].
 
 ### Diagnosing violations
 
@@ -28,4 +28,4 @@ State the estimand explicitly: the average effect for everyone, for the treated,
 
 ## Relation to modelling
 
-Uplift models inherit the same assumption. Evaluate them with the care described in [[Slice analysis]].
+Uplift models inherit the same assumption. Evaluate them with the care described in [[04-Evaluation.md#Slice analysis]].

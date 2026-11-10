@@ -18,6 +18,8 @@ import { clearPreviewCache, schedulePreview, syncPreviewForActiveDocument } from
 import { isFilesystemScopeError } from "../project/project-tree-ops";
 import { appAlert, appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
+import { flushHeadingRename } from "../editor/heading-rename";
+import { noteFileSaved } from "./project-index";
 
 export let autoSaveTimer = 0;
 let autoSaveInFlight = false;
@@ -76,6 +78,7 @@ async function writeActiveDocument(path: string, text: string, ask = true): Prom
     format = { ...format, encoding: "utf-8" }; if (tab) tab.format = format;
   }
   await saveTextFile(path, text, format);
+  noteFileSaved(path, text);
   return true;
 }
 
@@ -89,6 +92,7 @@ export async function openDocument() {
   } catch (error) { await appAlert(openErrorText(error)); }
 }
 export async function saveDocument() {
+  flushHeadingRename();
   try {
     let target = documentState.currentPath;
     if (!target) {
