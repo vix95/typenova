@@ -71,9 +71,9 @@ import { initChatPanel } from "./ai/chat-panel";
 import { initSpellSettings } from "./spelling/spell-options";
 import { initBookmarks } from "./editor/bookmarks";
 import { initHighlights } from "./editor/highlights";
+import { initTerminals } from "./terminal/terminal-panel";
 
-// Boot sequence. The order below is the original top-level execution order of the
-// pre-0.5.113 monolithic main.ts; event-listener registration order is behaviour.
+// Boot sequence. The order below is the original top-level execution order of the pre-0.5.113 monolithic main.ts; event-listener registration order is behaviour.
 // DOM scaffolding
 initWorkspaceDom();
 // Editor
@@ -168,6 +168,7 @@ initScrollSync();
 
 // Global listeners
 initGlobalBindings();
+initTerminals();
 
 // Session restore and unload handling
 void (async () => {

@@ -12,7 +12,7 @@ export const translations: Record<string, string> = {
   "Nagłówek 5": "Heading 5",
   "Nagłówek 6": "Heading 6",
   "Wpisz polecenie": "Type a command",
-  "Uzupełnij adres repozytorium projektu": "Repository URL placeholder",
+  "Otwórz repozytorium TypeNova na GitHubie": "Open the TypeNova repository on GitHub",
   "Eksport": "Export",
   "Nie udało się wyrenderować diagramu Mermaid": "Could not render Mermaid diagram",
   "Wpisz polecenie…": "Type a command…",
@@ -242,7 +242,6 @@ export const translations: Record<string, string> = {
   "Drukuj / PDF": "Print / PDF",
   "Środowisko Markdown": "Markdown workspace",
   "Repozytorium": "Repository",
-  "GitHub (adres repozytorium do uzupełnienia)": "GitHub (repository URL to be added)",
   "Ctrl+klik, aby przejść do sekcji": "Ctrl+click to go to the section",
   "Cmd+klik, aby przejść do sekcji": "Cmd+click to go to the section",
 };

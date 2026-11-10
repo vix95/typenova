@@ -4,6 +4,7 @@ mod git;
 mod page_server;
 mod secrets;
 mod spell;
+mod terminal;
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -405,16 +406,18 @@ pub fn run() {
     })
     // The hidden drag-ghost window must not keep the process alive: when the last editor window is gone the app ends.
     // Otherwise an invisible instance would remain and the single-instance guard would swallow the next launch.
+    .manage(terminal::Terminals::default())
     .on_window_event(|window, event| {
       if let tauri::WindowEvent::Destroyed = event {
         let app = window.app_handle();
         let another_editor_left = app.webview_windows().keys().any(|label| label != window.label() && is_editor_window_label(label));
         if is_editor_window_label(window.label()) && !another_editor_left {
+          terminal::kill_all(app);
           app.exit(0);
         }
       }
     })
-    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, spell::spell_check, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
+    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, spell::spell_check, terminal::terminal_shells, terminal::terminal_spawn, terminal::terminal_write, terminal::terminal_resize, terminal::terminal_kill, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
     .run(tauri::generate_context!())
     .expect("error while running TypeNova");
 }
