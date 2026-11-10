@@ -7,6 +7,7 @@ All notable changes to TypeNova are recorded here, newest first. Every entry cor
 ### Changed
 
 - The More (⋯) menu of the formatting toolbar no longer has the "Command palette" item (the palette stays on the search bar and Ctrl+K / Ctrl+Shift+P), and every action in it has an icon: Snippet, Image snippet, Focus, Find, and the ones that move there when the toolbar is narrow (Mermaid, White space, Highlight selection, formatting). The Mermaid toolbar button is an icon like the others.
+- Highlights are part of the editor's undo history: marking a passage, removing a highlight and changing its colour, note or group can be taken back with Ctrl+Z and brought again with Ctrl+Y, each as a step of its own (apart from typing). Changes made from the Highlights panel to a highlight of another file are not in the open document's history.
 
 ### Fixed
 

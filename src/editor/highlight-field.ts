@@ -3,6 +3,7 @@ import { StateEffect, StateField, type EditorState } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType, type DecorationSet } from "@codemirror/view";
 import { langText } from "../i18n/language";
 import { ICONS } from "../ui/icons";
+import { highlightHistory } from "./highlight-history";
 import type { HighlightColor } from "./highlights-model";
 
 /** One highlight to show: where it is in the open document, its colour and the text of its tooltip. */
@@ -68,4 +69,4 @@ export function highlightPositions(state: EditorState): { id: string; from: numb
   return found;
 }
 
-export const highlightExtension = [highlightField];
+export const highlightExtension = [highlightField, highlightHistory];
