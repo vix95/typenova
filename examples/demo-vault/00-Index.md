@@ -26,6 +26,7 @@ Vectors are written in bold, for example $\mathbf{x} \in \mathbb{R}^d$, and the 
 | Deployment | How does the model reach production safely? |
 | Monitoring | How do we notice when it stops working? |
 | Retrieval and RAG | How does a model use external knowledge? |
+| Data Analysis | What do the numbers in these files say? (CSV, TXT, charts) |
 
 ## Further reading
 

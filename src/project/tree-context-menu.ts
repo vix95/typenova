@@ -13,6 +13,7 @@ import { $ } from "../app/dom";
 import { activeSidebarTab } from "../app/sidebar";
 import { documentState } from "../documents/document-state";
 import { openTextInTab } from "../documents/file-actions";
+import { isDataFile, openInDataViewer, openLargeDataFile } from "../data/data-open";
 import { activeTab, createNewTab, renderTabs, switchToTab } from "../documents/tabs";
 import { view } from "../editor/editor-view";
 import { buildGraph } from "../graph-ui/indexing";
@@ -54,6 +55,7 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
   };
   if (!refreshOnly) {
     if (!isRoot) add(langText("Otwórz", "Open"), "open");
+    if (!isRoot && !isDirectory && isDataFile(path)) add(langText("Podgląd danych…", "Data view…"), "data-view");
     add(langText("Nowy plik…", "New file…"), "new-file");
   add(langText("Nowy folder…", "New folder…"), "new-folder");
     {
@@ -251,6 +253,7 @@ export async function openProjectTreeEntry(path: string, isDirectory: boolean) {
     showToast(langText("TypeNova nie może otworzyć tego pliku.", "TypeNova cannot open this file."));
     return;
   }
+  if (await openLargeDataFile(path)) return;
   try {
     const loaded = await loadTextFile(path);
     openTextInTab(path, loaded.text, loaded);
@@ -290,6 +293,7 @@ export async function handleTreeContextAction(action: string) {
   try {
     if (action === "remove-root") await removeProjectFolder(path);
     else if (action === "open" && !isRoot) await openProjectTreeEntry(path, isDirectory);
+    else if (action === "data-view" && !isRoot) await openInDataViewer(path);
     else if (action === "new-file") {
       const createdPath = await promptAndCreateProjectFile(destinationFolder);
       if (!createdPath) return;

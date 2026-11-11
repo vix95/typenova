@@ -8,6 +8,7 @@ import { openViewerFile } from "../preview/open-media";
 import { langText } from "../i18n/language";
 import { addProjectFolderPath } from "../project/project-tree-view";
 import { showToast } from "../ui/toast";
+import { openLargeDataFile } from "../data/data-open";
 
 let overlay: HTMLElement | null = null;
 
@@ -40,6 +41,7 @@ export async function openDroppedPaths(paths: readonly string[]): Promise<void> 
     if (await isDirectory(path)) { await addProjectFolderPath(path); folders++; continue; }
     if (isViewerFile(basename(path))) { await openViewerFile(path); opened++; continue; }
     if (!isEditableTextFile(basename(path))) { unsupported++; continue; }
+    if (await openLargeDataFile(path)) { opened++; continue; }
     try { const loaded = await readTextFileAfterGrant(path); openTextInTab(path, loaded.text, loaded); opened++; }
     catch (error) { if (error instanceof BinaryFileError) unsupported++; else failed++; }
   }

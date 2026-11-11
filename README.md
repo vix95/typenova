@@ -61,6 +61,8 @@ The chat (`Ctrl+Shift+M`) works on the document you have open and on your select
 - a 3D globe when the project gets large.
 
 
+**Data from CSV and text files.** Open a CSV, TSV or TXT file in the data view (file tree menu, "Data view…") for a table, a profile of every column and statistical charts — also for files of hundreds of megabytes, which are read in the background and never loaded into the editor. Put a chart into a note with a ```chart block (`file`, `type`, `x`, `y`, `agg`) or with "Insert into note".
+
 **A terminal inside the editor.** Press Ctrl+` for a panel under the editor with real shells — PowerShell, Command Prompt, Git Bash, WSL, bash and any other you add. Keep several terminals open at once, give each a name, and have them saved in the project (`typenova.config.json`): they come back when you open it, and a startup command from someone else's project runs only after you allow it.
 
 **Links work, and follow the headings.** Every link names its file and its header, `[[06-Monitoring.md#Drift Detection]]` (type `[[` and pick the file, then the section; the preview shows just the section and names the file in a tooltip). Click it in the preview (or Ctrl+click it in the editor) to jump to that section. Rename a heading and the `[[links]]` that point at it are rewritten for you — in the open documents and in the other Markdown files of the project — with a toast that offers Undo. It can be turned off in Settings.
@@ -74,7 +76,7 @@ Select a node and the section is rendered in a side panel next to a list of rela
 
 ## Try it on the demo vault
 
-The repository ships with a small, interlinked project in [`examples/demo-vault`](examples/demo-vault): a handbook on machine-learning systems with math, diagrams, code and cross-references. It's the vault used in the screenshots in this README. Open that folder in TypeNova and the graph fills up straight away.
+The repository ships with a small, interlinked project in [`examples/demo-vault`](examples/demo-vault): a handbook on machine-learning systems with math, diagrams, code and cross-references. It's the vault used in the screenshots in this README. Open that folder in TypeNova and the graph fills up straight away. Its `data/` folder holds sample CSV and text files, and the note `08-Data-Analysis.md` draws charts from them.
 
 ## Getting started
 

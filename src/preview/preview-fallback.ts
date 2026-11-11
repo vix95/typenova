@@ -11,6 +11,7 @@ import { langText } from "../i18n/language";
 import { buildOutline } from "../outline/outline";
 import { decorateCodeBlocks, resolveLocalImages } from "./code-blocks";
 import { observeMermaid } from "./mermaid";
+import { observeCharts } from "../data/chart-embed";
 import { resizeObserver } from "./preview-observers";
 import { clearPreviewCache, markStartupReady, schedulePreview } from "./preview-scheduler";
 import { blockElements, blockIndex, forceRenderIndices, heightCache, htmlCache, pendingRenderIndices, previewState } from "./preview-state";
@@ -90,7 +91,7 @@ export function renderPreviewFallback() {
     }
     buildOutline(headings);
     previewContent.innerHTML = html; previewTopSpacer.style.height = "0px"; previewBottomSpacer.style.height = "0px";
-    decorateCodeBlocks(previewContent); resolveLocalImages(previewContent); observeMermaid(previewContent);
+    decorateCodeBlocks(previewContent); resolveLocalImages(previewContent); observeMermaid(previewContent); observeCharts(previewContent);
     const wordMatches = source.match(/[\p{L}\p{N}_'-]+/gu) || [];
     updateStats({ words: wordMatches.length, chars: source.length, bytes: new TextEncoder().encode(source).byteLength });
     $("renderState").textContent = langText("Podgląd lokalny", "Local preview"); markStartupReady();

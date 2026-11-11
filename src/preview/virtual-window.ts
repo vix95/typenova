@@ -3,6 +3,7 @@ import { preview, previewBottomSpacer, previewContent, previewTopSpacer } from "
 import { graphPreviewOwnsPreview } from "../graph-ui/preview-host";
 import { decorateCodeBlocks, resolveLocalImages } from "./code-blocks";
 import { observeMermaid } from "./mermaid";
+import { observeCharts } from "../data/chart-embed";
 import { applyBlockHighlights } from "./preview-highlights";
 import { previewContentScrollTop, resizeObserver } from "./preview-observers";
 import { blockElements, blockIndex, heightCache, htmlCache, pendingRenderIndices, previewState } from "./preview-state";
@@ -49,7 +50,7 @@ export function renderVirtualWindow(force = false) {
       element.dataset.index = String(i); element.dataset.startLine = String(block.startLine); element.dataset.endLine = String(block.endLine);
       const html = htmlCache.get(block.key);
       if (html !== undefined) {
-        if (element.dataset.htmlHash !== block.hash) { element.innerHTML = html; element.dataset.htmlHash = block.hash; decorateCodeBlocks(element); resolveLocalImages(element); observeMermaid(element); applyBlockHighlights(element, block.startLine, block.endLine); }
+        if (element.dataset.htmlHash !== block.hash) { element.innerHTML = html; element.dataset.htmlHash = block.hash; decorateCodeBlocks(element); resolveLocalImages(element); observeMermaid(element); observeCharts(element); applyBlockHighlights(element, block.startLine, block.endLine); }
         element.style.minHeight = "0px";
       } else {
         if (element.dataset.htmlHash) { element.replaceChildren(); delete element.dataset.htmlHash; }
@@ -60,7 +61,7 @@ export function renderVirtualWindow(force = false) {
     }
     previewContent.replaceChildren(fragment);
     previewState.lastRenderedRange = [start, end];
-    for (const element of Array.from(previewContent.children)) { observeMermaid(element as HTMLElement); if (resizeObserver) resizeObserver.observe(element as HTMLElement); }
+    for (const element of Array.from(previewContent.children)) { observeMermaid(element as HTMLElement); observeCharts(element as HTMLElement); if (resizeObserver) resizeObserver.observe(element as HTMLElement); }
     // Bound the HTML/DOM cache. The worker retains parsed tokens, so evicted blocks are cheap to request again.
     for (const key of Array.from(htmlCache.keys())) { const idx = blockIndex.get(key); if (idx !== undefined && (idx < start - 50 || idx > end + 50)) htmlCache.delete(key); }
     for (const [key, element] of Array.from(blockElements.entries())) { const idx = blockIndex.get(key); if (idx === undefined || idx < start - 20 || idx > end + 20) { resizeObserver?.unobserve(element); element.remove(); blockElements.delete(key); } }

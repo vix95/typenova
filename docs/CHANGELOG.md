@@ -2,6 +2,17 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.130]   2026 11-11
+
+### Added
+
+- Data view for CSV, TSV and TXT files. "Data view…" in the file tree's menu (and the command palette) opens a read only dialog with three tabs: Data (the first 500 rows), Summary (rows, columns, missing values and, for each column, its type, statistics and distribution: histogram, top values or date range) and Charts (bar, line, histogram and scatter charts of the whole file, with the columns, aggregate and number of bars chosen on the spot). The file is read in pieces by a worker, so files of hundreds of megabytes work and the window stays responsive; encoding, header and delimiter are detected. CSV and text files from 50 MB open in the data view instead of the editor, which offers an "Editor" button for those who still want the text.
+- Charts in Markdown notes. A ```chart block (`file: data/orders.csv`, `type: bar`, `x: country`, `y: amount`, `agg: sum`, optional `top`, `bins`, `by`, `title`) is drawn in the preview from the data file, which is named relative to the note and must lie in the project folder. "Insert into note" in the data view writes the block at the cursor.
+- The Preview pane of CSV, TSV and TXT files has two tabs: Data (the rows as a table) and Charts (a chart for every column by its type, with its figures). Plain text without a delimiter shows its lines.
+- Chart wizard in the data view: choose what to see, complete a sentence about it ("Show the total of amount for each country"), then insert the chart into the note; the chart is drawn live. Also in the command palette: "Insert a chart from a data file into the note…".
+- Demo data in the demo vault: `data/orders.csv` (8,000 orders, semicolons and decimal commas), `data/model-runs.csv` (400 training runs) and `data/sensor-readings.txt` (pipe-delimited text), written by `examples/generate-demo-data.mjs`, and the note `08-Data-Analysis.md` with seven chart blocks over them.
+- Capabilities `fs:allow-open` and `fs:allow-read` (reading a file in pieces); the path scope is unchanged.
+
 ## [0.5.129] - 2026-11-11
 
 ### Added

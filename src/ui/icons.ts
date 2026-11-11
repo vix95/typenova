@@ -55,6 +55,12 @@ export const ICONS = {
   splitDown: svg('<rect x="2" y="3" width="12" height="10" rx="2"/><path d="M2 8h12"/>'),
   unsplit: svg('<rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 8h4"/>'),
   exitFullscreen: svg('<path d="M6 2.5v3.5H2.5M10 2.5v3.5h3.5M6 13.5V10H2.5M10 13.5V10h3.5"/>'),
+  table: svg('<rect x="2" y="3" width="12" height="10" rx="2"/><path d="M2 7h12M2 10.5h12M6.5 3v10"/>'),
+  chartBar: svg('<path d="M3 13V8M8 13V3M13 13V6"/>'),
+  chartLine: svg('<path d="M2.5 12l3.5-4 3 2 4.5-6"/><path d="M2.5 13.5h11"/>'),
+  chartScatter: svg('<circle cx="4.5" cy="10.5" r="1"/><circle cx="8" cy="6.5" r="1"/><circle cx="11.5" cy="9" r="1"/><circle cx="12" cy="4" r="1"/><path d="M2.5 13.5h11"/>'),
+  chartHistogram: svg('<path d="M2.5 13V9.5h3V13M5.5 13V4.5h3V13M8.5 13V7h3v6M11.5 13V10h2"/>'),
+  profile: svg('<path d="M3 3v10h10"/><path d="M5.5 10.5V8M8 10.5V5.5M10.5 10.5V7"/>'),
   stop: svg('<rect x="4" y="4" width="8" height="8" rx="1.5"/>'),
 } as const;
 
