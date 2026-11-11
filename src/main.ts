@@ -15,6 +15,7 @@ import { initPreviewContextMenu } from "./preview/preview-context-menu";
 import { initMediaViewer } from "./preview/media-viewer";
 import { initPagePreview } from "./preview/page-preview";
 import { initTreePreview } from "./preview/tree-preview";
+import { initDataPreview } from "./data/data-preview";
 import { initViewPositionPersistence, rememberViewPosition } from "./documents/view-position";
 import { initOutline } from "./outline/outline";
 import { initExportPrint } from "./preview/export-print";
@@ -72,7 +73,6 @@ import { initSpellSettings } from "./spelling/spell-options";
 import { initBookmarks } from "./editor/bookmarks";
 import { initHighlights } from "./editor/highlights";
 import { initTerminals } from "./terminal/terminal-panel";
-
 // Boot sequence. The order below is the original top-level execution order of the pre-0.5.113 monolithic main.ts; event-listener registration order is behaviour.
 // DOM scaffolding
 initWorkspaceDom();
@@ -100,7 +100,6 @@ window.setTimeout(() => {
     markStartupReady();
   }
 }, 8000);
-
 // Bookmarks and highlights are loaded before any tab (or the restored session) is shown
 initBookmarks();
 initHighlights();
@@ -116,6 +115,7 @@ initPreviewContextMenu();
 initMediaViewer();
 initPagePreview();
 initTreePreview();
+initDataPreview();
 initViewPositionPersistence();
 initOutline();
 initSectionVisibility();

@@ -12,6 +12,7 @@ import { resizeObserver } from "./preview-observers";
 import { blockElements, blockIndex, forceRenderIndices, heightCache, htmlCache, pendingRenderIndices, previewState } from "./preview-state";
 import { pagePreviewActive, refreshPagePreview } from "./page-preview";
 import { refreshTreePreview, treePreviewActive } from "./tree-preview";
+import { dataPreviewActive, refreshDataPreview } from "../data/data-preview";
 import { pumpWorker } from "./preview-worker-client";
 
 let previewTimer = 0;
@@ -32,6 +33,7 @@ export function schedulePreview() {
   window.clearTimeout(previewTimer);
   if (pagePreviewActive()) { previewState.updatePending = false; refreshPagePreview(); return; }
   if (treePreviewActive()) { previewState.updatePending = false; refreshTreePreview(); return; }
+  if (dataPreviewActive()) { previewState.updatePending = false; refreshDataPreview(); return; }
   const n = view.state.doc.length;
   // Once a document becomes large, always leave synchronous fallback mode.
   if (n >= 250_000) previewState.previewFallbackActive = false;
@@ -69,6 +71,7 @@ export function syncPreviewForActiveDocument() {
   if (formatStatus) formatStatus.textContent = isNotebook ? "Jupyter Notebook" : mode === "markdown" ? "Markdown" : (documentState.currentPath || documentState.untitledLabel).split(".").pop()?.toUpperCase() || "Text";
   refreshPagePreview();
   refreshTreePreview(true);
+  refreshDataPreview(true);
   applyWidths();
   requestAnimationFrame(() => view.requestMeasure());
 }

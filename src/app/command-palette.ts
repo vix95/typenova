@@ -25,6 +25,7 @@ import { openAiEdit } from "../ai/edit-dialog";
 import { toggleAiPane } from "../ai/chat-panel";
 import { focusNeighborGroup, toggleSplit } from "../documents/groups";
 import { goToNeighbourBookmark, toggleBookmark } from "../editor/bookmarks";
+import { insertChartFromFile, openActiveFileInDataViewer } from "../data/data-open";
 import { closeActiveTerminal, newTerminal, openTerminalSettings, renameActiveTerminal, restartActiveTerminal, splitActiveTerminal, toggleTerminalFullscreen, toggleTerminalPanel } from "../terminal/terminal-panel";
 
 type CommandItem = { labelPl: string; labelEn: string; shortcut?: string; run: () => void };
@@ -40,6 +41,8 @@ const commandItems: CommandItem[] = [
   { labelPl: "Historia Git: commity i gałęzie", labelEn: "Git history: commits and branches", run: () => void openGitHistory() },
   { labelPl: "Linki: zamień [[Tytuł]] na [[plik#Tytuł]] w projekcie", labelEn: "Links: write [[Title]] as [[file#Title]] across the project", run: () => void import("../documents/link-rename-apply").then(module => module.qualifyProjectLinks()) },
   { labelPl: "Terminal: pokaż lub ukryj panel", labelEn: "Terminal: show or hide the panel", shortcut: "Ctrl+`", run: () => toggleTerminalPanel() },
+  { labelPl: "Wstaw wykres z pliku danych do notatki…", labelEn: "Insert a chart from a data file into the note…", run: () => { void insertChartFromFile(); } },
+  { labelPl: "Podgląd danych: otwórz bieżący plik CSV/TXT", labelEn: "Data view: open the current CSV/TXT file", run: () => openActiveFileInDataViewer() },
   { labelPl: "Terminal: nowy terminal", labelEn: "Terminal: new terminal", shortcut: "Ctrl+Shift+`", run: () => newTerminal() },
   { labelPl: "Terminal: podziel w prawo (nowy terminal obok)", labelEn: "Terminal: split right (a new terminal beside)", shortcut: "Ctrl+Shift+5", run: () => splitActiveTerminal("columns") },
   { labelPl: "Terminal: podziel w dół (nowy terminal poniżej)", labelEn: "Terminal: split down (a new terminal below)", shortcut: "Ctrl+Shift+6", run: () => splitActiveTerminal("rows") },

@@ -45,6 +45,7 @@ const md: MarkdownIt = new MarkdownIt({
   typographer: true,
   breaks: false,
   highlight(code: string, language: string): string {
+    if (language === "chart") return `<pre><code class="language-chart">${md.utils.escapeHtml(code)}</code></pre>`;
     if (language === "mermaid") return `<pre><code class="language-mermaid">${md.utils.escapeHtml(code)}</code></pre>`;
     // Syntax highlighting can multiply memory usage in huge documents. Preserve
     // code formatting, but skip expensive tokenization for very large blocks.

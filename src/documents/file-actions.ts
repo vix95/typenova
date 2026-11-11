@@ -20,6 +20,7 @@ import { appAlert, appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
 import { flushHeadingRename } from "../editor/heading-rename";
 import { noteFileSaved } from "./project-index";
+import { openLargeDataFile } from "../data/data-open";
 
 export let autoSaveTimer = 0;
 let autoSaveInFlight = false;
@@ -87,6 +88,7 @@ export async function openDocument() {
     // No extension filter: this is a text editor and must open code/text files too.
     const chosen = await open({ multiple: false });
     if (typeof chosen !== "string") return;
+    if (await openLargeDataFile(chosen)) return;
     const loaded = await loadTextFile(chosen);
     openTextInTab(chosen, loaded.text, loaded);
   } catch (error) { await appAlert(openErrorText(error)); }

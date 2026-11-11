@@ -163,7 +163,16 @@ function createRemoveRootControl(root: string): HTMLElement {
   return control;
 }
 
-export async function renderProjectTree() {
+let renderChain: Promise<void> = Promise.resolve();
+
+/** Draws the tree. Calls run one after another: a render clears the container and then appends rows after awaiting the folder listings, so two at once (quick clicks on expand/collapse, a refresh during one) would both append and duplicate every row. */
+export function renderProjectTree(): Promise<void> {
+  const run = renderChain.then(renderProjectTreeNow, renderProjectTreeNow);
+  renderChain = run.catch(() => undefined);
+  return run;
+}
+
+async function renderProjectTreeNow(): Promise<void> {
   const root = $("projectFiles") as HTMLElement;
   root.replaceChildren();
   const roots = documentState.projectRoots;
