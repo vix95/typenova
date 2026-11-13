@@ -61,6 +61,7 @@ export const ICONS = {
   chartScatter: svg('<circle cx="4.5" cy="10.5" r="1"/><circle cx="8" cy="6.5" r="1"/><circle cx="11.5" cy="9" r="1"/><circle cx="12" cy="4" r="1"/><path d="M2.5 13.5h11"/>'),
   chartHistogram: svg('<path d="M2.5 13V9.5h3V13M5.5 13V4.5h3V13M8.5 13V7h3v6M11.5 13V10h2"/>'),
   profile: svg('<path d="M3 3v10h10"/><path d="M5.5 10.5V8M8 10.5V5.5M10.5 10.5V7"/>'),
+  terminalSide: svg('<rect x="2" y="3" width="12" height="10" rx="2"/><path d="M8 3v10M3.8 6.4l1.4 1.1-1.4 1.1"/>'),
   stop: svg('<rect x="4" y="4" width="8" height="8" rx="1.5"/>'),
 } as const;
 

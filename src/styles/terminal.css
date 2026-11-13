@@ -15,7 +15,7 @@
 .terminal-tabs { display: flex; flex: 1 1 auto; align-items: center; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .terminal-tabs::-webkit-scrollbar { display: none; }
 
-.terminal-tab { display: inline-flex; flex: 0 1 auto; align-items: center; gap: 7px; min-width: 0; max-width: 220px; height: 28px; padding: 0 5px 0 9px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--ui-muted); font-size: 12px; white-space: nowrap; cursor: pointer; user-select: none; }
+.terminal-tab { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 7px; min-width: 96px; max-width: 220px; height: 28px; padding: 0 5px 0 9px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--ui-muted); font-size: 12px; white-space: nowrap; cursor: pointer; user-select: none; }
 .terminal-tab:hover { background: var(--ui-hover); color: var(--ui-text); }
 /* The selected tab stays marked when the pointer is elsewhere: surface, border and an accent line under it. */
 .terminal-tab[aria-selected="true"] { background: var(--ui-active); border-color: var(--ui-border); color: var(--ui-text); box-shadow: inset 0 -2px 0 var(--ui-accent); }
@@ -139,3 +139,14 @@ html[data-theme="contrast"] .terminal-tab[aria-selected="true"] { outline: 2px s
 .terminal-split-node.is-rows > .terminal-pane-splitter:hover, .terminal-split-node.is-rows > .terminal-pane-splitter:focus-visible { background: linear-gradient(var(--ui-accent), var(--ui-accent)) center / 100% 2px no-repeat; }
 .resizing-terminal-panes .terminal-split-node.is-rows, .resizing-terminal-panes .terminal-split-node.is-rows * { cursor: row-resize !important; }
 .terminal-body > .terminal-pane { flex: 1 1 0; }
+
+/* "Terminal + preview" mode: the terminals on the left, the preview on the right, a divider between them. The panel is moved beside the preview by the script. */
+.terminal-side-splitter { display: none; }
+body.side-terminal-mode .terminal-side-splitter { display: block; flex: 0 0 5px; align-self: stretch; cursor: col-resize; background: var(--ui-border); touch-action: none; }
+body.side-terminal-mode .terminal-side-splitter:hover, body.side-terminal-mode .terminal-side-splitter:focus-visible, body.resizing-terminal-side .terminal-side-splitter { background: var(--ui-accent); outline: none; }
+body.resizing-terminal-side, body.resizing-terminal-side * { cursor: col-resize !important; user-select: none !important; -webkit-user-select: none !important; }
+body.side-terminal-mode #editorPane, body.side-terminal-mode #layout > .splitter[data-split="preview"] { display: none !important; }
+body.side-terminal-mode #layout > .terminal-panel { display: flex; flex: var(--side-terminal-grow, 0.5) 1 0 !important; width: auto; height: auto; min-width: 240px; border-top: 0; }
+body.side-terminal-mode #layout > #previewPane { flex: calc(1 - var(--side-terminal-grow, 0.5)) 1 0 !important; width: auto !important; min-width: 240px; }
+body.side-terminal-mode .terminal-resizer, body.side-terminal-mode #terminalMaximize { display: none; }
+#terminalSideMode.is-active { background: var(--ui-active); box-shadow: inset 0 -2px 0 var(--ui-accent); }

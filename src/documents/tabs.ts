@@ -196,6 +196,28 @@ export function addTabInBackground(label: string): DocumentTab {
   documentState.tabs.push(tab);
   return tab;
 }
+/** Which tab's state each editor was last given. The strip and the document in use follow `documentState.activeTabId`; this tells what the editor really holds, so that a disagreement can be caught before it is saved over the wrong file. */
+const editorHolds = new WeakMap<EditorView, string>();
+
+/** Puts a tab's state into an editor and remembers that the editor now holds that tab. */
+export function loadTabIntoView(target: EditorView, tab: DocumentTab): void {
+  target.setState(tab.state);
+  editorHolds.set(target, tab.id);
+}
+
+/**
+ * If the editor in use holds another tab than the one marked as in use (the strip then shows one document and the editor another), marks the tab whose text the editor holds as in use, so that nothing is saved into the wrong file.
+ * Returns the name of that tab when it had to be repaired, else null.
+ */
+export function repairEditorTabMismatch(): string | null {
+  const holds = editorHolds.get(view);
+  if (!holds || holds === documentState.activeTabId) return null;
+  const owner = documentState.tabs.find(tab => tab.id === holds);
+  if (!owner) return null;
+  showTab(owner, false);
+  return owner.label;
+}
+
 export function switchToTab(id: string) {
   if (graphPreviewOwnsPreview && document.body.classList.contains("graph-mode")) setSidebarTab(previousSidebarTab);
   const target = documentState.tabs.find(tab => tab.id === id);
@@ -217,7 +239,7 @@ export function showTab(target: DocumentTab, loadState: boolean): void {
   documentState.savedText = target.savedText;
   documentState.dirty = target.dirty;
   updateHeadingBreadcrumbs();
-  if (loadState) view.setState(target.state);
+  if (loadState) loadTabIntoView(view, target);
   refreshDocumentMarks();
   if (loadState) restoreViewPosition(target.viewPosition); else queuePreviewAnchorRestore(target.viewPosition?.preview ?? null);
   scheduleMinimapDraw();
@@ -237,7 +259,7 @@ export function showTab(target: DocumentTab, loadState: boolean): void {
 }
 /** Puts a document's state into an editor (the editor of a group that is not in use, for instance) with its size profile and syntax mode. */
 export function loadStateIntoView(target: EditorView, tab: DocumentTab): void {
-  target.setState(tab.state);
+  loadTabIntoView(target, tab);
   target.dispatch({ effects: [performanceCompartment.reconfigure(performanceExtensions(tab.state.doc.length))] });
   void configureLanguageForTab(tab, target);
 }
@@ -298,7 +320,7 @@ export function createNewTab(initialText = "", label = "Untitled.md") {
   documentState.savedText = initialText;
   documentState.dirty = false;
   updateHeadingBreadcrumbs();
-  view.setState(newState);
+  loadTabIntoView(view, tab);
   restoreViewPosition(null);
   scheduleMinimapDraw();
   updateMinimapLayout();

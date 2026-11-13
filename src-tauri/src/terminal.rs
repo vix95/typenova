@@ -10,7 +10,8 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard, TryLockError};
+use std::time::{Duration, Instant};
 use tauri::{ipc::Channel, AppHandle, Manager, State};
 
 /// Most a single write to a terminal may carry (a paste), so that one call cannot flood the shell.
@@ -42,17 +43,54 @@ pub struct ShellList {
   pub default_id: Option<String>,
 }
 
+type Killer = Arc<Mutex<Box<dyn ChildKiller + Send + Sync>>>;
+
 struct Session {
   master: Box<dyn MasterPty + Send>,
   writer: Box<dyn Write + Send>,
-  killer: Box<dyn ChildKiller + Send + Sync>,
+  killer: Killer,
+}
+
+/// A running terminal. The session (its input and size) and the way to end it have their own locks: a write that is stuck in a shell that does not read
+/// must never keep the other terminals, or the ending of this one, waiting.
+struct Entry {
+  generation: u64,
+  session: Arc<Mutex<Session>>,
+  killer: Killer,
+}
+
+/// How long a command waits for a terminal that is busy (a write stuck in a shell that does not read, as after the computer slept) before it gives up.
+/// Giving up keeps the commands from piling up behind the stuck one.
+const BUSY_LIMIT: Duration = Duration::from_secs(3);
+
+fn lock_busy<T>(mutex: &Mutex<T>) -> Result<MutexGuard<'_, T>, String> { lock_within(mutex, BUSY_LIMIT) }
+
+fn lock_within<T>(mutex: &Mutex<T>, limit: Duration) -> Result<MutexGuard<'_, T>, String> {
+  let deadline = Instant::now() + limit;
+  loop {
+    match mutex.try_lock() {
+      Ok(guard) => return Ok(guard),
+      Err(TryLockError::Poisoned(poisoned)) => return Ok(poisoned.into_inner()),
+      Err(TryLockError::WouldBlock) => {
+        if Instant::now() >= deadline { return Err("the terminal is not responding".into()); }
+        std::thread::sleep(Duration::from_millis(5));
+      }
+    }
+  }
 }
 
 /// Tells a session from an earlier one that had the same id: the end of the old one must not remove the new one.
 static NEXT_GENERATION: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Default, Clone)]
-pub struct Terminals(Arc<Mutex<HashMap<String, (u64, Session)>>>);
+pub struct Terminals(Arc<Mutex<HashMap<String, Entry>>>);
+
+/// The session and killer of a terminal; the list of terminals is locked only for this lookup.
+fn find(terminals: &Terminals, id: &str) -> Result<(Arc<Mutex<Session>>, Killer), String> {
+  let all = terminals.0.lock().map_err(|_| "terminals are unavailable")?;
+  let entry = all.get(id).ok_or("no such terminal")?;
+  Ok((entry.session.clone(), entry.killer.clone()))
+}
 
 fn is_executable_file(path: &Path) -> bool {
   path.is_file()
@@ -181,7 +219,7 @@ fn start_session(path: &str, args: &[String], cwd: Option<&str>, cols: u16, rows
   let mut child = pair.slave.spawn_command(command).map_err(|error| format!("cannot start the shell: {error}"))?;
   drop(pair.slave);
   let pid = child.process_id().unwrap_or(0);
-  let killer = child.clone_killer();
+  let killer: Killer = Arc::new(Mutex::new(child.clone_killer()));
   let mut reader = pair.master.try_clone_reader().map_err(|error| format!("cannot read the terminal: {error}"))?;
   let writer = pair.master.take_writer().map_err(|error| format!("cannot write to the terminal: {error}"))?;
   let emit = Arc::new(emit);
@@ -205,43 +243,52 @@ fn start_session(path: &str, args: &[String], cwd: Option<&str>, cols: u16, rows
   Ok((Session { master: pair.master, writer, killer }, pid))
 }
 
-#[tauri::command]
+// The commands below are `async` so that they run off the main thread: a blocked terminal must never freeze the window.
+#[tauri::command(async)]
 #[allow(clippy::too_many_arguments)]
 pub fn terminal_spawn(terminals: State<Terminals>, id: String, shell: String, args: Vec<String>, cwd: Option<String>, cols: u16, rows: u16, on_event: Channel<TerminalEvent>) -> Result<u32, String> {
   if !valid_id(&id) { return Err("invalid terminal id".into()); }
-  let mut sessions = terminals.0.lock().map_err(|_| "terminals are unavailable")?;
-  if sessions.contains_key(&id) { return Err("this terminal is already running".into()); }
+  // The window starts a terminal only when it believes none runs under this id (a first start, a restart, a start after the shell ended).
+  // One that is still listed is therefore a leftover, such as a shell that hung while the computer slept: it is ended and replaced, so that a restart always works.
+  let leftover = terminals.0.lock().map_err(|_| "terminals are unavailable")?.remove(&id);
+  if let Some(entry) = leftover { if let Ok(mut killer) = entry.killer.lock() { let _ = killer.kill(); } }
   let generation = NEXT_GENERATION.fetch_add(1, Ordering::Relaxed);
   let all = terminals.inner().0.clone();
   let own_id = id.clone();
+  // Starting a shell takes a moment: the list of terminals is not locked meanwhile.
   let (session, pid) = start_session(&shell, &args, cwd.as_deref(), cols, rows, move |event| { let _ = on_event.send(event); }, move || {
     // The shell is over: forgetting the session closes its pseudo terminal (unless a newer session already took the id).
-    if let Ok(mut sessions) = all.lock() { if sessions.get(&own_id).map(|(current, _)| *current) == Some(generation) { sessions.remove(&own_id); } }
+    if let Ok(mut sessions) = all.lock() { if sessions.get(&own_id).map(|entry| entry.generation) == Some(generation) { sessions.remove(&own_id); } }
   })?;
-  sessions.insert(id, (generation, session));
+  let killer = session.killer.clone();
+  let mut all = terminals.0.lock().map_err(|_| "terminals are unavailable")?;
+  // Two starts for one id at the same moment: the later one wins and the earlier shell is ended.
+  if let Some(earlier) = all.insert(id, Entry { generation, session: Arc::new(Mutex::new(session)), killer }) {
+    if let Ok(mut killer) = earlier.killer.lock() { let _ = killer.kill(); }
+  }
   Ok(pid)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn terminal_write(terminals: State<Terminals>, id: String, data: String) -> Result<(), String> {
   if data.len() > MAX_WRITE_BYTES { return Err("too much text at once".into()); }
-  let mut sessions = terminals.0.lock().map_err(|_| "terminals are unavailable")?;
-  let (_, session) = sessions.get_mut(&id).ok_or("no such terminal")?;
+  let (session, _) = find(&terminals, &id)?;
+  let mut session = lock_busy(&session)?;
   session.writer.write_all(data.as_bytes()).and_then(|_| session.writer.flush()).map_err(|error| error.to_string())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn terminal_resize(terminals: State<Terminals>, id: String, cols: u16, rows: u16) -> Result<(), String> {
-  let sessions = terminals.0.lock().map_err(|_| "terminals are unavailable")?;
-  let (_, session) = sessions.get(&id).ok_or("no such terminal")?;
+  let (session, _) = find(&terminals, &id)?;
+  let session = lock_busy(&session)?;
   session.master.resize(pty_size(cols, rows)).map_err(|error| error.to_string())
 }
 
-/// Ends a terminal's shell and forgets it. Asking for one that is gone is not an error.
-#[tauri::command]
+/// Ends a terminal's shell and forgets it. Asking for one that is gone is not an error. It does not wait for a stuck write: it ends the process, which frees the write.
+#[tauri::command(async)]
 pub fn terminal_kill(terminals: State<Terminals>, id: String) -> Result<(), String> {
-  let mut sessions = terminals.0.lock().map_err(|_| "terminals are unavailable")?;
-  if let Some((_, mut session)) = sessions.remove(&id) { let _ = session.killer.kill(); }
+  let entry = terminals.0.lock().map_err(|_| "terminals are unavailable")?.remove(&id);
+  if let Some(entry) = entry { if let Ok(mut killer) = entry.killer.lock() { let _ = killer.kill(); } }
   Ok(())
 }
 
@@ -249,7 +296,7 @@ pub fn terminal_kill(terminals: State<Terminals>, id: String) -> Result<(), Stri
 pub fn kill_all(app: &AppHandle) {
   if let Some(terminals) = app.try_state::<Terminals>() {
     if let Ok(mut sessions) = terminals.0.lock() {
-      for (_, (_, mut session)) in sessions.drain() { let _ = session.killer.kill(); }
+      for (_, entry) in sessions.drain() { if let Ok(mut killer) = entry.killer.lock() { let _ = killer.kill(); } }
     }
   }
 }
@@ -259,6 +306,18 @@ mod tests {
   use super::*;
   use std::sync::mpsc;
   use std::time::{Duration, Instant};
+
+  #[test]
+  fn a_busy_terminal_is_given_up_on_instead_of_waited_for_forever() {
+    let mutex = Mutex::new(1);
+    let held = mutex.lock().unwrap();
+    let started = Instant::now();
+    let result = lock_within(&mutex, Duration::from_millis(60));
+    assert_eq!(result.err().as_deref(), Some("the terminal is not responding"));
+    assert!(started.elapsed() >= Duration::from_millis(60) && started.elapsed() < Duration::from_secs(2));
+    drop(held);
+    assert!(lock_within(&mutex, Duration::from_millis(60)).is_ok(), "a free terminal is locked at once");
+  }
 
   #[test]
   fn ids_are_plain_keys() {
@@ -381,7 +440,7 @@ mod tests {
         seen = String::from_utf8_lossy(&text).matches("typenova-typed-input").count() >= 2;
       }
     }
-    let _ = session.killer.kill();
+    let _ = session.killer.lock().unwrap().kill();
     assert!(seen, "the shell echoed the command and printed its output: {:?}", String::from_utf8_lossy(&text));
   }
 }

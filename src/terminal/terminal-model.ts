@@ -260,3 +260,74 @@ export function parseLayout(raw: string | null | undefined): Layout | null {
   };
   try { return simplify(read(JSON.parse(raw ?? "null"), 0)); } catch { return null; }
 }
+
+/** The sides of a terminal that another one can be dropped on. */
+export type DropSide = "left" | "right" | "top" | "bottom";
+
+/** Puts a terminal on a side of another one (left and top: before it), taking it away from where it was shown. A split of the same direction takes it in; otherwise the target becomes a split of its own. */
+export function placeBeside(layout: Layout, targetId: string, movedId: string, side: DropSide): Layout {
+  if (targetId === movedId) return layout;
+  const without = removeLeaf(layout, movedId) ?? paneOf(targetId);
+  const dir: SplitDir = side === "left" || side === "right" ? "columns" : "rows";
+  const before = side === "left" || side === "top";
+  const insert = (node: Layout): Layout => {
+    if (node.kind === "pane") return node.id === targetId ? { kind: "split", dir, children: before ? [paneOf(movedId), node] : [node, paneOf(movedId)] } : node;
+    const at = node.children.findIndex(child => child.kind === "pane" && child.id === targetId);
+    if (at >= 0 && node.dir === dir) { const children = [...node.children]; children.splice(before ? at : at + 1, 0, paneOf(movedId)); return { ...node, children }; }
+    return { ...node, children: node.children.map(insert) };
+  };
+  return simplify(insert(without)) ?? without;
+}
+
+/** The layout with two terminals exchanging places (one of them may not be shown yet: the other then simply gives way to it). */
+export function swapLeaves(layout: Layout, a: string, b: string): Layout {
+  const swap = (node: Layout): Layout => node.kind === "pane" ? (node.id === a ? paneOf(b) : node.id === b ? paneOf(a) : node) : { ...node, children: node.children.map(swap) };
+  return swap(layout);
+}
+
+/** The ids with one moved to a slot (the position it should have among the others once it is taken out). */
+export function moveId(ids: readonly string[], id: string, slot: number): string[] {
+  const rest = ids.filter(other => other !== id);
+  if (rest.length === ids.length) return [...ids];
+  rest.splice(Math.max(0, Math.min(rest.length, slot)), 0, id);
+  return rest;
+}
+
+/** A family of shells whose commands read alike: what a code block is written for, and what a terminal runs. */
+export type ShellFamily = "posix" | "powershell" | "cmd";
+
+const LANGUAGE_FAMILY: Readonly<Record<string, ShellFamily>> = {
+  bash: "posix", sh: "posix", shell: "posix", zsh: "posix", ksh: "posix",
+  powershell: "powershell", pwsh: "powershell", ps1: "powershell", ps: "powershell",
+  cmd: "cmd", bat: "cmd", batch: "cmd",
+};
+const SHELL_FAMILY: Readonly<Record<string, ShellFamily>> = {
+  gitbash: "posix", bash: "posix", zsh: "posix", sh: "posix", wsl: "posix", ksh: "posix",
+  powershell: "powershell", pwsh: "powershell", cmd: "cmd",
+};
+/** Shells that suit a family, best first. */
+const PREFERRED_SHELLS: Readonly<Record<ShellFamily, readonly string[]>> = {
+  posix: ["gitbash", "bash", "zsh", "wsl", "sh"], powershell: ["pwsh", "powershell"], cmd: ["cmd"],
+};
+
+/** The family a fenced code block's language belongs to (bash, sh, powershell, ps1, cmd, bat…), or null when it is not a shell script. */
+export const languageFamily = (language: string): ShellFamily | null => LANGUAGE_FAMILY[language.trim().toLowerCase()] ?? null;
+
+/** The family of a shell by its id, or null for one that is not known (a shell of the user's own). */
+export const shellFamily = (shellId: string): ShellFamily | null => SHELL_FAMILY[shellId] ?? null;
+
+/** The shell of a family that this computer has, by preference, or null. */
+export function pickShellFor(family: ShellFamily, profiles: readonly ShellProfile[]): ShellProfile | null {
+  for (const id of PREFERRED_SHELLS[family]) { const found = profiles.find(profile => profile.id === id); if (found) return found; }
+  return null;
+}
+
+/** What is typed into a terminal for a code block: blank lines at the ends dropped, the "$ " prompt marks of documentation removed when every line has one, lines separated by Enter. */
+export function commandText(code: string): string {
+  const lines = code.replace(/\r\n?/g, "\n").split("\n").map(line => line.replace(/\s+$/, ""));
+  while (lines.length && lines[0] === "") lines.shift();
+  while (lines.length && lines[lines.length - 1] === "") lines.pop();
+  const filled = lines.filter(line => line !== "");
+  const marked = filled.length > 0 && filled.every(line => /^\s*\$ /.test(line));
+  return (marked ? lines.map(line => line.replace(/^(\s*)\$ /, "$1")) : lines).join("\r");
+}

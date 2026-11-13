@@ -54,7 +54,9 @@ const md: MarkdownIt = new MarkdownIt({
       try { return `<pre><code class="hljs language-${md.utils.escapeHtml(language)}">${hljs.highlight(code, { language, ignoreIllegals: true }).value}</code></pre>`; }
       catch { /* fall through to escaped code */ }
     }
-    return `<pre><code>${md.utils.escapeHtml(code)}</code></pre>`;
+    // A language the highlighter does not know (powershell, bat…) keeps its name: the block's language label and its "Run" button need it.
+    const name = /^[A-Za-z0-9_+#.-]{1,30}$/.test(language) ? ` class="language-${language}"` : "";
+    return `<pre><code${name}>${md.utils.escapeHtml(code)}</code></pre>`;
   }
 }).use(anchor, { permalink: false })
   .use(taskLists, { enabled: true, label: true })

@@ -10,7 +10,7 @@ import { previousSidebarTab, setSidebarTab } from "../app/sidebar";
 import { setClean, setDirty, updateDirtyUi } from "./dirty-state";
 import { documentState, type DocumentTab } from "./document-state";
 import { updateStats } from "./document-stats";
-import { activeTab, configureLanguageForTab, createEditorState, persistOpenSession, renderTabs, switchToTab } from "./tabs";
+import { activeTab, configureLanguageForTab, createEditorState, persistOpenSession, renderTabs, repairEditorTabMismatch, switchToTab } from "./tabs";
 import { view } from "../editor/editor-view";
 import { graphPreviewOwnsPreview } from "../graph-ui/preview-host";
 import { langText } from "../i18n/language";
@@ -69,6 +69,12 @@ export function openErrorText(error: unknown): string {
 
 /** Writes the active document in the encoding and line endings it was opened with. Asks before characters would be lost; false when the user cancelled. */
 async function writeActiveDocument(path: string, text: string, ask = true): Promise<boolean> {
+  // The text comes from the editor, the path from the tab marked as in use: when they disagree, nothing is written (it would go into the wrong file).
+  const repaired = repairEditorTabMismatch();
+  if (repaired) {
+    showToast(langText(`Karta i edytor pokazywały różne dokumenty. Karta została dopasowana do tekstu w edytorze („${repaired}”) i nic nie zapisano. Zapisz ponownie.`, `The tab and the editor showed different documents. The tab was matched to the text in the editor (“${repaired}”) and nothing was saved. Save again.`));
+    return false;
+  }
   const tab = activeTab();
   let format = tab?.format ?? DEFAULT_FORMAT;
   const lost = countUnmappable(text, format.encoding);

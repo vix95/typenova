@@ -72,7 +72,16 @@ export class TerminalSession {
   private handleInput(data: string): void {
     this.hooks.onInput();
     if (!this.alive) { if (data === "\r") this.hooks.onRestartRequest(); return; }
-    void writeTerminal(this.id, data).catch(() => undefined);
+    void writeTerminal(this.id, data).catch(error => this.warnUnresponsive(error));
+  }
+
+  private lastWarning = 0;
+
+  /** A shell that stopped reading (as after the computer slept) does not take input: say so on the screen, once in a while, and how to get out of it. */
+  private warnUnresponsive(error: unknown): void {
+    if (!/not responding/.test(String(error)) || Date.now() - this.lastWarning < 10_000) return;
+    this.lastWarning = Date.now();
+    this.term.write(`\r\n\x1b[33m${langText("[TypeNova] Terminal nie odpowiada. Uruchom go ponownie z menu karty (prawy przycisk) albo zamknij.", "[TypeNova] The terminal is not responding. Restart it from the tab menu (right-click) or close it.")}\x1b[0m\r\n`);
   }
 
   /** Puts the screen into the page (once it is visible, so that it can measure itself). */

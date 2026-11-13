@@ -169,3 +169,56 @@ test("a stored layout is read back only when it is valid", async () => {
   assert.deepEqual(m.parseLayout(JSON.stringify(S("columns", P("a"), P("bad id")))), P("a"), "an invalid part is dropped and a split of one is that one");
   assert.equal(m.parseLayout(null), null);
 });
+
+test("a terminal dropped on a side of another one goes before or after it, in the direction of that side", async () => {
+  const m = await model();
+  const P = id => ({ kind: "pane", id });
+  const S = (dir, ...children) => ({ kind: "split", dir, children });
+  assert.deepEqual(m.placeBeside(S("columns", P("a"), P("b")), "b", "c", "right"), S("columns", P("a"), P("b"), P("c")), "the same direction joins the split");
+  assert.deepEqual(m.placeBeside(S("columns", P("a"), P("b")), "a", "c", "left"), S("columns", P("c"), P("a"), P("b")), "left of the first");
+  assert.deepEqual(m.placeBeside(S("columns", P("a"), P("b")), "b", "c", "bottom"), S("columns", P("a"), S("rows", P("b"), P("c"))), "another direction splits the target");
+  assert.deepEqual(m.placeBeside(P("a"), "a", "c", "top"), S("rows", P("c"), P("a")));
+  assert.deepEqual(m.placeBeside(S("columns", P("a"), P("b"), P("c")), "a", "c", "bottom"), S("columns", S("rows", P("a"), P("c")), P("b")), "a terminal that was shown is moved, not copied");
+  assert.deepEqual(m.placeBeside(S("columns", P("a"), P("b")), "a", "b", "right"), S("columns", P("a"), P("b")), "right of a: where b already is");
+  assert.deepEqual(m.placeBeside(P("a"), "a", "a", "left"), P("a"), "onto itself nothing happens");
+  assert.deepEqual(m.leaves(m.placeBeside(S("columns", P("a"), P("b")), "b", "c", "top")), ["a", "c", "b"]);
+});
+
+test("two terminals can exchange places, and a tab can be moved in the list", async () => {
+  const m = await model();
+  const P = id => ({ kind: "pane", id });
+  const S = (dir, ...children) => ({ kind: "split", dir, children });
+  assert.deepEqual(m.swapLeaves(S("columns", P("a"), S("rows", P("b"), P("c"))), "a", "c"), S("columns", P("c"), S("rows", P("b"), P("a"))));
+  assert.deepEqual(m.swapLeaves(S("columns", P("a"), P("b")), "a", "z"), S("columns", P("z"), P("b")), "a terminal that is not shown takes the place");
+  assert.deepEqual(m.moveId(["a", "b", "c", "d"], "d", 0), ["d", "a", "b", "c"]);
+  assert.deepEqual(m.moveId(["a", "b", "c", "d"], "a", 2), ["b", "c", "a", "d"]);
+  assert.deepEqual(m.moveId(["a", "b"], "b", 99), ["a", "b"]);
+  assert.deepEqual(m.moveId(["a", "b"], "nope", 0), ["a", "b"]);
+});
+
+test("a code block is matched with the shells that can run it", async () => {
+  const m = await model();
+  assert.equal(m.languageFamily("bash"), "posix"); assert.equal(m.languageFamily(" Shell "), "posix");
+  assert.equal(m.languageFamily("PowerShell"), "powershell"); assert.equal(m.languageFamily("ps1"), "powershell");
+  assert.equal(m.languageFamily("bat"), "cmd");
+  for (const other of ["js", "python", "", "console", "json"]) assert.equal(m.languageFamily(other), null, `"${other}" is not a shell script`);
+  assert.equal(m.shellFamily("gitbash"), "posix"); assert.equal(m.shellFamily("wsl"), "posix");
+  assert.equal(m.shellFamily("pwsh"), "powershell"); assert.equal(m.shellFamily("cmd"), "cmd");
+  assert.equal(m.shellFamily("custom-nu"), null);
+  const profiles = ["cmd", "powershell", "wsl", "gitbash"].map(id => ({ id, label: id, path: "x", args: [] }));
+  assert.equal(m.pickShellFor("posix", profiles).id, "gitbash", "Git Bash before WSL");
+  assert.equal(m.pickShellFor("powershell", profiles).id, "powershell");
+  assert.equal(m.pickShellFor("cmd", profiles).id, "cmd");
+  assert.equal(m.pickShellFor("posix", profiles.slice(0, 2)), null, "no bash on this computer");
+});
+
+test("the text typed for a code block is cleaned up and ends each line with Enter", async () => {
+  const m = await model();
+  const CR = String.fromCharCode(13);
+  assert.equal(m.commandText("cd /mnt/c/x\n"), "cd /mnt/c/x");
+  assert.equal(m.commandText("\n\nnpm install\n  npm test  \n\n"), "npm install" + CR + "  npm test");
+  assert.equal(m.commandText("$ ls\n$ pwd"), "ls" + CR + "pwd", "prompt marks of documentation are dropped when every line has one");
+  assert.equal(m.commandText("echo $HOME\n$ x"), "echo $HOME" + CR + "$ x", "but not when only some lines have one");
+  assert.equal(m.commandText("a\r\nb"), "a" + CR + "b");
+  assert.equal(m.commandText("   \n\n"), "");
+});

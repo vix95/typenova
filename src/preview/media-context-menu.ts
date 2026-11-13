@@ -34,6 +34,13 @@ export async function copyImage(image: HTMLImageElement): Promise<void> {
   }
 }
 
+/** Copies what the viewer shows: a picture as an image, a diagram as SVG code. */
+export function copyShownMedia(stage: HTMLElement): void {
+  const image = stage.querySelector("img"), svg = stage.querySelector("svg");
+  if (image) void copyImage(image);
+  else if (svg) void copyTextToClipboard(svg.outerHTML).then(ok => showToast(ok ? langText("Skopiowano kod SVG.", "SVG code copied.") : langText("Nie udało się skopiować.", "Could not copy.")));
+}
+
 /** Adds the menu to the viewer dialog (inside it, so it is drawn in the dialog's top layer). */
 export function attachMediaContextMenu(dialog: HTMLDialogElement, stage: HTMLElement): void {
   const menu = document.createElement("div"); menu.className = "context-menu media-context-menu"; menu.setAttribute("role", "menu"); menu.hidden = true;
@@ -48,8 +55,7 @@ export function attachMediaContextMenu(dialog: HTMLDialogElement, stage: HTMLEle
     item.textContent = image ? langText("Kopiuj obraz", "Copy image") : langText("Kopiuj kod SVG", "Copy SVG code");
     item.addEventListener("click", () => {
       hide();
-      if (image) void copyImage(image);
-      else if (svg) void copyTextToClipboard(svg.outerHTML).then(ok => showToast(ok ? langText("Skopiowano kod SVG.", "SVG code copied.") : langText("Nie udało się skopiować.", "Could not copy.")));
+      copyShownMedia(stage);
     });
     menu.replaceChildren(item);
     menu.hidden = false; menu.style.visibility = "hidden";

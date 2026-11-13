@@ -1915,9 +1915,10 @@ body.focus-mode .cm-content, .focus-mode .cm-content { font-size: var(--editor-f
 
 /* Markdown preview snippet toolbar: language and copy controls share one compact row. */
 #preview pre.has-code-copy { position: relative; padding-top: 34px !important; }
+/* The toolbar is the first child of the scrolling <pre>: it is sticky (not absolute) so that it stays in view when a long line scrolls the code sideways. It takes no height of its own; it is lifted into the top padding. */
 #preview .code-block-toolbar {
-  position: absolute; top: 5px; left: 6px; right: 6px; z-index: 3; display: flex; align-items: center; justify-content: flex-end;
-  gap: 5px; min-width: 0; pointer-events: none;
+  position: sticky; left: 0; z-index: 3; display: flex; align-items: flex-start; justify-content: flex-end; box-sizing: border-box;
+  width: 100%; height: 0; margin: 0; padding: 0 6px; gap: 5px; min-width: 0; transform: translateY(-29px); pointer-events: none;
 }
 #preview .code-block-toolbar .code-language-pill {
   position: static !important; top: auto; right: auto; z-index: auto; display: inline-flex; align-items: center;
@@ -1929,6 +1930,7 @@ body.focus-mode .cm-content, .focus-mode .cm-content { font-size: var(--editor-f
   min-height: 24px; padding: 3px 8px; border: 1px solid var(--ui-border); border-radius: 6px; pointer-events: auto;
   background: var(--ui-panel2); color: var(--ui-text); font: 600 10px/1.2 Inter, "Segoe UI", sans-serif; cursor: pointer;
 }
+#preview .code-run-button .ui-icon { display: block; width: 13px; height: 13px; flex: 0 0 13px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 #preview .code-copy-icon { display: block; width: 13px; height: 13px; flex: 0 0 13px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 #preview .code-copy-label { white-space: nowrap; }
 #preview .code-copy-button:hover, #preview .code-copy-button:focus-visible { border-color: var(--ui-accent); background: var(--ui-hover); color: var(--ui-text); }
