@@ -12,7 +12,7 @@ import { scrollSyncIdleTimer, scrollSyncState, syncPreviewToEditor } from "../ed
 import { langText } from "../i18n/language";
 import { applyFontSize, applyTheme, lineNumbersEnabled, setLineNumbers, setWrapping } from "../layout/appearance";
 import { applyWidths, layoutState, preferences, saveWidths } from "../layout/layout";
-import { applyOutlineCollapse, collapsedHeadings, outlineHeadings } from "../outline/outline";
+import { applyOutlineCollapse, collapsedHeadings, outlineHeadings, persistCollapsed } from "../outline/outline";
 
 const lineNumbersToggle = $("lineNumbersToggle") as HTMLInputElement;
 const minimapToggle = $("minimapToggle") as HTMLInputElement;
@@ -69,8 +69,8 @@ export function initSettingsBindings(): void {
   previewFontSizeSelect.addEventListener("change", (event: Event) => applyFontSize("preview", (event.target as HTMLSelectElement).value));
   $<HTMLInputElement>("syncToggle").checked = scrollSyncState.syncScroll;
   $("syncToggle").addEventListener("change", (e: Event) => { scrollSyncState.syncScroll = (e.target as HTMLInputElement).checked; localStorage.setItem("typenova.syncScroll", String(scrollSyncState.syncScroll)); if (!scrollSyncState.syncScroll) { window.clearTimeout(scrollSyncIdleTimer); scrollSyncState.scrollSyncOwner = null; scrollSyncState.expectedPreviewScrollTop = null; scrollSyncState.expectedEditorScrollTop = null; } else requestAnimationFrame(() => syncPreviewToEditor()); });
-  $("collapseAll").addEventListener("click", () => { outlineHeadings.forEach((h, i) => { if (i + 1 < outlineHeadings.length && outlineHeadings[i + 1].level > h.level) collapsedHeadings.add(h.key); }); localStorage.setItem("typenova.collapsed", JSON.stringify([...collapsedHeadings])); applyOutlineCollapse(); });
-  $("expandAll").addEventListener("click", () => { collapsedHeadings.clear(); localStorage.setItem("typenova.collapsed", "[]"); applyOutlineCollapse(); });
+  $("collapseAll").addEventListener("click", () => { outlineHeadings.forEach((h, i) => { if (i + 1 < outlineHeadings.length && outlineHeadings[i + 1].level > h.level) collapsedHeadings.add(h.key); }); persistCollapsed(); applyOutlineCollapse(); });
+  $("expandAll").addEventListener("click", () => { collapsedHeadings.clear(); persistCollapsed(); applyOutlineCollapse(); });
   $("resetLayout").addEventListener("click", () => { layoutState.savedWidthRatios = null; const w = ($("layout") as HTMLElement).getBoundingClientRect().width; const usable = Math.max(1, w - 10); Object.assign(preferences, { outline: Math.round(usable * .20), editor: Math.round(usable * .49), preview: Math.round(usable * .31) }); applyWidths(); saveWidths(); });
   $("helpOpen").addEventListener("click", () => ($("helpDialog") as HTMLDialogElement).showModal());
   $("helpClose").addEventListener("click", () => ($("helpDialog") as HTMLDialogElement).close());

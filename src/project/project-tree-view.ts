@@ -15,6 +15,7 @@ import { addProjectRoot, removeProjectRoot } from "../filesystem/project-roots";
 import { isFilesystemScopeError, markTreeClipboardState, projectTreeController, projectTreeState } from "./project-tree-ops";
 import { setProjectRoots } from "./project-roots";
 import { captureTreeBaseline } from "./project-tree-sync";
+import { restoreExpandedFolders, saveExpandedFolders } from "./expanded-folders";
 import { openProjectTreeEntry, showTreeContextMenu } from "./tree-context-menu";
 import { installTreeDragDrop } from "./tree-drag-drop";
 import { appAlert, appConfirm } from "../ui/dialogs";
@@ -185,6 +186,7 @@ async function renderProjectTreeNow(): Promise<void> {
   $("fileEmptyState").hidden = !!roots.length;
   $("recentFiles").hidden = !!roots.length;
   if (!roots.length) return;
+  restoreExpandedFolders();
   installTreeDragDrop();
   let walk: (path: string, depth: number, parent: HTMLElement) => Promise<boolean>;
 
@@ -201,6 +203,7 @@ async function renderProjectTreeNow(): Promise<void> {
       if (child.hidden) {
         child.hidden = false;
         projectTreeState.expandedFolders.add(full);
+        saveExpandedFolders();
         disclosure.classList.add("expanded");
         if (!child.dataset.loaded) {
           const loaded = await walk(full, depth + 1, child);
@@ -209,6 +212,7 @@ async function renderProjectTreeNow(): Promise<void> {
       } else {
         child.hidden = true;
         projectTreeState.expandedFolders.delete(full);
+        saveExpandedFolders();
         disclosure.classList.remove("expanded");
       }
     });
@@ -257,5 +261,6 @@ async function renderProjectTreeNow(): Promise<void> {
 
   if (multiple) for (const folder of roots) await addDirectory(root, basename(folder), folder, 0, true);
   else await walk(roots[0], 0, root);
+  saveExpandedFolders();
   void captureTreeBaseline();
 }

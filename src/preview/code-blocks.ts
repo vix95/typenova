@@ -5,6 +5,8 @@ import { normalizeLocalImagePath } from "../filesystem/path-utils";
 import { documentState } from "../documents/document-state";
 import { langText } from "../i18n/language";
 import { showToast } from "../ui/toast";
+import { ICONS } from "../ui/icons";
+import { languageFamily } from "../terminal/terminal-model.js";
 
 export async function copyTextToClipboard(text: string): Promise<boolean> {
   try {
@@ -89,7 +91,25 @@ export function decorateCodeBlocks(root: HTMLElement) {
     toolbar.insertBefore(pill, copy);
     pre.classList.add("has-language-pill");
     pre.dataset.languagePill = "yes";
+    if (languageFamily(language) && copy) toolbar.insertBefore(runButton(code, language), copy);
   }
+}
+
+/** "Run" on a shell script block (bash, PowerShell, cmd…): types the code into a terminal and runs it. The user sees the code and clicks: nothing runs by itself. */
+function runButton(code: HTMLElement, language: string): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "code-copy-button code-run-button";
+  button.insertAdjacentHTML("afterbegin", ICONS.play);
+  const label = document.createElement("span"); label.className = "code-copy-label"; label.textContent = langText("Uruchom", "Run");
+  button.append(label);
+  const tooltip = langText("Uruchom w terminalu (ostatnio używanym albo nowym)", "Run in the terminal (the one used last, or a new one)");
+  button.dataset.tooltip = tooltip; button.setAttribute("aria-label", tooltip);
+  button.addEventListener("click", event => {
+    event.preventDefault(); event.stopPropagation();
+    void import("../terminal/terminal-run").then(module => module.runInTerminal(code.textContent || "", language));
+  });
+  return button;
 }
 const IMAGE_UNAVAILABLE_CLASS = "image-unavailable";
 

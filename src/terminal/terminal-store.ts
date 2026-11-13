@@ -9,8 +9,8 @@ import { appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
 import { listShells } from "./terminal-backend";
 import {
-  absoluteFolder, activeTerminalOfConfig, cleanName, commandHash, leaves, MAX_PANES, MAX_TERMINALS, newTerminalId, normalizeLayout, paneOf, parseCustomProfiles, parseLayout, pickProfile, removeLeaf, replaceLeaf, splitLayout, startupCommands, terminalsOfConfig, uniqueName, untrustedCommands, withTerminals,
-  type Layout, type ShellProfile, type SplitDir, type TerminalSetup,
+  absoluteFolder, activeTerminalOfConfig, cleanName, commandHash, leaves, MAX_PANES, MAX_TERMINALS, moveId, newTerminalId, normalizeLayout, paneOf, placeBeside, swapLeaves, parseCustomProfiles, parseLayout, pickProfile, removeLeaf, replaceLeaf, splitLayout, startupCommands, terminalsOfConfig, uniqueName, untrustedCommands, withTerminals,
+  type DropSide, type Layout, type ShellProfile, type SplitDir, type TerminalSetup,
 } from "./terminal-model";
 import { TerminalSession } from "./terminal-session";
 
@@ -88,10 +88,10 @@ export function setTerminalHostResolver(resolver: (id: string) => HTMLElement | 
 
 /** Keeps the layout valid (existing terminals, the active one among them) and remembers it. */
 function syncLayout(): void {
-  const before = JSON.stringify(terminalState.layout);
   terminalState.layout = normalizeLayout(terminalState.layout ?? readLayout(), terminalState.tabs.map(tab => tab.setup.id), terminalState.activeId);
   terminalState.panes = leaves(terminalState.layout);
-  if (JSON.stringify(terminalState.layout) !== before) { try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(terminalState.layout)); } catch { /* storage unavailable */ } }
+  // Compared with what is stored, not with the layout before: a split made just before has already replaced it.
+  try { const text = JSON.stringify(terminalState.layout); if (localStorage.getItem(LAYOUT_KEY) !== text) localStorage.setItem(LAYOUT_KEY, text); } catch { /* storage unavailable */ }
 }
 const readLayout = (): Layout | null => { try { return parseLayout(localStorage.getItem(LAYOUT_KEY)); } catch { return null; } };
 
@@ -140,9 +140,19 @@ export function createTerminal(options: NewTerminal = {}): TerminalTab | null {
 
 const lastActiveByRoot = new Map<string, string>();
 
+/** Terminals in the order they were last in focus (the newest first). */
+const recentIds: string[] = [];
+
+/** The terminals, the one used last first; the ones never focused follow in tab order. */
+export function recentTerminals(): TerminalTab[] {
+  const known = recentIds.map(id => tabById(id)).filter((tab): tab is TerminalTab => !!tab);
+  return [...known, ...terminalState.tabs.filter(tab => !known.includes(tab))];
+}
+
 export function activateTerminal(id: string): void {
   const tab = tabById(id);
   if (!tab) return;
+  recentIds.splice(0, recentIds.length, id, ...recentIds.filter(other => other !== id));
   // A terminal that is not on screen takes the place of the one in focus.
   if (!terminalState.panes.includes(id) && terminalState.layout && terminalState.activeId && terminalState.panes.includes(terminalState.activeId)) terminalState.layout = replaceLeaf(terminalState.layout, terminalState.activeId, id);
   terminalState.activeId = id;
@@ -164,6 +174,31 @@ export function splitTerminal(id?: string, dir: SplitDir = "columns"): void {
     terminalState.panes = leaves(terminalState.layout);
   }
   activateTerminal(tab.setup.id);
+}
+
+/**
+ * A terminal dragged onto a pane: onto a side of it, it is shown there (the pane is split); onto the middle, it takes the place of that pane's terminal
+ * (or exchanges places with it when both are shown). The dragged terminal gets the focus.
+ */
+export function dropTerminal(movedId: string, targetId: string, zone: "center" | DropSide): void {
+  if (movedId === targetId || !tabById(movedId) || !tabById(targetId) || !terminalState.layout) return;
+  const shown = terminalState.panes.includes(movedId);
+  if (zone === "center") terminalState.layout = shown ? swapLeaves(terminalState.layout, movedId, targetId) : replaceLeaf(terminalState.layout, targetId, movedId);
+  else {
+    if (!shown && terminalState.panes.length >= MAX_PANES) { showToast(langText(`Na ekranie może być najwyżej ${MAX_PANES} terminale naraz.`, `At most ${MAX_PANES} terminals can be on screen at once.`)); return; }
+    terminalState.layout = placeBeside(terminalState.layout, targetId, movedId, zone);
+  }
+  terminalState.panes = leaves(terminalState.layout);
+  activateTerminal(movedId);
+}
+
+/** Moves a tab to a place in the tab list (the order is saved with the project). */
+export function moveTerminalTab(id: string, slot: number): void {
+  const order = moveId(terminalState.tabs.map(tab => tab.setup.id), id, slot);
+  if (order.every((value, index) => value === terminalState.tabs[index].setup.id)) return;
+  terminalState.tabs.sort((a, b) => order.indexOf(a.setup.id) - order.indexOf(b.setup.id));
+  persistSoon();
+  notifyTerminals();
 }
 
 /** Shows only the terminal in focus again (the others stay open, in the tabs). */

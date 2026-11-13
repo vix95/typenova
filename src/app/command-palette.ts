@@ -26,7 +26,7 @@ import { toggleAiPane } from "../ai/chat-panel";
 import { focusNeighborGroup, toggleSplit } from "../documents/groups";
 import { goToNeighbourBookmark, toggleBookmark } from "../editor/bookmarks";
 import { insertChartFromFile, openActiveFileInDataViewer } from "../data/data-open";
-import { closeActiveTerminal, newTerminal, openTerminalSettings, renameActiveTerminal, restartActiveTerminal, splitActiveTerminal, toggleTerminalFullscreen, toggleTerminalPanel } from "../terminal/terminal-panel";
+import { toggleSideMode, closeActiveTerminal, newTerminal, openTerminalSettings, renameActiveTerminal, restartActiveTerminal, splitActiveTerminal, toggleTerminalFullscreen, toggleTerminalPanel } from "../terminal/terminal-panel";
 
 type CommandItem = { labelPl: string; labelEn: string; shortcut?: string; run: () => void };
 const commandItems: CommandItem[] = [
@@ -43,6 +43,7 @@ const commandItems: CommandItem[] = [
   { labelPl: "Terminal: pokaż lub ukryj panel", labelEn: "Terminal: show or hide the panel", shortcut: "Ctrl+`", run: () => toggleTerminalPanel() },
   { labelPl: "Wstaw wykres z pliku danych do notatki…", labelEn: "Insert a chart from a data file into the note…", run: () => { void insertChartFromFile(); } },
   { labelPl: "Podgląd danych: otwórz bieżący plik CSV/TXT", labelEn: "Data view: open the current CSV/TXT file", run: () => openActiveFileInDataViewer() },
+  { labelPl: "Terminal po lewej, podgląd po prawej (50/50): włącz / wyłącz", labelEn: "Terminal on the left, preview on the right (50/50): toggle", run: () => toggleSideMode() },
   { labelPl: "Terminal: nowy terminal", labelEn: "Terminal: new terminal", shortcut: "Ctrl+Shift+`", run: () => newTerminal() },
   { labelPl: "Terminal: podziel w prawo (nowy terminal obok)", labelEn: "Terminal: split right (a new terminal beside)", shortcut: "Ctrl+Shift+5", run: () => splitActiveTerminal("columns") },
   { labelPl: "Terminal: podziel w dół (nowy terminal poniżej)", labelEn: "Terminal: split down (a new terminal below)", shortcut: "Ctrl+Shift+6", run: () => splitActiveTerminal("rows") },

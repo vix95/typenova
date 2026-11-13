@@ -12,7 +12,7 @@ import { OPEN_SESSION_STORAGE_KEY, documentState, showWelcomeWhenNoSession, type
 import { updateQuickStats, updateStats } from "./document-stats";
 import { recentFiles, rememberRecentFile } from "./file-actions";
 import { startText } from "./start-text";
-import { activeTab, configureLanguageForTab, createEditorState, createNewTab, persistOpenSession, renderTabs, switchToTab } from "./tabs";
+import { activeTab, configureLanguageForTab, createEditorState, createNewTab, loadTabIntoView, persistOpenSession, renderTabs, switchToTab } from "./tabs";
 import { performanceCompartment } from "../editor/compartments";
 import { performanceExtensions } from "../editor/editor-extensions";
 import { view } from "../editor/editor-view";
@@ -55,7 +55,7 @@ function activateRestoredTab(tab: DocumentTab): void {
   documentState.untitledLabel = tab.label;
   documentState.savedText = tab.savedText;
   documentState.dirty = false;
-  view.setState(tab.state);
+  loadTabIntoView(view, tab);
   refreshDocumentMarks();
   documentState.performanceMode = tab.state.doc.length >= 1_000_000;
   view.dispatch({ effects: [performanceCompartment.reconfigure(performanceExtensions(tab.state.doc.length))] });
@@ -199,14 +199,14 @@ export async function offerRecovery() {
         switchToTab(matchingTab.id);
         tab = matchingTab;
         tab.state = createEditorState(recovery.text);
-        view.setState(tab.state);
+        loadTabIntoView(view, tab);
         refreshDocumentMarks();
       } else if (documentState.tabs.length === 1 && !documentState.tabs[0].path && !documentState.tabs[0].dirty) {
         // Reuse the clean startup placeholder so recovery does not leave an extra
         // Untitled.md tab next to the recovered document.
         tab = documentState.tabs[0];
         tab.state = createEditorState(recovery.text);
-        view.setState(tab.state);
+        loadTabIntoView(view, tab);
         refreshDocumentMarks();
       } else {
         tab = createNewTab(recovery.text, recoveredLabel);

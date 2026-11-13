@@ -7,6 +7,8 @@ import { readPreferenceFlag, readPreferenceNumber, writePreferenceFlag } from ".
 import { ICONS } from "../ui/icons";
 import { showToast } from "../ui/toast";
 import { openTerminalDialog } from "./terminal-dialog";
+import { installTerminalDrag } from "./terminal-drag";
+import { applySideModeLabels, restoreSideMode, setSideMode, sideModeActive } from "./terminal-side-mode";
 import { closeTerminalMenu, openTerminalMenu, type MenuEntry } from "./terminal-menu";
 import { paneBodyFor, renderPanes } from "./terminal-panes";
 import { setupTerminalSettings } from "./terminal-settings";
@@ -61,7 +63,10 @@ function applyLabels(): void {
   labelButton("terminalNew", "plus", langText("Nowy terminal (Ctrl+Shift+`)", "New terminal (Ctrl+Shift+`)"));
   labelButton("terminalNewMenu", "chevronDown", langText("Wybierz powłokę nowego terminala", "Choose the shell of a new terminal"));
   labelButton("terminalMaximize", maximized ? "chevronDown" : "chevronUp", maximized ? langText("Zmniejsz panel terminala", "Make the terminal panel smaller") : langText("Powiększ panel terminala", "Make the terminal panel larger"), maximized);
-  labelButton("terminalSplit", "splitRight", langText("Podziel: nowy terminal obok (Ctrl+Shift+5)", "Split: a new terminal beside this one (Ctrl+Shift+5)"));
+  if (sideModeActive()) labelButton("terminalSplit", "splitDown", langText("Podziel: nowy terminal poniżej (Ctrl+Shift+6)", "Split: a new terminal below this one (Ctrl+Shift+6)"));
+  else labelButton("terminalSplit", "splitRight", langText("Podziel: nowy terminal obok (Ctrl+Shift+5)", "Split: a new terminal beside this one (Ctrl+Shift+5)"));
+  labelButton("terminalSideMode", "terminalSide", sideModeActive() ? langText("Wyjdź z trybu terminal + podgląd (wróć do edytora)", "Leave the terminal + preview mode (back to the editor)") : langText("Terminal po lewej, podgląd po prawej (50/50)", "Terminal on the left, preview on the right (50/50)"), sideModeActive());
+  applySideModeLabels();
   labelButton("terminalSplitMenu", "chevronDown", langText("Więcej opcji podziału", "More split options"));
   labelButton("terminalFullscreen", fullscreen ? "exitFullscreen" : "fullscreen", fullscreen ? langText("Wyjdź z trybu pełnoekranowego (F11)", "Leave full screen (F11)") : langText("Terminal na cały ekran (F11)", "Terminal full screen (F11)"), fullscreen);
   labelButton("terminalHide", "close", langText("Ukryj panel terminala (terminale nadal działają)", "Hide the terminal panel (terminals keep running)"));
@@ -178,6 +183,8 @@ function render(): void {
   const tabs = byId("terminalTabs");
   tabs.replaceChildren(...terminalState.tabs.map(tab => tabElement(tab, tab.setup.id === terminalState.activeId)));
   for (const item of tabs.querySelectorAll<HTMLElement>(".terminal-tab")) item.classList.toggle("is-beside", terminalState.panes.length > 1 && terminalState.panes.includes(item.dataset.id ?? ""));
+  // The strip scrolls when the tabs do not fit (a narrow panel): the active one is kept in view.
+  tabs.querySelector<HTMLElement>(".terminal-tab.is-active")?.scrollIntoView({ inline: "nearest", block: "nearest" });
   byId("terminalToggle").dataset.count = String(terminalState.tabs.length);
   const rebuilt = renderPanes(byId("terminalBody"), byId("terminalEmpty"), { onFocus: id => { if (id !== terminalState.activeId) activateTerminal(id); }, onHide: hideFromSplit });
   const shown = new Set(terminalState.panes);
@@ -255,6 +262,12 @@ function openSplitMenu(anchor: HTMLElement): void {
   openTerminalMenu(entries, anchor, langText("Podział terminali", "Split terminals"));
 }
 
+/** Terminal on the left and the preview on the right, or back to the editor. */
+export function toggleSideMode(): void {
+  setSideMode(!sideModeActive(), show => showTerminalPanel(show, { focus: false }));
+  applyLabels();
+}
+
 export function openTerminalSettings(): void {
   const dialog = byId<HTMLDialogElement>("terminalSettingsDialog");
   if (!dialog.open) dialog.showModal();
@@ -272,6 +285,8 @@ export function showTerminalPanel(show: boolean, options: { createIfEmpty?: bool
   // Hiding the panel while the keyboard is in it gives the keyboard back to the editor.
   if (!show && panel().contains(document.activeElement)) view.focus();
   if (!show && fullscreen) { fullscreen = false; panel().classList.remove("is-fullscreen"); document.body.classList.remove("terminal-fullscreen"); }
+  // Hiding the panel ends the mode that put it beside the preview.
+  if (!show && sideModeActive()) setSideMode(false, () => undefined);
   panel().hidden = !show;
   writePreferenceFlag(OPEN_KEY, show);
   document.body.classList.toggle("terminal-open", show);
@@ -311,11 +326,14 @@ export function closeActiveTerminal(): void { const tab = activeTab(); if (tab) 
 /** Wires the panel, the status bar button, the shortcuts and the saved terminals of the open project folders. */
 export function initTerminals(): void {
   setTerminalHostResolver(paneBodyFor);
+  installTerminalDrag();
   byId("terminalNew").addEventListener("click", newTerminal);
   byId("terminalNewMenu").addEventListener("click", event => openNewMenu(event.currentTarget as HTMLElement));
   byId("terminalMaximize").addEventListener("click", () => { maximized = !maximized; writePreferenceFlag(MAXIMIZED_KEY, maximized); applyHeight(); applyLabels(); });
   byId("terminalHide").addEventListener("click", () => showTerminalPanel(false));
-  byId("terminalSplit").addEventListener("click", () => splitActiveTerminal("columns"));
+  byId("terminalSplit").addEventListener("click", () => splitActiveTerminal(sideModeActive() ? "rows" : "columns"));
+  byId("terminalSideMode").addEventListener("click", toggleSideMode);
+  byId("menuViewTerminalSide").addEventListener("click", toggleSideMode);
   byId("terminalSplitMenu").addEventListener("click", event => openSplitMenu(event.currentTarget as HTMLElement));
   byId("terminalFullscreen").addEventListener("click", toggleTerminalFullscreen);
   byId("terminalToggle").addEventListener("click", toggleTerminalPanel);
@@ -343,5 +361,9 @@ export function initTerminals(): void {
   loadTerminalsOfRoots(documentState.projectRoots);
   applyHeight();
   applyLabels();
-  void loadShells().then(() => { if (readPreferenceFlag(OPEN_KEY, false)) showTerminalPanel(true, { createIfEmpty: false, focus: false }); });
+  void loadShells().then(() => {
+    if (readPreferenceFlag(OPEN_KEY, false)) showTerminalPanel(true, { createIfEmpty: false, focus: false });
+    restoreSideMode(show => showTerminalPanel(show, { focus: false }));
+    applyLabels();
+  });
 }

@@ -2,6 +2,48 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.134] - 2026-11-14
+
+### Added
+
+- "Terminal + preview" mode: the work area is split in two, the terminals on the left (the Split button then splits downward, so up to four terminals sit one above another) and the preview of the open document on the right, with a divider that can be dragged (or moved with the arrow keys; the share is remembered). The editor is hidden until the mode is left. Turn it on with the button in the terminal header, View > Terminal + preview (50/50), or the command palette; hiding the terminal panel leaves the mode.
+- Language suggestions after the fence of a code block: typing ``` lists the languages and typing narrows them (`ba` shows bash, bat); choosing one also writes the closing fence when the block has none. The list includes `mermaid` and `chart` with a starting body.
+- A copy button in the viewer of Mermaid diagrams and images (the image, or the SVG code of a diagram).
+
+### Fixed
+
+- The "Run" and "Copy" buttons of a code block scrolled away with a long line of code; they now stay in view (in the Preview pane and in the graph's preview).
+- Terminal tabs keep a readable width: when they do not fit (a narrow panel, as in the Terminal + preview mode) the strip scrolls and keeps the active tab in view.
+- The editor's minimap (the quick overview on the right) is drawn again when the theme changes; it kept the old theme's dark background.
+- In the high-contrast theme the selected Data / Charts tab uses the theme's accent colour.
+
+## [0.5.133] - 2026-11-13
+
+### Added
+
+- Terminals can be dragged like documents: drag a terminal by its tab or by the bar of its screen onto the side of another screen to split there (a coloured zone shows where it will land), onto the middle of a screen to show it in that place (or exchange places when both are shown), or along the tabs to move the tab. Esc cancels the drag.
+
+- A "Run" button on shell script blocks (bash, sh, zsh, powershell, ps1, cmd, bat) in the preview types the code into a terminal and runs it: in the terminal used last when its shell reads that kind of script, otherwise in a new terminal with a fitting shell (Git Bash or WSL for bash, PowerShell, cmd); with no terminal open, one is created. The user sees the code and clicks; nothing runs by itself. Blocks in a language the highlighter does not know now keep their language label.
+
+### Fixed
+
+- Terminals no longer freeze after the computer slept. The terminal commands ran on the main thread and shared one lock, so a shell that stopped reading could stop the whole window; they now run off the main thread, each terminal has its own lock, and a stuck terminal is given up on after 3 seconds with a message on its screen. Ending a terminal never waits for its input.
+- A terminal that hung could not be restarted ("this terminal is already running"): starting a terminal now ends and replaces a leftover session with the same id.
+- The layout of split terminals was not always saved; it is now saved after every change.
+- A safeguard against saving into the wrong file: the editor remembers which tab's text it holds, and a save is refused when that is not the tab marked as in use (the strip then showed one document and the editor another). The tab is matched to the text in the editor and a message asks to save again. The cause of such a mismatch is not known yet.
+
+## [0.5.132] - 2026-11-13
+
+### Fixed
+
+- The Project tree remembers which folders are open and which are closed, between restarts and between projects (each project keeps its own; up to 3,000 folders). Expand all and Collapse all are remembered too. Top-level folders of a multi-folder tree still start open.
+
+## [0.5.131] - 2026-11-13
+
+### Fixed
+
+- The table of contents remembers which sections are folded for every document separately. Before, the folded sections were one shared list that was cut down to the headings of the document shown, so going to another document and back expanded everything. Up to 300 documents are remembered; a document saved under a name keeps what it had folded while untitled.
+
 ## [0.5.130]   2026 11-11
 
 ### Added

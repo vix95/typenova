@@ -787,14 +787,18 @@ body.graph-mode #topbar.menu-open .menubar .menu-pop { pointer-events: auto !imp
   box-sizing: border-box;
   padding-top: 38px !important;
 }
+/* Sticky, not absolute: the toolbar is the first child of the scrolling <pre> and must stay in view when a long line scrolls the code sideways (see the same rule for #preview). */
 .brain-preview-body .code-block-toolbar {
-  position: absolute;
-  top: 6px;
-  left: 7px;
-  right: 7px;
+  position: sticky;
+  left: 0;
+  width: 100%;
+  height: 0;
+  box-sizing: border-box;
+  padding: 0 7px;
+  transform: translateY(-32px);
   z-index: 3;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-end;
   gap: 5px;
   min-width: 0;
@@ -998,9 +1002,9 @@ html[data-theme] #brainView .brain-refresh-button:hover {
 #brainPreviewBody.uses-shared-preview #preview.graph-preview-shared .preview-content pre.has-code-copy,
 #brainPreviewBody.uses-shared-preview #preview.graph-preview-shared .preview-content pre.has-language-pill { position: relative !important; padding-top: 41px !important; }
 #brainPreviewBody.uses-shared-preview #preview.graph-preview-shared .preview-content .code-block-toolbar {
-  position: absolute !important; inset: 6px 7px auto 7px !important; z-index: 4; display: flex !important; flex-direction: row !important;
-  flex-wrap: nowrap !important; align-items: center !important; justify-content: flex-end !important; gap: 5px !important;
-  width: auto !important; height: 26px !important; min-width: 0 !important; padding: 0 !important; margin: 0 !important; pointer-events: none !important;
+  position: sticky !important; inset: auto auto auto 0 !important; z-index: 4; display: flex !important; flex-direction: row !important;
+  flex-wrap: nowrap !important; align-items: flex-start !important; justify-content: flex-end !important; gap: 5px !important; box-sizing: border-box !important;
+  width: 100% !important; height: 0 !important; min-width: 0 !important; padding: 0 7px !important; margin: 0 !important; transform: translateY(-35px); pointer-events: none !important;
 }
 #brainPreviewBody.uses-shared-preview #preview.graph-preview-shared .preview-content .code-block-toolbar > .code-language-pill {
   position: static !important; inset: auto !important; display: inline-flex !important; align-items: center; flex: 0 1 auto !important;

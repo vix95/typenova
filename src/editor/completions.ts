@@ -9,6 +9,7 @@ import { documentState } from "../documents/document-state";
 import { encodeMarkdownImagePath, parentDirectoryPath } from "./image-insert";
 import { langText } from "../i18n/language";
 import { completeWikiLink } from "./link-completion";
+import { completeFenceLanguage } from "./fence-completion";
 import { rootContaining } from "../filesystem/project-roots";
 
 type ImagePathCompletionContext = {
@@ -118,6 +119,8 @@ export const completions = (context: CompletionContext) => {
   if (/(?<!!)\[\[[^\]\n|]*$/.test(wikiLine.text.slice(0, context.pos - wikiLine.from))) return completeWikiLink(context);
   const imagePath = imagePathCompletionContext(context);
   if (imagePath) return completeImagePath(context, imagePath);
+  const fenceLanguage = completeFenceLanguage(context);
+  if (fenceLanguage) return fenceLanguage;
 
   // When the user types only a heading prefix at the start of a Markdown line,
   // offer the matching heading level instead of always suggesting H2.

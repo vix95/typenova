@@ -1,5 +1,7 @@
 /** Virtualised heading outline: building, folding and active-heading tracking. */
-import { readPreferenceJson, isStringArray } from "../settings/storage";
+import { readPreferenceJson } from "../settings/storage";
+import { normalizedFsPath } from "../filesystem/project-tree-operations";
+import { collapsedFor, isCollapseStore, liveKeys, withCollapsed, type CollapseStore } from "./outline-collapse";
 import { EditorView } from "@codemirror/view";
 import { $ } from "../app/dom";
 import { outlineBottomSpacer, outlineContent, outlineRoot, outlineTopSpacer } from "../app/workspace-dom";
@@ -22,7 +24,17 @@ let visibleOutlineIndex = new Map<string, number>();
 let headingIndexByKey = new Map<string, number>();
 let lastOutlineRange: [number, number] = [-1, -1];
 const OUTLINE_ROW_HEIGHT = 31;
-export let collapsedHeadings = new Set<string>(readPreferenceJson("typenova.collapsed", isStringArray, []));
+const COLLAPSE_STORAGE_KEY = "typenova.collapsedByDocument";
+let collapseStore: CollapseStore = readPreferenceJson(COLLAPSE_STORAGE_KEY, isCollapseStore, {});
+/** The folded sections of the document shown now; it is loaded from `collapseStore` when another document is shown. */
+export let collapsedHeadings = new Set<string>();
+let collapseOwner = "";
+const documentKey = (): string => (documentState.currentPath ? normalizedFsPath(documentState.currentPath) : `tab:${documentState.activeTabId}`);
+/** Remembers the folded sections of the current document. */
+export function persistCollapsed(): void {
+  collapseStore = withCollapsed(collapseStore, collapseOwner || documentKey(), collapsedHeadings);
+  try { localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(collapseStore)); } catch { /* storage unavailable */ }
+}
 let lastOutlineActive = "";
 const outlineButtons = new Map<string, HTMLButtonElement>();
 export function buildOutline(headings: { level: number; text: string; line: number }[]) {
@@ -40,9 +52,16 @@ export function buildOutline(headings: { level: number; text: string; line: numb
   }
   outlineState.outlineTabId = documentState.activeTabId;
   outlineState.lastHeadingBreadcrumbSignature = "";
-  const validKeys = new Set(outlineHeadings.map(h => h.key));
-  collapsedHeadings = new Set([...collapsedHeadings].filter(key => validKeys.has(key)));
-  localStorage.setItem("typenova.collapsed", JSON.stringify([...collapsedHeadings]));
+  // Folded sections belong to the document: showing another one loads its own, and the others stay remembered.
+  const owner = documentKey();
+  if (owner !== collapseOwner) {
+    // A document that was just saved under a name keeps the sections it had folded while it was untitled.
+    const savedNow = collapseOwner === `tab:${documentState.activeTabId}` && !collapseStore[owner];
+    collapsedHeadings = savedNow ? collapsedHeadings : collapsedFor(collapseStore, owner);
+    collapseOwner = owner;
+  }
+  collapsedHeadings = liveKeys(collapsedHeadings, new Set(outlineHeadings.map(h => h.key)));
+  if (outlineHeadings.length) persistCollapsed();
   $("headingCount").textContent = outlineHeadings.length.toLocaleString(document.documentElement.lang === "en" ? "en-US" : "pl-PL");
   headingIndexByKey = new Map(outlineHeadings.map((h, i) => [h.key, i]));
   lastOutlineActive = ""; recomputeVisibleOutline(); lastOutlineRange = [-1, -1]; renderOutlineWindow(true); updateActiveOutline(); updateHeadingBreadcrumbs();
@@ -99,7 +118,7 @@ export function renderOutlineWindow(force = false) {
       toggle.setAttribute("aria-hidden", "true");
       toggle.tabIndex = -1;
     }
-    toggle.addEventListener("click", e => { e.stopPropagation(); if (collapsedHeadings.has(h.key)) collapsedHeadings.delete(h.key); else collapsedHeadings.add(h.key); localStorage.setItem("typenova.collapsed", JSON.stringify([...collapsedHeadings])); recomputeVisibleOutline(); lastOutlineRange = [-1, -1]; renderOutlineWindow(true); updateActiveOutline(); });
+    toggle.addEventListener("click", e => { e.stopPropagation(); if (collapsedHeadings.has(h.key)) collapsedHeadings.delete(h.key); else collapsedHeadings.add(h.key); persistCollapsed(); recomputeVisibleOutline(); lastOutlineRange = [-1, -1]; renderOutlineWindow(true); updateActiveOutline(); });
     const button = document.createElement("button"); button.className = `outline-item level-${h.level}${h.key === lastOutlineActive ? " active" : ""}`; button.textContent = h.text; button.title = `${langText("Linia", "Line")} ${h.line}`;
     button.addEventListener("click", () => { const line = Math.min(h.line, view.state.doc.lines), pos = view.state.doc.line(line).from; view.dispatch({ selection: { anchor: pos }, effects: EditorView.scrollIntoView(pos, { y: "center" }) }); view.focus(); if (scrollSyncState.syncScroll) syncPreviewToEditor(); });
     row.addEventListener("contextmenu", event => showOutlineContextMenu(event, h.key));

@@ -12,7 +12,7 @@ import { setClean, setDirty } from "./dirty-state";
 import { documentState } from "./document-state";
 import { updateStats } from "./document-stats";
 import { activeFormat, LINE_ENDING_LABELS, updateFormatStatus } from "./format-display";
-import { activeTab, configureLanguageForTab, createEditorState, renderTabs } from "./tabs";
+import { activeTab, configureLanguageForTab, createEditorState, loadTabIntoView, renderTabs } from "./tabs";
 import { refreshDocumentMarks } from "../editor/document-marks";
 
 let menu: HTMLDivElement | null = null;
@@ -61,7 +61,7 @@ async function reopenWithEncoding(encoding: TextEncodingName): Promise<void> {
   try {
     const loaded = await loadTextFile(path, encoding);
     tab.format = loaded; tab.state = createEditorState(loaded.text); tab.savedText = loaded.text;
-    view.setState(tab.state);
+    loadTabIntoView(view, tab);
     refreshDocumentMarks();
     documentState.savedText = loaded.text; documentState.docRevision++;
     setClean(); updateStats(); updateFormatStatus(); renderTabs(); syncPreviewForActiveDocument(); void configureLanguageForTab(tab);

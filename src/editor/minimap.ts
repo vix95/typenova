@@ -16,6 +16,8 @@ let minimapDragging = false;
 export function initializeEditorMinimap() {
   const host = $("editor") as HTMLElement;
   minimapHost = host;
+  // The overview is a picture: it takes its background and text colours from the theme when it is drawn, so a change of theme must draw it again.
+  new MutationObserver(() => scheduleMinimapDraw()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   minimapWrap = document.createElement("div");
   minimapWrap.className = "editor-minimap";
   minimapWrap.setAttribute("role", "scrollbar");
