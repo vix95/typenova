@@ -2,6 +2,12 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.136] - 2026-11-14
+
+### Added
+
+- Backlinks. Under the table of contents a "Backlinks" section lists the notes that link to the note in use: the notes in the order of the project, and for each link the line it stands on, shown around the link; a click opens that note at that line. Links are resolved the way the section graph does (a link to a title, to a file, to a section of a file), links in code are not counted, links inside the note itself are left out, and open notes count as they are now, saved or not. The section can be folded (remembered) and is hidden for a note that has no file yet.
+
 ## [0.5.135] - 2026-11-14
 
 ### Added

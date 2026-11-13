@@ -273,3 +273,48 @@ export function linkNamesFile(sourcePath: string, filePath: string, allPaths: re
   const written = linkPathFor(sourcePath, filePath, allPaths).toLocaleLowerCase();
   return wanted === written || wanted === stem(written) || wanted === (filePath.split(/[\\/]/).pop() ?? "").toLocaleLowerCase() || wanted === stem(filePath.split(/[\\/]/).pop() ?? "");
 }
+
+/** One link, in some file, that leads into another file. */
+export interface LinkOccurrence {
+  path: string;
+  name: string;
+  /** The line of the link (1-based). */
+  line: number;
+  /** The line it stands in, trimmed and shortened. */
+  text: string;
+  /** The text between `[[` and `]]`. */
+  inner: string;
+  /** The section the link leads to. */
+  targetTitle: string;
+  targetLine: number;
+}
+
+const OCCURRENCE_TEXT = 200;
+const NO_TARGET: Heading = { path: "", name: "", line: 0, title: "" };
+
+/**
+ * Every link in `sources` that leads into the file `targetPath`, resolved the way the section graph does (a link to a title, to a file, to a section of a file).
+ * Links inside the file itself are not counted, and a link in code is not a link.
+ */
+export function linksInto(sources: readonly SourceText[], targetPath: string): LinkOccurrence[] {
+  const split = new Map(sources.map(source => [source.path, splitLines(source.text)]));
+  const index = new Index();
+  for (const source of sources) for (const heading of headingsOf(source, split.get(source.path)!.lines)) index.add(heading);
+  const found: LinkOccurrence[] = [];
+  for (const source of sources) {
+    if (source.path === targetPath) continue;
+    const fence: FenceState = { marker: null, length: 0 };
+    split.get(source.path)!.lines.forEach((line, lineIndex) => {
+      if (consumeFenceLine(fence, line) || fence.marker || !line.includes("[[")) return;
+      const code = inlineCodeSpans(line);
+      for (const match of line.matchAll(WIKI_LINK_PATTERN)) {
+        if (code.some(([from, to]) => match.index! >= from && match.index! < to)) continue;
+        const section = index.resolve(match as RegExpExecArray, source.path, NO_TARGET).section;
+        if (!section || section.path !== targetPath) continue;
+        const text = line.trim();
+        found.push({ path: source.path, name: source.name, line: lineIndex + 1, text: text.length > OCCURRENCE_TEXT ? `${text.slice(0, OCCURRENCE_TEXT)}…` : text, inner: match[0].slice(2, -2), targetTitle: section.title, targetLine: section.line });
+      }
+    });
+  }
+  return found;
+}

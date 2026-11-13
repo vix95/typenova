@@ -21,7 +21,7 @@ export function resetAppData() {
     if (!base) continue;
     const folder = path.join(base, IDENTIFIER);
     if (!folder.endsWith(".e2e")) throw new Error("refusing to delete " + folder);
-    fs.rmSync(folder, { recursive: true, force: true });
+    fs.rmSync(folder, { recursive: true, force: true, maxRetries: 30, retryDelay: 300 });   // the WebView of the previous run may still be letting go of its files
   }
 }
 
