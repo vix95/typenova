@@ -51,11 +51,11 @@ async function findTarget(port, timeout = 60000) {
  * Starts the program with `args` (files or folders, like a double click) and returns a handle to its window.
  * `reset` forgets stored settings first; pass false to see what a second start restores.
  */
-export async function startApp({ args = [], reset = true, projects = [] } = {}) {
-  if (!exeExists()) throw new Error("the end-to-end build is missing: run `npm run e2e:build`");
+export async function startApp({ args = [], reset = true, projects = [], exe = EXE } = {}) {
+  if (!fs.existsSync(exe)) throw new Error(exe === EXE ? "the end-to-end build is missing: run `npm run e2e:build`" : `no program at ${exe}`);
   if (reset) resetAppData();
   const port = nextPort++;
-  const child = spawn(EXE, args, { env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`, ...(projects.length ? { TYPENOVA_E2E_FOLDERS: projects.join(path.delimiter) } : {}) }, stdio: "ignore", detached: false });
+  const child = spawn(exe, args, { env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`, ...(projects.length ? { TYPENOVA_E2E_FOLDERS: projects.join(path.delimiter) } : {}) }, stdio: "ignore", detached: false });
   const target = await findTarget(port);
   const socket = new WebSocket(target.webSocketDebuggerUrl);
   await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = () => reject(new Error("cannot connect to the window")); });

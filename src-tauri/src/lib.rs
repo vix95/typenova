@@ -1,4 +1,5 @@
 mod ai;
+mod cache_cleanup;
 mod clipboard_files;
 mod git;
 mod page_server;
@@ -408,6 +409,7 @@ pub fn run() {
     .plugin(tauri_plugin_persisted_scope::init())
     .plugin(tauri_plugin_opener::init())
     .setup(|app| {
+      cache_cleanup::claim_profile();
       if let Some(window) = app.get_webview_window("main") {
         harden_webview(&window);
       }
@@ -434,8 +436,11 @@ pub fn run() {
       }
     })
     .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, spell::spell_check, terminal::terminal_shells, terminal::terminal_spawn, terminal::terminal_write, terminal::terminal_resize, terminal::terminal_kill, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
-    .run(tauri::generate_context!())
-    .expect("error while running TypeNova");
+    .build(tauri::generate_context!())
+    .expect("error while building TypeNova")
+    .run(|app, event| {
+      if let tauri::RunEvent::Exit = event { cache_cleanup::clean_on_exit(app); }
+    });
 }
 
 #[cfg(test)]

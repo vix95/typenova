@@ -2,6 +2,12 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.137] - 2026-11-14
+
+### Added
+
+- Windows installer that cleans up after itself. Uninstalling removes the installation folder, the Start menu shortcut, the entry in Apps & features, the program's settings, link index and WebView profile, and the registry keys and file-type leftovers (`<class>_backup` values, empty extension keys) of the Markdown and Mermaid associations; the associations go back to the program that had them. An update keeps the settings. The uninstaller removes the data folders with `rd /s /q` without logging each file in its window, and the program deletes its disposable WebView caches (code cache, disk cache, shader caches: thousands of small files) when it ends, so removing it is quick; local storage, IndexedDB and cookies are kept. `e2e/installer-check.ps1` installs the isolated test installer, runs the installed program (`e2e/installed.e2e.mjs`: starts, edits and saves a file), uninstalls it and lists what is left.
+
 ## [0.5.136] - 2026-11-14
 
 ### Added
