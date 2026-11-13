@@ -82,6 +82,20 @@ fn grant_launch_files<R: tauri::Runtime>(app: &impl Manager<R>, paths: &[String]
   }
 }
 
+/// For the end-to-end tests only (a debug build): folders named in `TYPENOVA_E2E_FOLDERS` are granted to the file system scope at start, as if the user had picked them
+/// in the folder dialog, which a test cannot drive. It does not exist in a release build.
+#[cfg(debug_assertions)]
+fn grant_e2e_folders<R: tauri::Runtime>(app: &impl Manager<R>) {
+  use tauri_plugin_fs::FsExt;
+  if let Some(list) = std::env::var_os("TYPENOVA_E2E_FOLDERS") {
+    for folder in std::env::split_paths(&list) {
+      // An empty entry would be the empty path, which as a recursive scope means everything.
+      if folder.as_os_str().is_empty() { continue; }
+      let _ = app.fs_scope().allow_directory(&folder, true);
+    }
+  }
+}
+
 /// Paths given on the command line at startup, until the page asks for them.
 static PENDING_LAUNCH_PATHS: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
@@ -399,6 +413,8 @@ pub fn run() {
       }
       let paths = launch_paths(&std::env::args().collect::<Vec<_>>());
       grant_launch_files(app, &paths);
+      #[cfg(debug_assertions)]
+      grant_e2e_folders(app);
       if let Ok(mut pending) = PENDING_LAUNCH_PATHS.lock() {
         *pending = paths;
       }

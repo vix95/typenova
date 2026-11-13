@@ -134,5 +134,14 @@ Correctness rules:
 | Frontend bundle | `npm run build` |
 | Rust | `cargo test` in `src-tauri/` |
 | Graph indexing benchmark | `npm run benchmark:graph` |
+| End-to-end (the real program) | `npm run e2e:build`, then `npm run e2e` |
 
 CI (`.github/workflows/build.yml`) runs the tests, the benchmark, the build and the Windows installer on every pull request. A headless browser with a mocked Tauri bridge is not the desktop application: behaviour that depends on WebView2, the asset protocol, custom URI schemes, CSP or native windows must be checked in a real debug build (a build with a separate `identifier` and `CARGO_TARGET_DIR` can run next to an installed copy; WebView2 accepts `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=…`).
+
+### End-to-end tests (`e2e/`)
+
+They drive the real program, not a browser with a stand-in for the backend: the Rust host, the real file system scope and capabilities, real shells in ConPTY, real files on disk. `npm run e2e:build` builds an isolated copy (`src-tauri/target-e2e`, identifier `pl.itvix.typenova.e2e`, so it cannot hand its start to a running TypeNova and does not fight a development build for the executable); `npm run e2e` runs `e2e/*.e2e.mjs` one file at a time. `harness.mjs` starts the program with WebView2's remote debugging port and talks to its window over the DevTools protocol (`evaluate`, `waitFor`, `key`, `type`, `invoke` of Tauri commands); it closes the program through its window, because a forced end loses what the WebView has not written to disk yet. The program's settings and WebView profile of that identifier are deleted before each test that does not ask to keep them.
+
+- Project folders cannot be given on the command line (only files are), and the folder dialog cannot be driven, so a debug build grants the folders named in `TYPENOVA_E2E_FOLDERS` to the file system scope at start (`grant_e2e_folders` in `lib.rs`, compiled out of release builds); the harness also writes them as the remembered project folders and reloads the page.
+- Covered: starting without console errors, editing and saving into the real file, quick tab switching (the active tab and the text in the editor agree and a save goes to that file only), a 55 MB CSV opened in the data view through the real scope with a chart computed from it, a file outside the opened folders being refused (and the chart block saying so), the open folders and folded sections coming back after a restart, a real shell running a command, a terminal restarted under the same id, and the window staying responsive while a terminal is flooded with input.
+- Not covered: waking from sleep (it cannot be produced here), the folder and save dialogs, installers, macOS and Linux.

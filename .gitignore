@@ -44,3 +44,7 @@ src-tauri/gen/
 
 # Sample files are byte-exact fixtures (encodings, line endings): keep them out of the log ignore and never convert them.
 !examples/file-types/**/*.log
+
+# Isolated build of the app used by the end-to-end tests (npm run e2e)
+src-tauri/target-e2e/
+.e2e-work/

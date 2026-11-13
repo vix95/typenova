@@ -2,6 +2,13 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.135] - 2026-11-14
+
+### Added
+
+- End-to-end tests of the real program (`npm run e2e:build`, `npm run e2e`): editing and saving on disk, quick tab switching, a large CSV in the data view, the file system scope, what is remembered after a restart, and a real shell in the terminal including restarting a terminal and a flood of input. See ARCHITECTURE, "End-to-end tests".
+- Debug builds only: folders named in `TYPENOVA_E2E_FOLDERS` are granted to the file system scope at start, for those tests.
+
 ## [0.5.134] - 2026-11-14
 
 ### Added
