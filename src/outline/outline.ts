@@ -1,6 +1,7 @@
 /** Virtualised heading outline: building, folding and active-heading tracking. */
 import { readPreferenceJson } from "../settings/storage";
 import { normalizedFsPath } from "../filesystem/project-tree-operations";
+import { scheduleBacklinks } from "./backlinks-panel";
 import { collapsedFor, isCollapseStore, liveKeys, withCollapsed, type CollapseStore } from "./outline-collapse";
 import { EditorView } from "@codemirror/view";
 import { $ } from "../app/dom";
@@ -66,6 +67,7 @@ export function buildOutline(headings: { level: number; text: string; line: numb
   headingIndexByKey = new Map(outlineHeadings.map((h, i) => [h.key, i]));
   lastOutlineActive = ""; recomputeVisibleOutline(); lastOutlineRange = [-1, -1]; renderOutlineWindow(true); updateActiveOutline(); updateHeadingBreadcrumbs();
   void refreshSectionVisibility();
+  scheduleBacklinks();
 }
 
 /** Re-renders the outline rows so hidden sections show as dimmed. */

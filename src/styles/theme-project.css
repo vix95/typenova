@@ -831,3 +831,25 @@ html[data-theme="contrast"] .tn-select-menu { border-width: 2px; }
 html[data-theme="contrast"] .tn-select-option[aria-selected="true"] { border-color: var(--ui-accent) !important; }
 @media (prefers-reduced-motion: reduce) { .tn-select-trigger, .tn-select-chevron { transition: none !important; } }
 
+
+/* Backlinks: the notes that link to the note in use, under the table of contents. */
+.outline-view { display: flex; flex-direction: column; }
+.outline-view > .outline-list { flex: 1 1 auto; min-height: 90px; }
+.backlinks { flex: 0 1 auto; display: flex; flex-direction: column; min-height: 0; max-height: 45%; border-top: 1px solid var(--ui-border); }
+.backlinks[hidden] { display: none; }
+.backlinks-heading { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: 0; border-radius: 0; background: transparent; color: var(--ui-text); font-weight: 600; text-align: left; cursor: pointer; }
+.backlinks-heading:hover { background: var(--ui-hover); }
+.backlinks-heading:focus-visible, .backlink-hit:focus-visible { outline: 2px solid var(--ui-focus-ring, var(--ui-accent)); outline-offset: -2px; }
+.backlinks-heading .heading-count { margin-left: auto; }
+.backlinks-chevron { width: 12px; height: 12px; flex: 0 0 12px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform .12s ease; }
+.backlinks-heading[aria-expanded="true"] .backlinks-chevron { transform: rotate(90deg); }
+.backlinks-body { min-height: 0; overflow: auto; padding: 0 8px 8px; }
+.backlinks-body[hidden] { display: none; }
+.backlink-file { margin-top: 6px; }
+.backlink-file-name { padding: 2px 4px; font-size: 12px; font-weight: 600; color: var(--ui-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.backlink-hit { display: flex; align-items: baseline; gap: 8px; width: 100%; padding: 3px 4px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ui-muted); font-size: 12px; text-align: left; cursor: pointer; }
+.backlink-hit:hover { background: var(--ui-hover); color: var(--ui-text); }
+.backlink-number { flex: 0 0 auto; min-width: 22px; text-align: right; font-variant-numeric: tabular-nums; opacity: .75; }
+.backlink-line { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.backlink-link { padding: 0 2px; border-radius: 3px; background: color-mix(in srgb, var(--ui-accent) 22%, transparent); color: var(--ui-text); }
+@media (prefers-reduced-motion: reduce) { .backlinks-chevron { transition: none; } }

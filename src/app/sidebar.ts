@@ -1,5 +1,6 @@
 /** Sidebar tab state (Files / Outline / Graph), sidebar visibility and its button bindings. */
 import { $ } from "./dom";
+import { installBacklinks } from "../outline/backlinks-panel";
 import { documentState } from "../documents/document-state";
 import { view } from "../editor/editor-view";
 import { renderGraph } from "../graph-ui/graph-renderer";
@@ -48,6 +49,7 @@ export function showSidebar() {
 }
 
 export function initSidebarBindings(): void {
+  installBacklinks();
   $("sidebarFilesTab").addEventListener("click", () => { if (!outlineState.outlineVisible) showSidebar(); setSidebarTab("files"); });
   $("sidebarOutlineTab").addEventListener("click", () => { if (!outlineState.outlineVisible) showSidebar(); setSidebarTab("outline"); });
   $("sidebarBrainTab").addEventListener("click", () => { if (!outlineState.outlineVisible) showSidebar(); setSidebarTab("brain"); });

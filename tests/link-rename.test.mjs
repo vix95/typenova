@@ -191,3 +191,20 @@ test("a preview link shows the section, and names its file in a tooltip", async 
   assert.ok(html.includes('data-wiki-link="Plain">Plain</a>') && !html.includes('data-wiki-link="Plain" data-tooltip'));
   assert.ok(html.includes('data-tooltip="a.md">label</a>'));
 });
+
+test("the links that lead into a file are found, with their lines, however they are written", async () => {
+  const m = await import("../.test-build/graph/link-rename.js");
+  const sources = [
+    { path: "/p/target.md", name: "target.md", text: "# Target\n\n## Setup\n\ntext\n" },
+    { path: "/p/a.md", name: "a.md", text: "# A\n\nSee [[Setup]] and [[target.md#Setup|the setup]].\nPlain [[Target]] too.\n\n```\n[[Setup]] in code is not a link\n```\n\nInline `[[Setup]]` is not either.\n" },
+    { path: "/p/b.md", name: "b.md", text: "# B\n\n## Setup\n\nA [[Setup]] link to its own section.\n[[target]]\n" },
+    { path: "/p/c.md", name: "c.md", text: "# C\n\n[[Nothing here]]\n" },
+  ];
+  const found = m.linksInto(sources, "/p/target.md");
+  const where = found.map(hit => `${hit.name}:${hit.line}`);
+  assert.deepEqual(where, ["a.md:3", "a.md:3", "a.md:4", "b.md:6"], "two links on one line, one to the file by title, one to the file name; the own-section link and the code ones are not counted");
+  assert.equal(found[0].targetTitle, "Setup"); assert.equal(found[0].targetLine, 3);
+  assert.ok(found[2].text.includes("Plain [[Target]]"));
+  assert.deepEqual(m.linksInto(sources, "/p/c.md"), [], "nothing links to c.md");
+  assert.deepEqual(m.linksInto(sources, "/p/target.md").filter(hit => hit.path === "/p/target.md"), [], "a file's own links are left out");
+});
