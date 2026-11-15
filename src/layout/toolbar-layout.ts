@@ -1,4 +1,6 @@
 /** Responsive overflow handling of the formatting toolbar. */
+import { installWriterMode } from "../writer/writer-mode";
+import { installProjectActionsOverflow } from "./project-actions-overflow";
 // Adaptively move toolbar commands into the three-dot menu instead of letting them overlap.
 const formattingToolbar = document.querySelector<HTMLElement>(".formatbar");
 const formattingOverflow = formattingToolbar?.querySelector<HTMLDetailsElement>("details.toolbar-overflow") || null;
@@ -35,6 +37,10 @@ function layoutToolbarActions() {
 export function scheduleToolbarLayout() { if (toolbarLayoutQueued) return; toolbarLayoutQueued = true; requestAnimationFrame(layoutToolbarActions); }
 
 export function initToolbarLayout(): void {
+  // The Project heading of the sidebar has the same problem: its icons move into a menu when the sidebar is narrow.
+  installProjectActionsOverflow();
+  // The Writer button sits among the top-bar actions; its mode is part of the editor's state.
+  installWriterMode();
   if (formattingToolbar && formattingOverflow && formattingOverflowMenu) {
     for (const node of Array.from(formattingToolbar.children)) {
       if (!(node instanceof HTMLElement) || !node.matches('button[data-wrap],button[data-prefix],#insertImage,#insertTable,#insertRule,#insertMath,#insertMermaid,#toggleWhitespace,#toggleHighlight')) continue;

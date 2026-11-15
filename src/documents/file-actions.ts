@@ -1,4 +1,5 @@
 /** Open, save, save-as, auto-save and recent-files handling. */
+import { changedOnDisk, confirmOverwriteOfChangedFile } from "./save-conflict";
 import { basename } from "../filesystem/path-utils";
 import { writeRecoverySnapshot as recoveryWrite, saveDocumentVersion as saveVersion } from "./recovery-store";
 import { open, save } from "@tauri-apps/plugin-dialog";
@@ -84,8 +85,11 @@ async function writeActiveDocument(path: string, text: string, ask = true): Prom
     if (!await appConfirm(question, { confirmLabel: langText("Zapisz jako UTF-8", "Save as UTF-8"), primaryAction: "cancel" })) return false;
     format = { ...format, encoding: "utf-8" }; if (tab) tab.format = format;
   }
+  // The file may have been changed from outside since this document read it; saving would destroy that.
+  if (ask && path === documentState.currentPath && await changedOnDisk(path, documentState.savedText) && !await confirmOverwriteOfChangedFile(basename(path))) return false;
   await saveTextFile(path, text, format);
   noteFileSaved(path, text);
+  document.dispatchEvent(new CustomEvent("typenova:file-saved"));
   return true;
 }
 
@@ -143,6 +147,7 @@ async function runAutoSave() {
   autoSaveInFlight = true; autoSaveQueued = false;
   const path = documentState.currentPath, revision = documentState.docRevision, text = view.state.doc.toString();
   try {
+    if (await changedOnDisk(path, documentState.savedText)) { $("statusText").textContent = langText("Automatyczny zapis wstrzymany: plik zmienił się na dysku", "Auto-save paused: the file changed on disk"); return; }
     if (!await writeActiveDocument(path, text, false)) { $("statusText").textContent = langText("Automatyczny zapis wstrzymany: w tym kodowaniu nie da się zapisać wszystkich znaków", "Auto-save paused: not every character fits this encoding"); return; }
     if (documentState.currentPath === path) { documentState.savedText = text; rememberRecentFile(path); persistOpenSession(); if (documentState.docRevision === revision) setClean(); else { setDirty(); autoSaveQueued = true; } }
     if (documentState.currentPath === path) $("statusText").textContent = `${langText("Zapisano automatycznie", "Auto-saved")}: ${basename(path)}`;

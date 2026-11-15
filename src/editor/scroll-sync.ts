@@ -7,6 +7,7 @@ import { previewContentScrollTop, previewPaddingTop } from "../preview/preview-o
 import { cancelQueuedPreviewAnchor } from "../preview/preview-scroll-memory";
 import { previewState } from "../preview/preview-state";
 import { findBlockAtOffset, scheduleVirtualRefresh } from "../preview/virtual-window";
+import { installScrollArrows } from "../ui/scroll-arrows";
 
 // Scroll synchronization is locked to the pane the user is actively scrolling.
 // This prevents delayed programmatic scroll events and virtual-preview height
@@ -142,4 +143,6 @@ export function initScrollSync(): void {
     scheduleVirtualRefresh();
     handleSynchronizedScroll("preview");
   }, { passive: true });
+  // The arrows at the edge of each pane scroll it a page, so the panes stay in step through the listeners above.
+  installScrollArrows();
 }

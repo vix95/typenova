@@ -176,12 +176,11 @@ void (async () => {
   restoreGroupsAtStartup();
   await offerRecovery();
 })();
-window.addEventListener("beforeunload", event => {
+// No "reload the site?" question from the web view: the session is stored and unsaved text is offered back by the recovery.
+window.addEventListener("beforeunload", () => {
   const active = documentState.tabs.find(tab => tab.id === documentState.activeTabId);
   if (active && documentState.startupSessionReady) rememberViewPosition(active);
   persistOpenSession();
-  const autoSave = localStorage.getItem("typenova.autoSave") === "true" && !!documentState.currentPath;
-  if (documentState.dirty && !autoSave) event.preventDefault();
 });
 
 // External links, language, tooltips, context menus and dialogs

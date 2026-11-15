@@ -2,6 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { exeExists, startApp, workspace, writeFiles } from "./harness.mjs";
+import { ignorableProblem, waitForTreeFile } from "./helpers.mjs";
 
 const skip = !exeExists() && "the end-to-end build is missing (npm run e2e:build)";
 const NOTES = {
@@ -10,7 +11,6 @@ const NOTES = {
   "b.md": "# B\n\nA plain link to [[Target]].\n",
   "c.md": "# C\n\n[[Nothing here]] and a note about setup that is not a link.\n",
 };
-const inTree = name => `[...document.querySelectorAll('[data-file-path]')].some(x => x.dataset.filePath.replace(/\\\\/g, '/').endsWith('/${name}'))`;
 const clickTree = (app, name) => app.evaluate(`(() => { const e = [...document.querySelectorAll('[data-file-path]')].find(x => x.dataset.filePath.replace(/\\\\/g, '/').endsWith('/${name}')); if (!e) throw new Error('not in the tree: ${name}'); e.click(); return true; })()`);
 const files = app => app.evaluate(`[...document.querySelectorAll('#backlinks .backlink-file')].map(f => f.querySelector('.backlink-file-name').textContent + ':' + f.querySelectorAll('.backlink-hit').length).join(',')`);
 
@@ -19,7 +19,7 @@ test("the backlinks of a note list the notes that link to it, with their lines, 
   const app = await startApp({ projects: [folder] });
   try {
     await app.ready();
-    await app.waitFor(inTree("target.md"), { timeout: 30000, what: "the project tree" });
+    await waitForTreeFile(app, "target.md");
     await clickTree(app, "target.md");
     await app.waitFor(`document.querySelector('.cm-content')?.innerText.startsWith('# Target')`, { what: "target.md" });
     await app.click("#sidebarOutlineTab");
@@ -32,6 +32,6 @@ test("the backlinks of a note list the notes that link to it, with their lines, 
     // The panel is about the note in use: now the note a.md, which nothing links to.
     await app.waitFor(`document.querySelector('#backlinks .backlink-hit') === null || document.querySelector('#backlinks .muted')`, { timeout: 15000, what: "the backlinks of a.md (none)" });
     assert.equal(await app.text("#backlinksCount"), "0");
-    assert.deepEqual(app.problems.filter(line => !/ResizeObserver/.test(line)), []);
+    assert.deepEqual(app.problems.filter(line => !ignorableProblem(line)), []);
   } finally { await app.stop(); }
 });

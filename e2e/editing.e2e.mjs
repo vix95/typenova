@@ -3,15 +3,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { exeExists, readText, startApp, workspace, writeFiles } from "./harness.mjs";
+import { clickTreeFile, ignorableProblem, waitForTreeFile } from "./helpers.mjs";
 
 const skip = !exeExists() && "the end-to-end build is missing (npm run e2e:build)";
 const NOTES = { "alpha.md": "# Alpha\n\nfirst note\n", "beta.md": "# Beta\n\nsecond note\n", "gamma.md": "# Gamma\n\nthird note\n" };
 
 /** Clicks a file of the project tree (the path is written with / or the Windows separator). */
-const open = (app, name) => app.evaluate(`(() => { const e = [...document.querySelectorAll('[data-file-path]')].find(x => x.dataset.filePath.replace(/\\\\/g, '/').endsWith('/${name}')); if (!e) throw new Error('not in the tree: ${name}'); e.click(); return true; })()`);
-const inTree = (app, name) => `[...document.querySelectorAll('[data-file-path]')].some(x => x.dataset.filePath.replace(/\\\\/g, '/').endsWith('/${name}'))`;
 const editorText = app => app.evaluate(`document.querySelector('.cm-content')?.innerText ?? ''`);
-const ignorable = line => /ResizeObserver loop|favicon/.test(line);
 
 test("the program starts, is called TypeNova and raises no errors", { skip }, async () => {
   const app = await startApp();
@@ -19,7 +17,7 @@ test("the program starts, is called TypeNova and raises no errors", { skip }, as
     await app.ready();
     assert.equal(await app.evaluate(`document.title`), "TypeNova");
     await app.sleep(1500);
-    assert.deepEqual(app.problems.filter(line => !ignorable(line)), [], "nothing in the console while starting");
+    assert.deepEqual(app.problems.filter(line => !ignorableProblem(line)), [], "nothing in the console while starting");
     assert.deepEqual(await app.invoke("take_launch_paths"), [], "no files were handed over");
   } finally { await app.stop(); }
 });
@@ -29,8 +27,7 @@ test("an opened project folder lists its notes, and they can be edited and saved
   const app = await startApp({ projects: [folder] });
   try {
     await app.ready();
-    await app.waitFor(inTree(app, "alpha.md"), { what: "the project tree to list alpha.md", timeout: 30000 });
-    await open(app, "alpha.md");
+    await clickTreeFile(app, "alpha.md");
     await app.waitFor(`document.querySelector('.cm-content')?.innerText.startsWith('# Alpha')`, { what: "alpha.md in the editor" });
     await app.evaluate(`document.querySelector('.cm-content').focus()`);
     await app.key("End", "End", 35, 2);                      // Ctrl+End
@@ -47,12 +44,12 @@ test("quick switching between tabs always leaves the editor showing the document
   const app = await startApp({ projects: [folder] });
   try {
     await app.ready();
-    await app.waitFor(inTree(app, "gamma.md"), { what: "the tree", timeout: 30000 });
-    for (const name of ["alpha.md", "beta.md", "gamma.md"]) { await open(app, name); await app.sleep(400); }
+    await waitForTreeFile(app, "gamma.md");
+    for (const name of ["alpha.md", "beta.md", "gamma.md"]) { await clickTreeFile(app, name); await app.sleep(400); }
     const titles = { "alpha.md": "# Alpha", "beta.md": "# Beta", "gamma.md": "# Gamma" };
     const names = Object.keys(titles);
     for (let round = 0; round < 40; round++) {
-      await open(app, names[(round * 7) % 3]);
+      await clickTreeFile(app, names[(round * 7) % 3]);
       if (round % 5 === 0) await app.sleep(30);
     }
     await app.sleep(800);

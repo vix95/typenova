@@ -120,7 +120,7 @@ html[data-theme="contrast"] .markdown-body pre,html[data-theme="contrast"] .mark
 .cm-search{background:var(--ui-panel)!important;color:var(--ui-text)!important;border:1px solid var(--ui-border)!important;padding:8px!important;box-shadow:var(--ui-shadow-floating)}
 .cm-search input,.cm-search button,.cm-search label{background:var(--ui-panel2)!important;color:var(--ui-text)!important;border:1px solid var(--ui-border)!important;border-radius:4px;padding:5px!important}
 .cm-search .cm-textfield{background:var(--ui-bg)!important;color:var(--ui-text)!important}
-.app-toast{position:fixed;z-index:1000;right:18px;bottom:42px;max-width:min(720px,85vw);padding:12px 16px;background:var(--ui-panel);color:var(--ui-text);border:1px solid var(--ui-accent);border-radius:9px;box-shadow:var(--ui-shadow-floating);opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .15s,transform .15s}.app-toast.visible{opacity:1;transform:translateY(0)}
+.app-toast{position:fixed;z-index:1000;inset:auto 18px 42px auto;margin:0;overflow:visible;max-width:min(720px,85vw);padding:12px 16px;background:var(--ui-panel);color:var(--ui-text);border:1px solid var(--ui-accent);border-radius:9px;box-shadow:var(--ui-shadow-floating);opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .15s,transform .15s}.app-toast.visible{opacity:1;transform:translateY(0)}
 .focus-hint{position:fixed;z-index:1001;right:18px;top:12px;background:var(--ui-panel);color:var(--ui-text);border:1px solid var(--ui-accent);box-shadow:var(--ui-shadow-floating)}
 .focus-mode .layout{height:calc(100vh - 12px)!important;display:flex!important}.focus-mode .editor-pane{flex:1 1 100%!important;width:100%!important;max-width:none!important;margin:0!important}.focus-mode .cm-editor{height:100%!important}.focus-mode #editor{height:calc(100vh - 12px)!important;padding:0 max(5vw,24px)!important}
 .outline-row .outline-fold{margin-left:calc(var(--outline-depth,0)*12px);flex:0 0 18px;width:18px;padding-left:0;padding-right:0}
@@ -413,7 +413,7 @@ kbd{font-family:Inter,"Segoe UI",sans-serif;font-size:10px;font-weight:600;line-
 .markdown-body pre{margin:1em 0 1.25em;padding:14px 15px;border:1px solid #28384e;border-radius:9px;background:#1a2536;line-height:1.55;overflow:auto}
 .markdown-body pre code{background:none;padding:0;color:#dfe9f8;font-size:.9em}
 .markdown-body table{border-collapse:collapse;display:block;overflow:auto;width:100%}
-.markdown-body th,.markdown-body td{border:1px solid #394860;padding:7px 9px;text-align:left}
+.markdown-body th,.markdown-body td{border:1px solid #394860;padding:7px 9px;text-align:left;vertical-align:top;min-width:6em;overflow-wrap:break-word;word-break:normal}
 .markdown-body th{background:#1c2b40}
 .preview-pane.narrow-preview #preview .preview-content{max-width:720px!important;margin:0 auto!important}
 .layout.split-view-mode .editor-pane,.layout.split-view-mode .preview-pane{flex:1 1 0!important;width:auto!important;min-width:0}
@@ -641,7 +641,9 @@ html[data-theme="contrast"] .cm-editor,html[data-theme="contrast"] .cm-scroller,
 
 /* Preview and editor keep their own scroll tracks stable during synchronized scroll. */
 #preview { overflow-x: hidden !important; overflow-y: scroll !important; scrollbar-gutter: stable; overscroll-behavior: contain; }
-#preview::-webkit-scrollbar, .cm-scroller::-webkit-scrollbar { width: 12px; }
+#preview::-webkit-scrollbar, .cm-scroller::-webkit-scrollbar { width: 12px; height: 12px; }
+/* Where the vertical and the horizontal scrollbar meet the browser draws a light square unless it is given the colour of the track. */
+#preview::-webkit-scrollbar-corner, .cm-scroller::-webkit-scrollbar-corner, #projectFiles::-webkit-scrollbar-corner { background: var(--ui-panel); }
 #preview::-webkit-scrollbar-track, .cm-scroller::-webkit-scrollbar-track { background: var(--ui-panel); }
 #preview::-webkit-scrollbar-thumb, .cm-scroller::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ui-muted) 52%, var(--ui-panel)); border: 3px solid var(--ui-panel); border-radius: 999px; }
 #preview::-webkit-scrollbar-thumb:hover, .cm-scroller::-webkit-scrollbar-thumb:hover { background: var(--ui-accent); }
@@ -1176,6 +1178,22 @@ html[data-theme="contrast"] .editor-minimap { border-left: 2px solid #fff; }
 html[data-theme="contrast"] .editor-minimap-viewport { border: 2px solid #ffff00; background: #ffff0022; }
 @media (prefers-reduced-motion: reduce) { .editor-minimap-viewport { will-change: auto; } }
 
+/* 0.5.138 — scroll arrows (src/ui/scroll-arrows.ts): a flat pair of buttons in the lower right corner of every editor and of the preview, clear of the scrollbar (12px). Quiet until the pane is pointed at. */
+.scroll-arrows { position: absolute; right: 20px; bottom: 14px; z-index: 5; display: flex; flex-direction: column; gap: 4px; opacity: .5; transition: opacity .15s ease; }
+.scroll-arrows[hidden] { display: none; }
+.cm-editor:hover > .scroll-arrows, .preview-pane:hover > .scroll-arrows, .scroll-arrows:focus-within { opacity: 1; }
+.scroll-arrow { width: 26px; height: 26px; padding: 0; display: grid; place-items: center; line-height: 0; border: 1px solid var(--ui-border); border-radius: 6px; background: var(--ui-panel); color: var(--ui-text); box-shadow: none; cursor: pointer; }
+.scroll-arrow .ui-icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.scroll-arrow:hover:not(:disabled) { background: var(--ui-hover); border-color: var(--ui-accent); }
+.scroll-arrow:active:not(:disabled) { background: var(--ui-active); }
+.scroll-arrow:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 1px; }
+.scroll-arrow:disabled { opacity: .35; cursor: default; }
+html[data-theme="contrast"] .scroll-arrows { opacity: 1; }
+html[data-theme="contrast"] .scroll-arrow { border-width: 2px; background: #000; color: #fff; }
+html[data-theme="contrast"] .scroll-arrow:hover:not(:disabled) { background: #ffff00; color: #000; border-color: #fff; }
+@media (prefers-reduced-motion: reduce) { .scroll-arrows { transition: none; } }
+@media print { .scroll-arrows { display: none !important; } }
+
 /* 0.5.13 — the selected tab highlight spans the complete tab, including its close control. */
 .editor-tab.active {
   background: var(--ui-active) !important;
@@ -1304,58 +1322,6 @@ html[data-theme="contrast"] .typenova-tooltip-shortcut { border-width: 2px; colo
   width: 25px !important;
   margin-left: auto !important;
 }
-
-/* Narrow sidebars switch to two rows rather than clipping “Table of contents”. */
-@container (max-width: 269px) {
-  .sidebar-tabs {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 26px;
-    grid-template-rows: 32px 32px 32px;
-    gap: 3px !important;
-    padding: 5px 6px !important;
-    min-height: 107px;
-    height: auto !important;
-    flex: 0 0 auto !important;
-    align-items: stretch !important;
-  }
-  #sidebarFilesTab {
-    grid-column: 1;
-    grid-row: 1;
-    width: 100% !important;
-    min-width: 0 !important;
-    justify-content: flex-start !important;
-  }
-  #sidebarOutlineTab {
-    grid-column: 1 / 3;
-    grid-row: 2;
-    width: 100% !important;
-    min-width: 0 !important;
-    justify-content: flex-start !important;
-  }
-  /* The Graph tab takes its own row like the other two; without a place of its own it was auto-placed and centred. */
-  #sidebarBrainTab {
-    grid-column: 1 / 3;
-    grid-row: 3;
-    width: 100% !important;
-    min-width: 0 !important;
-    justify-content: flex-start !important;
-  }
-  .sidebar-tab span {
-    min-width: 0 !important;
-    max-width: none !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
-    white-space: nowrap !important;
-  }
-  .sidebar-collapse {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: center !important;
-    justify-self: end;
-    margin: 0 !important;
-  }
-}
-
 
 /* TypeNova 0.5.16 — keep the collapsed-sidebar control in its own reserved rail.
    The expand button is a normal flex child, never an overlay above the editor. */
@@ -2310,7 +2276,7 @@ html[data-theme="contrast"] .editor-tab-list .editor-tab.tab-skeleton{border-wid
 .project-tree{flex:1 1 auto;min-height:0;overflow:hidden}
 .project-tree-head{flex:0 0 auto}
 #projectFiles{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-bottom:12px}
-#projectFiles::-webkit-scrollbar{width:12px}
+#projectFiles::-webkit-scrollbar{width:12px;height:12px}
 #projectFiles::-webkit-scrollbar-track{background:var(--ui-panel)}
 #projectFiles::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--ui-muted) 52%,var(--ui-panel));border:3px solid var(--ui-panel);border-radius:8px}
 #projectFiles::-webkit-scrollbar-thumb:hover{background:var(--ui-accent)}
@@ -2696,3 +2662,21 @@ dialog.media-player-dialog:fullscreen .media-player-element{flex:1 1 auto;min-he
 .markdown-body a.wikilink{cursor:pointer}
 .cm-wikilink{color:var(--ui-link);text-decoration:underline;text-decoration-color:#72e6ff88;text-underline-offset:2px}
 .cm-follow-key-held .cm-wikilink{cursor:pointer}
+
+/* 0.5.140 — Commit and push dialog (src/git-ui/git-sync-dialog.ts) */
+.git-sync-dialog { width: min(640px, calc(100vw - 32px)); max-width: 100%; }
+.git-sync-target { color: var(--ui-muted); font-size: 12px; overflow-wrap: anywhere; }
+.git-sync-notes { display: flex; flex-direction: column; gap: 6px; }
+.git-sync-warning { padding: 8px 10px; border: 1px solid var(--ui-accent); border-radius: 8px; background: color-mix(in srgb, var(--ui-accent) 10%, var(--ui-panel)); font-size: 12.5px; }
+.git-sync-error { padding: 8px 10px; border: 1px solid var(--ui-border); border-left: 3px solid #e5534b; border-radius: 8px; background: var(--ui-panel2); font-size: 12.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.git-sync-error[hidden] { display: none; }
+.git-sync-files { margin: 0; padding: 4px; list-style: none; max-height: 220px; overflow: auto; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-input-bg); }
+.git-sync-file { display: flex; align-items: center; gap: 8px; padding: 3px 6px; font: 12px/1.4 Consolas, "JetBrains Mono", monospace; }
+.git-sync-file .ui-icon { flex: none; width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.git-sync-file.git-sync-a { color: #3fb950; }
+.git-sync-file.git-sync-d { color: #e5534b; }
+.git-sync-file.git-sync-r { color: var(--ui-accent); }
+.git-sync-path { min-width: 0; color: var(--ui-text); overflow-wrap: anywhere; }
+.git-sync-more { padding: 3px 6px; color: var(--ui-muted); font-size: 12px; }
+.git-sync-content textarea { resize: vertical; min-height: 64px; }
+html[data-theme="contrast"] .git-sync-file.git-sync-a, html[data-theme="contrast"] .git-sync-file.git-sync-d { color: #fff; }

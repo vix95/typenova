@@ -12,6 +12,12 @@ export interface NameDialogOptions {
 }
 
 /** Resolves with the trimmed name, or null when the dialog is cancelled. */
+/** Selects the name of a file in a field without its extension, so that typing a new name keeps `.md`. A name that has no dot, or only a leading one (`.gitignore`), is selected whole. */
+export function selectBaseName(input: HTMLInputElement): void {
+  const dot = input.value.lastIndexOf(".");
+  input.setSelectionRange(0, dot > 0 ? dot : input.value.length);
+}
+
 export function askForName(options: NameDialogOptions): Promise<string | null> {
   return new Promise(resolve => {
     const dialog = document.createElement("dialog");
@@ -44,6 +50,6 @@ export function askForName(options: NameDialogOptions): Promise<string | null> {
     input.addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); void submit(); } });
     input.addEventListener("input", () => { error.hidden = true; });
     dialog.showModal(); input.focus();
-    if (options.initialValue) { const dot = options.initialValue.lastIndexOf("."); input.setSelectionRange(0, dot > 0 ? dot : options.initialValue.length); }
+    if (options.initialValue) selectBaseName(input);
   });
 }

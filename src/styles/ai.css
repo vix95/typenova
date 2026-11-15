@@ -143,3 +143,29 @@ dialog.ai-options-dialog { width: min(520px, calc(100vw - 32px)); }
 .ai-options-test { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .ai-options-help a { color: var(--ui-accent); text-decoration: underline; }
 .ai-options-help a:focus-visible { outline: 2px solid var(--ui-focus-ring, var(--ui-accent)); outline-offset: 2px; }
+
+/* 0.5.142 — the assistant with the project: sources, citations, folder tasks and proposed changes (src/ai/project-answer.ts) */
+.ai-quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px 0; }
+.ai-quick .ai-flat-button { height: 30px; padding: 0 10px; font-size: 12px; }
+.ai-quick .ai-flat-button:disabled { opacity: .5; cursor: default; }
+.ai-cite { display: inline; padding: 0 3px; margin: 0 1px; border: 1px solid var(--ui-border); border-radius: 4px; background: var(--ui-panel2); color: var(--ui-accent); font: 600 11px/1.5 Consolas, "JetBrains Mono", monospace; cursor: pointer; vertical-align: baseline; box-shadow: none; }
+.ai-cite:hover { background: var(--ui-hover); border-color: var(--ui-accent); }
+.ai-cite:focus-visible, .ai-source-link:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 1px; }
+.ai-sources-details > summary { cursor: pointer; }
+.ai-sources-list { margin: 4px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; max-height: 180px; overflow: auto; }
+.ai-source-link { display: block; width: 100%; padding: 2px 6px; border: 0; border-radius: 4px; background: transparent; color: var(--ui-text); font-size: 12px; text-align: left; overflow-wrap: anywhere; cursor: pointer; box-shadow: none; }
+.ai-source-link:hover { background: var(--ui-hover); }
+.ai-proposal { margin: 8px 0; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-panel2); overflow: hidden; }
+.ai-proposal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--ui-border); font-size: 12px; }
+.ai-proposal-file { font-weight: 600; overflow-wrap: anywhere; }
+.ai-proposal-status { color: var(--ui-muted); text-align: right; }
+.ai-diff { margin: 0; padding: 6px 0; max-height: 240px; overflow: auto; font: 12px/1.5 Consolas, "JetBrains Mono", monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-diff-line { display: block; padding: 0 10px; }
+.ai-diff-add { background: color-mix(in srgb, #3fb950 22%, transparent); }
+.ai-diff-del { background: color-mix(in srgb, #e5534b 22%, transparent); }
+.ai-proposal-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--ui-border); }
+.ai-proposal-actions:empty { display: none; }
+.ai-proposal-actions .ai-flat-button { height: 30px; padding: 0 10px; font-size: 12px; }
+html[data-theme="contrast"] .ai-cite, html[data-theme="contrast"] .ai-proposal { border-width: 2px; border-color: #fff; }
+html[data-theme="contrast"] .ai-diff-add { background: #003300; }
+html[data-theme="contrast"] .ai-diff-del { background: #4d0000; }

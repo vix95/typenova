@@ -4,8 +4,12 @@ import { button, el } from "../editor/bookmark-browser";
 import { langText } from "../i18n/language";
 import { appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
+import { basename } from "../filesystem/path-utils";
+import { REPO_DICTIONARY_FILE } from "./repo-dictionary-model";
+import { installSpellStatus } from "./spell-status";
+import { dictionaryRepository, exportToRepository, installRepositoryDictionary, readRepositoryDictionary } from "./repo-dictionary";
 import { parseLanguages, serializeLanguages } from "./spell-model";
-import { addPersonalWord, clearPersonalWords, personalWords, removePersonalWord, setSpellEnabled, setSpellLanguages, spellEnabled, spellLanguages, SPELL_CHANGED_EVENT } from "./spell-settings";
+import { addPersonalWord, clearPersonalWords, personalWords, removePersonalWord, repositoryDictionaryAuto, setRepositoryDictionaryAuto, setSpellEnabled, setSpellLanguages, spellEnabled, spellLanguages, SPELL_CHANGED_EVENT } from "./spell-settings";
 
 let wordsDialog: HTMLDialogElement | null = null;
 
@@ -25,6 +29,38 @@ function renderWords(list: HTMLElement, count: HTMLElement): void {
   }
 }
 
+/** The part of the window about the repository: where the words go, the button that exports them, and the switch that adds new words there too. */
+function repositoryBlock(): { element: HTMLElement; refresh: () => void } {
+  const box = el("div", "spell-repo");
+  const info = el("p", "ai-options-lead spell-repo-info");
+  const exportButton = button("ai-flat-button", "arrowUp", langText("Eksportuj do repozytorium", "Export to the repository"), () => undefined, true);
+  const auto = el("label", "check-row spell-repo-auto");
+  const checkbox = el("input"); checkbox.type = "checkbox"; checkbox.checked = repositoryDictionaryAuto();
+  auto.append(checkbox, el("span", "", langText("Dodawaj nowe słowa od razu także do słownika repozytorium", "Also add new words to the repository dictionary right away")));
+  checkbox.addEventListener("change", () => setRepositoryDictionaryAuto(checkbox.checked));
+  let repo: string | null = null;
+  exportButton.addEventListener("click", () => {
+    if (!repo) return;
+    exportButton.disabled = true;
+    void exportToRepository(repo).then(result => {
+      showToast(result.path
+        ? langText(`Zapisano ${result.total} słów w ${REPO_DICTIONARY_FILE} (nowych: ${result.added}). Plik jest zmianą w repozytorium: zatwierdź go.`, `Saved ${result.total} words in ${REPO_DICTIONARY_FILE} (${result.added} new). The file is a change in the repository: commit it.`)
+        : langText(`Słownik repozytorium ma już wszystkie te słowa (${result.total}).`, `The repository dictionary already has all these words (${result.total}).`));
+    }).catch(error => showToast(String(error))).finally(() => { exportButton.disabled = false; refresh(); });
+  });
+  const refresh = (): void => {
+    void dictionaryRepository().then(async found => {
+      repo = found;
+      exportButton.disabled = !found; checkbox.disabled = !found;
+      if (!found) { info.textContent = langText("Nie pracujesz w repozytorium Git, więc słowa zostają tylko w TypeNova, na tym komputerze.", "You are not working in a Git repository, so the words stay in TypeNova, on this computer only."); return; }
+      const existing = await readRepositoryDictionary(found);
+      info.textContent = langText(`Repozytorium „${basename(found)}”: ${REPO_DICTIONARY_FILE} ma ${existing.words.length} słów. Słowa z tego pliku nie są oznaczane jako błędy w dokumentach repozytorium.`, `Repository “${basename(found)}”: ${REPO_DICTIONARY_FILE} has ${existing.words.length} words. Words from this file are not marked as mistakes in the repository's documents.`);
+    });
+  };
+  box.append(info, exportButton, auto);
+  return { element: box, refresh };
+}
+
 /** The window with the words the user added: add a word, remove one, remove all. */
 export function openSpellWordsDialog(): void {
   wordsDialog?.close();
@@ -34,7 +70,7 @@ export function openSpellWordsDialog(): void {
   const count = el("span", "bookmark-count");
   title.append(el("span", "", langText("Słownik osobisty", "Personal dictionary")), count);
   dialog.setAttribute("aria-labelledby", title.id);
-  const lead = el("p", "ai-options-lead", langText("Słowa z tego słownika nie są oznaczane jako błędy, bez względu na wielkość liter. Słownik jest zapisany tylko na tym komputerze.", "Words in this dictionary are not marked as mistakes, whatever their letter case. The dictionary is stored only on this computer."));
+  const lead = el("p", "ai-options-lead", langText("Słowa z tego słownika nie są oznaczane jako błędy, bez względu na wielkość liter. Ten słownik osobisty jest zapisany w TypeNova, na tym komputerze. Pracując w repozytorium, możesz go wyeksportować do pliku w repozytorium (poniżej).", "Words in this dictionary are not marked as mistakes, whatever their letter case. This personal dictionary is stored in TypeNova, on this computer. When you work in a repository you can export it to a file in the repository (below)."));
   const add = el("form", "spell-word-add");
   const input = el("input", "bookmark-input"); input.type = "text"; input.maxLength = 64; input.spellcheck = false;
   input.placeholder = langText("Nowe słowo", "New word");
@@ -57,7 +93,9 @@ export function openSpellWordsDialog(): void {
   }, true);
   const done = button("bookmark-confirm", "check", langText("Gotowe", "Done"), () => dialog.close(), true);
   actions.append(clear, el("span", "bookmark-actions-gap"), done);
-  content.append(title, lead, add, list, actions);
+  const repository = repositoryBlock();
+  repository.refresh();
+  content.append(title, lead, add, list, repository.element, actions);
   dialog.append(content);
   document.addEventListener(SPELL_CHANGED_EVENT, redraw);
   dialog.addEventListener("close", () => { document.removeEventListener(SPELL_CHANGED_EVENT, redraw); if (wordsDialog === dialog) wordsDialog = null; dialog.remove(); });
@@ -77,6 +115,8 @@ export function initSpellSettings(): void {
   toggle.addEventListener("change", () => setSpellEnabled(toggle.checked));
   select.addEventListener("change", () => setSpellLanguages(parseLanguages(select.value)));
   $("spellOpenWords").addEventListener("click", openSpellWordsDialog);
+  installRepositoryDictionary();
+  installSpellStatus();
   // A change made elsewhere (the command palette) shows in the settings too.
   document.addEventListener(SPELL_CHANGED_EVENT, () => { toggle.checked = spellEnabled(); });
 }

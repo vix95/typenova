@@ -1079,7 +1079,8 @@ html[data-theme] #brainView .brain-refresh-button:hover {
   vertical-align: middle;
 }
 .cm-search input[type="checkbox"],
-.brain-filter-check-row input[type="checkbox"] {
+.brain-filter-check-row input[type="checkbox"],
+.spell-repo-auto input[type="checkbox"] {
   appearance: none !important;
   -webkit-appearance: none !important;
   display: inline-grid !important;
@@ -1103,7 +1104,8 @@ html[data-theme] #brainView .brain-refresh-button:hover {
   vertical-align: middle;
 }
 .cm-search input[type="checkbox"]::after,
-.brain-filter-check-row input[type="checkbox"]::after {
+.brain-filter-check-row input[type="checkbox"],
+.spell-repo-auto input[type="checkbox"]::after {
   content: "";
   width: 6px;
   height: 3px;
@@ -1114,17 +1116,21 @@ html[data-theme] #brainView .brain-refresh-button:hover {
   transform: rotate(-45deg);
 }
 .cm-search input[type="checkbox"]:checked,
-.brain-filter-check-row input[type="checkbox"]:checked {
+.brain-filter-check-row input[type="checkbox"],
+.spell-repo-auto input[type="checkbox"]:checked {
   border-color: var(--ui-accent) !important;
   background: var(--ui-accent) !important;
 }
 .cm-search input[type="checkbox"]:checked::after,
-.brain-filter-check-row input[type="checkbox"]:checked::after { opacity: 1; }
-.brain-filter-check-row input[type="checkbox"]:indeterminate {
+.brain-filter-check-row input[type="checkbox"],
+.spell-repo-auto input[type="checkbox"]:checked::after { opacity: 1; }
+.brain-filter-check-row input[type="checkbox"],
+.spell-repo-auto input[type="checkbox"]:indeterminate {
   border-color: var(--ui-accent) !important;
   background: var(--ui-accent) !important;
 }
-.brain-filter-check-row input[type="checkbox"]:indeterminate::after {
+.brain-filter-check-row input[type="checkbox"],
+.spell-repo-auto input[type="checkbox"]:indeterminate::after {
   width: 7px;
   height: 0;
   margin: 0;
@@ -1134,7 +1140,8 @@ html[data-theme] #brainView .brain-refresh-button:hover {
   transform: none;
 }
 .cm-search input[type="checkbox"]:focus-visible,
-.brain-filter-check-row input[type="checkbox"]:focus-visible {
+.brain-filter-check-row input[type="checkbox"],
+.spell-repo-auto input[type="checkbox"]:focus-visible {
   outline: 2px solid var(--ui-focus-ring) !important;
   outline-offset: 2px !important;
 }

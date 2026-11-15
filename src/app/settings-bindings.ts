@@ -1,4 +1,6 @@
 /** Settings dialog controls (theme, auto-save, wrapping, line numbers, minimap, fonts, welcome) and help dialogs. */
+import { aiEnabled, setAiEnabled } from "../ai/ai-enabled";
+import { followActiveDocument, revealActiveDocument, setFollowActiveDocument } from "../project/reveal-active-document";
 import { $ } from "./dom";
 import { documentState } from "../documents/document-state";
 import { autoSaveTimer, renderRecentFiles, scheduleAutoSave } from "../documents/file-actions";
@@ -25,6 +27,10 @@ export function initSettingsBindings(): void {
   $<HTMLInputElement>("autoSaveToggle").checked = localStorage.getItem("typenova.autoSave") === "true";
   $("autoSaveToggle").addEventListener("change", (e: Event) => { const enabled = (e.target as HTMLInputElement).checked; localStorage.setItem("typenova.autoSave", String(enabled)); if (enabled) { scheduleAutoSave(); $("statusText").textContent = documentState.currentPath ? langText("Automatyczny zapis włączony", "Auto-save enabled") : langText("Zapisz dokument raz, aby aktywować automatyczny zapis", "Save the document once to enable auto-save"); } else { clearTimeout(autoSaveTimer); $("statusText").textContent = langText("Automatyczny zapis wyłączony", "Auto-save disabled"); } });
   renderRecentFiles();
+  $<HTMLInputElement>("aiEnabledToggle").checked = aiEnabled();
+  $("aiEnabledToggle").addEventListener("change", (e: Event) => setAiEnabled((e.target as HTMLInputElement).checked));
+  $<HTMLInputElement>("treeFollowToggle").checked = followActiveDocument();
+  $("treeFollowToggle").addEventListener("change", (e: Event) => { setFollowActiveDocument((e.target as HTMLInputElement).checked); if (followActiveDocument()) void revealActiveDocument(); });
   $<HTMLInputElement>("wrapToggle").checked = localStorage.getItem("typenova.wrap") === "true";
   $("wrapToggle").addEventListener("change", (e: Event) => setWrapping((e.target as HTMLInputElement).checked));
   lineNumbersToggle.checked = lineNumbersEnabled;

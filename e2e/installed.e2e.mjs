@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { readText, startApp, workspace, writeFiles } from "./harness.mjs";
+import { ignorableProblem } from "./helpers.mjs";
 
 const exe = process.env.TYPENOVA_E2E_EXE;
 const skip = !exe && "set TYPENOVA_E2E_EXE to the installed program (see installer-check.ps1)";
@@ -25,7 +26,7 @@ test("the installed program starts, raises no errors, and edits and saves a file
     assert.ok(readText(file).includes("SAVED-BY-INSTALLED-BUILD"), "the text reached the file");
     // What the program keeps for itself exists now, so that the uninstaller has something to clean.
     await app.evaluate(`localStorage.setItem('typenova.installedCheck', '1')`);
-    assert.deepEqual(app.problems.filter(line => !/ResizeObserver|favicon/.test(line)), [], "nothing in the console");
+    assert.deepEqual(app.problems.filter(line => !ignorableProblem(line)), [], "nothing in the console");
   } finally { await app.stop(); }
   // The disposable WebView caches (thousands of small files) are removed when the program ends; what the user may care about stays.
   const profile = path.join(process.env.LOCALAPPDATA, "pl.itvix.typenova.e2e", "EBWebView");

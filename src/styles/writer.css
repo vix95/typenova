@@ -1,0 +1,50 @@
+/* The Writer mode (src/writer/): the editor shows the rendered Markdown and edits it directly; the syntax of the element under the caret is shown. Colours come from the theme tokens. */
+
+/* The editor takes the whole width: there is no preview beside it, and no gutters or minimap around the text. */
+body.writer-mode #previewPane, body.writer-mode .splitter[data-split="preview"], body.writer-mode #togglePreview { display: none !important; }
+body.writer-mode .layout .editor-pane { flex: 1 1 0 !important; width: auto !important; min-width: 0 !important; max-width: none !important; border-right: 0; }
+body.writer-mode .cm-gutters, body.writer-mode .editor-minimap { display: none !important; }
+body.writer-mode .cm-activeLine { background: transparent; }
+
+/* The text: a readable column, proportional type, generous line height. */
+.cm-editor .cm-content.cm-writer-content { box-sizing: border-box; width: min(100%, 840px) !important; flex: 0 1 auto !important; margin: 0 auto !important; padding: 36px 28px 40vh !important; font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif !important; font-size: 16px !important; line-height: 1.75 !important; color: var(--ui-text); caret-color: var(--ui-accent); }
+.cm-writer-content .cm-line { padding: 0 2px; }
+.cm-writer-content .cm-line.cm-writer-blank { line-height: .7 !important; }
+.cm-writer-heading { font-weight: 700; line-height: 1.35; color: var(--ui-text); }
+.cm-writer-h1 { padding-top: .5em; font-size: 2em; border-bottom: 1px solid var(--ui-border); }
+.cm-writer-h2 { padding-top: .4em; font-size: 1.6em; border-bottom: 1px solid var(--ui-border); }
+.cm-writer-h3 { padding-top: .3em; font-size: 1.3em; }
+.cm-writer-h4 { font-size: 1.12em; }
+.cm-writer-h5 { font-size: 1em; }
+.cm-writer-h6 { font-size: .95em; color: var(--ui-muted); }
+.cm-writer-strong { font-weight: 700; }
+.cm-writer-em { font-style: italic; }
+.cm-writer-strike { text-decoration: line-through; opacity: .8; }
+.cm-writer-code-inline { padding: .1em .35em; border-radius: 4px; background: var(--ui-panel2); font-family: Consolas, "JetBrains Mono", monospace; font-size: .88em; }
+.cm-writer-link { color: var(--ui-link, var(--ui-accent)); text-decoration: underline; text-underline-offset: 2px; cursor: text; }
+.cm-writer-syntax { opacity: .55; }
+.cm-writer-quote { padding-left: 16px; border-left: 3px solid var(--ui-accent); color: var(--ui-muted); }
+.cm-writer-bullet { display: inline-block; width: 1.3em; text-align: center; color: var(--ui-accent); font-weight: 700; }
+.cm-writer-checkbox { margin: 0 .55em 0 .15em; vertical-align: middle; accent-color: var(--ui-accent); cursor: pointer; }
+.cm-writer-task-done { color: var(--ui-muted); text-decoration: line-through; }
+.cm-writer-rule { display: block; height: 0; margin: .8em 0; border-top: 2px solid var(--ui-border); }
+.cm-writer-image { display: inline-block; max-width: 100%; cursor: default; }
+.cm-writer-image img { display: block; max-width: 100%; max-height: 520px; margin: 4px 0; border-radius: 5px; }
+.cm-writer-image-missing { padding: 2px 8px; border: 1px dashed var(--ui-border); border-radius: 5px; color: var(--ui-muted); font-size: .9em; }
+
+/* Code blocks: the fences are replaced by the language label (and a thin closing edge) until the caret is inside. */
+.cm-writer-code { padding: 0 14px !important; background: var(--ui-panel2); font-family: Consolas, "JetBrains Mono", monospace !important; font-size: .9em; line-height: 1.6; }
+.cm-writer-code-first { padding-top: 8px !important; border-radius: 8px 8px 0 0; }
+.cm-writer-code-last { padding-bottom: 8px !important; border-radius: 0 0 8px 8px; }
+.cm-writer-fence-hidden.cm-writer-code-first { text-align: right; line-height: 1.2; }
+.cm-writer-fence-hidden.cm-writer-code-last { min-height: 8px; line-height: 8px; font-size: 0; }
+.cm-writer-language { color: var(--ui-muted); font-size: 11px; letter-spacing: .04em; text-transform: lowercase; }
+
+/* Tables stay as text (aligned pipes), styled: a header row, a quiet delimiter row. */
+.cm-writer-table-row { padding: 0 12px !important; background: var(--ui-panel2); font-family: Consolas, "JetBrains Mono", monospace; font-size: .9em; line-height: 1.6; }
+.cm-writer-table-head { font-weight: 700; }
+.cm-writer-table-delim { color: var(--ui-muted); }
+
+html[data-theme="contrast"] .cm-writer-quote { border-left-color: #fff; }
+html[data-theme="contrast"] .cm-writer-code, html[data-theme="contrast"] .cm-writer-table-row, html[data-theme="contrast"] .cm-writer-code-inline { background: #000; outline: 1px solid #fff; }
+@media print { body.writer-mode .cm-editor .cm-content.cm-writer-content { width: 100%; padding: 0; } }

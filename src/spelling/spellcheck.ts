@@ -5,7 +5,7 @@ import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate
 import { documentState } from "../documents/document-state";
 import { checkWords, spellBackendAvailable } from "./spell-client";
 import { checkKey, findWords, isProseDocument, rangesOutside, unknownWords, type SpellWord } from "./spell-model";
-import { isUserWord, spellEnabled, spellLanguages, SPELL_CHANGED_EVENT } from "./spell-settings";
+import { isUserWord, spellEnabled, spellLanguages, SPELL_CHANGED_EVENT, SPELL_MARKS_EVENT } from "./spell-settings";
 
 export interface Misspelling { from: number; to: number; word: string }
 
@@ -159,4 +159,9 @@ class SpellChecker {
   }
 }
 
-export const spellExtension = [spellField, ViewPlugin.fromClass(SpellChecker)];
+/** Tells the rest of the interface (the status bar) when the marks changed, whoever changed them. */
+const announceMarks = EditorView.updateListener.of(update => {
+  if (update.transactions.some(transaction => transaction.effects.some(effect => effect.is(setMisspellings)))) document.dispatchEvent(new CustomEvent(SPELL_MARKS_EVENT));
+});
+
+export const spellExtension = [spellField, ViewPlugin.fromClass(SpellChecker), announceMarks];

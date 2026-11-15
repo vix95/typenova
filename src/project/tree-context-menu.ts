@@ -1,4 +1,5 @@
 /** Project tree context menu and its file operations (open, new file, delete, copy, cut, paste). */
+import { aiEnabled } from "../ai/ai-enabled";
 import { pasteSystemFiles, systemClipboardFiles, systemFilesAreNewer } from "./system-clipboard";
 import { normalizedFsPath, pathIsInside, parentPath } from "../filesystem/project-tree-operations";
 import { basename, isEditableTextFile, isViewerFile } from "../filesystem/path-utils";
@@ -6,7 +7,8 @@ import { openViewerFile } from "../preview/open-media";
 import { exists, mkdir, rename, writeTextFile } from "@tauri-apps/plugin-fs";
 import { BinaryFileError, loadTextFile } from "../filesystem/text-io";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import { askForName } from "../ui/name-dialog";
+import { runFolderTask } from "../ai/chat-panel";
+import { askForName, selectBaseName } from "../ui/name-dialog";
 import { fileNameProblem } from "../editor/image-paste-dialog";
 import { join } from "@tauri-apps/api/path";
 import { $ } from "../app/dom";
@@ -19,7 +21,7 @@ import { view } from "../editor/editor-view";
 import { buildGraph } from "../graph-ui/indexing";
 import { langText } from "../i18n/language";
 import { isFilesystemScopeError, markTreeClipboardState, performTreeMoveOrCopy, performTreeRename, projectTreeController, projectTreeState, setTreeClipboard } from "./project-tree-ops";
-import { openProject, removeProjectFolder, renderProjectTree } from "./project-tree-view";
+import { addProjectFolder, openProject, removeProjectFolder, renderProjectTree } from "./project-tree-view";
 import { isOpenProjectRoot, projectRootFor } from "./project-roots";
 import { refreshProjectTree } from "./project-tree-sync";
 import { appAlert, appConfirm } from "../ui/dialogs";
@@ -58,6 +60,10 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
     if (!isRoot && !isDirectory && isDataFile(path)) add(langText("Podgląd danych…", "Data view…"), "data-view");
     add(langText("Nowy plik…", "New file…"), "new-file");
   add(langText("Nowy folder…", "New folder…"), "new-folder");
+    if (isDirectory && aiEnabled()) {
+      add(langText("Podsumuj folder (AI)", "Summarize folder (AI)"), "ai-summary");
+      add(langText("Znajdź sprzeczności (AI)", "Find contradictions (AI)"), "ai-contradictions");
+    }
     {
       const hr = document.createElement("hr"); menu.append(hr);
     }
@@ -75,7 +81,7 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
     if (rootRow) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń folder z drzewa", "Remove folder from tree"), "remove-root"); }
     { const hr = document.createElement("hr"); menu.append(hr); add(langText("Pokaż w eksploratorze", "Show in file explorer"), "reveal"); }
   }
-  { if (!refreshOnly) { const hr = document.createElement("hr"); menu.append(hr); } add(langText("Odśwież", "Refresh"), "refresh", { shortcut: "F5" }); }
+  { if (!refreshOnly) { const hr = document.createElement("hr"); menu.append(hr); } add(langText("Dodaj folder do obszaru roboczego…", "Add folder to workspace…"), "add-folder"); add(langText("Odśwież", "Refresh"), "refresh", { shortcut: "F5" }); }
   menu.hidden = false; menu.style.visibility = "hidden"; menu.style.left = "0px"; menu.style.top = "0px";
   requestAnimationFrame(() => {
     const rect = menu!.getBoundingClientRect();
@@ -185,7 +191,7 @@ async function promptAndCreateProjectFile(directoryPath: string): Promise<string
       errorMessage.textContent = message;
       errorMessage.hidden = false;
       input.setAttribute("aria-invalid", "true");
-      input.focus(); input.select();
+      input.focus(); selectBaseName(input);
     };
     const cleanup = () => {
       form.removeEventListener("submit", onSubmit);
@@ -234,7 +240,7 @@ async function promptAndCreateProjectFile(directoryPath: string): Promise<string
     cancel.addEventListener("click", onCancel);
     dialog.addEventListener("close", onClose);
     dialog.showModal();
-    requestAnimationFrame(() => { input.focus(); input.select(); });
+    requestAnimationFrame(() => { input.focus(); selectBaseName(input); });
   });
 }
 export async function openProjectTreeEntry(path: string, isDirectory: boolean) {
@@ -287,6 +293,7 @@ export async function handleTreeContextAction(action: string) {
   const target = projectTreeState.contextTarget;
   const menu = treeContextMenuElement(); menu.hidden = true;
   if (action === "refresh") { await refreshProjectTree(); return; }
+  if (action === "add-folder") { await addProjectFolder(); return; }
   if (!target) return;
   const { path, isDirectory, isRoot } = target;
   const destinationFolder = isRoot ? path : (isDirectory ? path : parentPath(path));
@@ -294,6 +301,8 @@ export async function handleTreeContextAction(action: string) {
     if (action === "remove-root") await removeProjectFolder(path);
     else if (action === "open" && !isRoot) await openProjectTreeEntry(path, isDirectory);
     else if (action === "data-view" && !isRoot) await openInDataViewer(path);
+    else if (action === "ai-summary" && isDirectory) runFolderTask("summary", path);
+    else if (action === "ai-contradictions" && isDirectory) runFolderTask("contradictions", path);
     else if (action === "new-file") {
       const createdPath = await promptAndCreateProjectFile(destinationFolder);
       if (!createdPath) return;

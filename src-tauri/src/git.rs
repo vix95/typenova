@@ -1,4 +1,4 @@
-//! Read-only Git history for the Git panel: branches, tags, the commit list, one commit's files and a file's diff.
+//! Read-only Git history for the Git panel (writing is in `git_sync.rs`): branches, tags, the commit list, one commit's files and a file's diff.
 //!
 //! Everything goes through the `git` executable with an argument list (never a shell); revisions, hashes and paths from the
 //! frontend are validated first.
@@ -10,7 +10,7 @@ const FIELD: char = '\u{1f}';
 const RECORD: char = '\u{1e}';
 const MAX_DIFF_BYTES: usize = 300_000;
 
-fn run_git(repo: &str, args: &[&str]) -> Result<String, String> {
+pub(crate) fn run_git(repo: &str, args: &[&str]) -> Result<String, String> {
   let mut command = Command::new("git");
   command
     .arg("-C")
@@ -37,7 +37,7 @@ fn valid_hash(value: &str) -> bool {
   (7..=64).contains(&value.len()) && value.chars().all(|c| c.is_ascii_hexdigit())
 }
 
-fn valid_rev(value: &str) -> bool {
+pub(crate) fn valid_rev(value: &str) -> bool {
   !value.is_empty()
     && value.len() <= 200
     && !value.starts_with('-')
@@ -45,7 +45,7 @@ fn valid_rev(value: &str) -> bool {
     && value.chars().all(|c| c.is_ascii_alphanumeric() || "._/@+#-".contains(c))
 }
 
-fn safe_relative_path(value: &str) -> bool {
+pub(crate) fn safe_relative_path(value: &str) -> bool {
   !value.is_empty()
     && !value.starts_with('-')
     && !value.contains('\0')
