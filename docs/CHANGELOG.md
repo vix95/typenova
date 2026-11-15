@@ -2,6 +2,12 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.150] - 2026-11-15
+
+### Fixed
+
+- A window larger than the usable screen area (a small screen or a high display scale: the default height is 896 logical pixels) is made smaller and moved back inside, so its lower part - the status bar and the bottom of a dialog with its "Done" button - is not left under the taskbar.
+
 ## [0.5.149] - 2026-11-15
 
 ### Fixed
