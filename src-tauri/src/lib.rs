@@ -9,6 +9,7 @@ mod page_server;
 mod secrets;
 mod spell;
 mod terminal;
+mod window_fit;
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -145,7 +146,7 @@ async fn open_document_window(app: AppHandle, token: String) -> Result<(), Strin
     .inner_size(1200.0, 800.0)
     .min_inner_size(900.0, 500.0)
     .build()
-    .map(|window| harden_webview(&window))
+    .map(|window| { harden_webview(&window); window_fit::fit_to_work_area(&window); })
     .map_err(|error| error.to_string())
 }
 
@@ -415,6 +416,7 @@ pub fn run() {
       cache_cleanup::claim_profile();
       if let Some(window) = app.get_webview_window("main") {
         harden_webview(&window);
+        window_fit::fit_to_work_area(&window);
       }
       let paths = launch_paths(&std::env::args().collect::<Vec<_>>());
       grant_launch_files(app, &paths);
