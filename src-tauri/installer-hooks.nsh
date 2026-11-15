@@ -13,11 +13,15 @@
   ${EndIf}
 !macroend
 
-; Uninstalling TypeNova leaves nothing of its own behind. The standard uninstaller removes the application data (settings, the link index, the WebView profile) only when
-; a box in its window is ticked, and a silent uninstall never ticks it; here the data is removed in every real uninstall. An update (the new installer runs the old
-; uninstaller with /UPDATE) keeps it. The user's own files (notes, projects, typenova.config.json in a project folder) are never touched.
+; Uninstalling TypeNova leaves nothing of its own behind. The application data (settings, the link index, the WebView profile) is removed when the box in the
+; uninstaller window is ticked, and in a silent uninstall (/S), which has no window to tick it in. An update (the new installer runs the old uninstaller with
+; /UPDATE) keeps it, and so does a reinstall started from the installer's own window with the box left unticked: the settings survive it.
+; The user's own files (notes, projects, typenova.config.json in a project folder) are never touched.
 !macro NSIS_HOOK_POSTUNINSTALL
   ${If} $UpdateMode <> 1
+  ${AndIf} $DeleteAppDataCheckboxState = 1
+  ${OrIf} $UpdateMode <> 1
+  ${AndIf} ${Silent}
     SetShellVarContext current
     ; The data folders hold thousands of small WebView files. `RmDir /r` of NSIS logs every one of them in the window and is slow; `rd /s /q` removes them without
     ; any output (nsExec keeps the console window hidden) and the uninstaller still waits for it, so nothing is left behind when it ends.
@@ -34,6 +38,8 @@
     DeleteRegValue HKCU "${MANUPRODUCTKEY}" "Installer Language"
     DeleteRegKey /ifempty HKCU "${MANUPRODUCTKEY}"
     DeleteRegKey /ifempty HKCU "${MANUKEY}"
+  ${EndIf}
+  ${If} $UpdateMode <> 1
     !insertmacro TypeNovaCleanExtension "md"
     !insertmacro TypeNovaCleanExtension "markdown"
     !insertmacro TypeNovaCleanExtension "mdown"
