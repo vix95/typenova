@@ -10,7 +10,12 @@ import { readPreferenceFlag, readPreferenceNumber, writePreferenceFlag } from ".
 import { ICONS } from "../ui/icons";
 import { showToast } from "../ui/toast";
 import { buildChatSystem, splitCodeBlocks, toApiMessages, type ChatTurn } from "./ai-model";
+import { parseAnswer } from "./edit-proposals";
+import { renderProposals, renderProse, renderSentSources } from "./project-answer";
+import { EDIT_RULES, folderTaskRequest, projectSystemPart, type FolderTask, type Source } from "./project-prompt";
+import { defaultFolder, folderLabel, folderTurn, questionTurn, type ProjectTurn } from "./project-turn";
 import { displayName, setupHint } from "./provider-texts";
+import { AI_ENABLED_EVENT, aiEnabled, installAiEnabled } from "./ai-enabled";
 import { askAi, describeAiError, isAiCancelled, refusalMessage } from "./ai-client";
 import { captureContext, renderContext } from "./chat-context";
 import { openAiOptions } from "./ai-options";
@@ -18,6 +23,7 @@ import { isAiReady, providerReadiness, readProvider } from "./ai-settings";
 
 const OPEN_KEY = "typenova.ai.open";
 const WIDTH_KEY = "typenova.ai.width";
+const PROJECT_KEY = "typenova.ai.project";
 const MIN_WIDTH = 280;
 const MAX_WIDTH = 720;
 const SPLITTER_WIDTH = 5;
@@ -27,6 +33,8 @@ let controller: AbortController | null = null;
 let paneOpen = false;
 let useDocument = true;
 let useSelection = true;
+/** Passages of the notes that match a question go to the model with it (off until the person switches it on). */
+let useProject = readPreferenceFlag(PROJECT_KEY, false);
 
 const pane = () => $("aiPane");
 const messages = () => $("aiMessages");
@@ -60,6 +68,7 @@ function applyPane(open: boolean): void {
 }
 
 export function setAiPaneOpen(open: boolean): void {
+  if (open && !aiEnabled()) return;
   writePreferenceFlag(OPEN_KEY, open);
   applyPane(open);
 }
@@ -91,13 +100,20 @@ function codeBlock(text: string, language: string): HTMLElement {
   return block;
 }
 
-/** Draws an assistant answer: prose as paragraphs (plain text, never HTML) and fenced code as blocks with actions. */
-function renderAnswer(container: HTMLElement, answer: string): void {
+/** What an answer may cite and change: the passages that were sent, and the notes an edit may name. */
+interface AnswerContext { sources: Source[]; known: { file: string; path: string }[] }
+
+/** Draws an assistant answer: prose as paragraphs (plain text, never HTML; citations become buttons), fenced code as blocks with actions, and, once the answer is complete, the proposed changes as differences to approve. */
+function renderAnswer(container: HTMLElement, answer: string, context: AnswerContext | null = null, final = false): void {
   container.replaceChildren();
-  for (const part of splitCodeBlocks(answer)) {
-    if (part.kind === "text") container.append(el("p", "ai-text", part.text));
-    else container.append(codeBlock(part.text, part.language));
+  const parsed = context ? parseAnswer(answer) : null;
+  for (const part of splitCodeBlocks(parsed ? parsed.prose : answer)) {
+    if (part.kind === "code") container.append(codeBlock(part.text, part.language));
+    else if (context) renderProse(container, part.text, context.sources);
+    else container.append(el("p", "ai-text", part.text));
   }
+  if (context && parsed?.pending && !final) container.append(el("p", "ai-text ai-thinking", langText("Przygotowuję propozycje zmian…", "Preparing proposed changes…")));
+  if (context && parsed && final) renderProposals(container, parsed.proposals, context.known);
   if (!container.childNodes.length) container.append(el("p", "ai-text ai-thinking", "…"));
 }
 
@@ -123,13 +139,30 @@ function setBusy(busy: boolean): void {
   messages().setAttribute("aria-busy", String(busy));
 }
 
-async function send(raw: string): Promise<void> {
+/** A task on a whole folder: summarize it, or look for contradictions in it. */
+interface FolderJob { kind: FolderTask; folder: string }
+
+/** What the model is told besides the person's words: the open document, the selection, and the project passages with the rules for citing and proposing changes. */
+function systemFor(context: ReturnType<typeof captureContext>, turn: ProjectTurn | null, job: FolderJob | undefined): string {
+  const base = buildChatSystem({ documentName: documentName(), documentText: useDocument && !job ? view.state.doc.toString() : "", selection: context.selection?.text ?? "" });
+  return turn ? `${base}
+
+${projectSystemPart(turn.sources)}
+
+${EDIT_RULES}` : base;
+}
+
+function folderNote(turn: ProjectTurn): string {
+  const parts = [turn.clipped ? "The notes were shortened to fit; say that your answer rests on shortened passages." : "", turn.dropped ? `${turn.dropped} passages did not fit and were left out; say so.` : ""];
+  return parts.filter(Boolean).join(" ");
+}
+
+async function send(raw: string, job?: FolderJob): Promise<void> {
   const text = raw.trim();
   if (!text || controller) return;
   if (!isAiReady()) { refreshSetup(); return; }
-  // What is sent along is shown with the message, so that it is clear afterwards which document and passage the answer is about.
-  const context = captureContext(useDocument, useSelection);
-  turns.push({ role: "user", text });
+  // What is sent along is shown with the message, so that it is clear afterwards which document, passage and notes the answer is about.
+  const context = captureContext(useDocument && !job, useSelection && !job);
   const userBubble = addBubble("user", text);
   const sent = el("ul", "ai-context-list ai-context-sent");
   renderContext(sent, context);
@@ -138,15 +171,27 @@ async function send(raw: string): Promise<void> {
   input().value = "";
   controller = new AbortController();
   setBusy(true);
-  const system = buildChatSystem({ documentName: documentName(), documentText: useDocument ? view.state.doc.toString() : "", selection: context.selection?.text ?? "" });
   let answer = "";
+  let turn: ProjectTurn | null = null;
   try {
+    if (job || useProject) {
+      turn = job ? await folderTurn(job.folder) : await questionTurn(text);
+      userBubble.append(renderSentSources(turn, aiName()));
+      if (turn.tooLarge || (job && !turn.sources.length)) {
+        answerBubble.remove();
+        addBubble("error", turn.tooLarge ? langText("Projekt ma za dużo plików, żeby go przeszukać.", "The project has too many files to search.") : langText("W tym folderze nie ma notatek Markdown.", "There are no Markdown notes in this folder."));
+        return;
+      }
+    }
+    const request = job ? folderTaskRequest(job.kind, folderLabel(job.folder), document.documentElement.lang === "en" ? "en" : "pl", folderNote(turn!)) : text;
+    turns.push({ role: "user", text: request });
+    const answerContext: AnswerContext | null = turn ? { sources: turn.sources, known: turn.known } : null;
     const result = await askAi({
-      system, messages: toApiMessages(turns), signal: controller.signal,
-      onText: (_delta, full) => { answer = full; renderAnswer(answerBubble, full); messages().scrollTop = messages().scrollHeight; },
+      system: systemFor(context, turn, job), messages: toApiMessages(turns), signal: controller.signal,
+      onText: (_delta, full) => { answer = full; renderAnswer(answerBubble, full, answerContext); messages().scrollTop = messages().scrollHeight; },
     });
     answer = result.text || answer;
-    renderAnswer(answerBubble, answer);
+    renderAnswer(answerBubble, answer, answerContext, true);
     if (result.refused) { answerBubble.remove(); addBubble("error", refusalMessage()); }
     else {
       turns.push({ role: "assistant", text: answer });
@@ -162,6 +207,15 @@ async function send(raw: string): Promise<void> {
   }
 }
 
+/** The summary and the contradiction search run on one folder: the folder of the note in use (or the first project folder), or the one named. */
+export function runFolderTask(kind: FolderTask, folder: string | null = defaultFolder()): void {
+  if (!aiEnabled()) return;
+  if (!folder) { showToast(langText("Otwórz folder projektu, żeby uruchomić to zadanie.", "Open a project folder to run this task.")); return; }
+  setAiPaneOpen(true);
+  const name = folderLabel(folder);
+  void send(kind === "summary" ? langText(`Podsumuj folder „${name}”`, `Summarize the folder “${name}”`) : langText(`Znajdź sprzeczności w folderze „${name}”`, `Find contradictions in the folder “${name}”`), { kind, folder });
+}
+
 function newConversation(): void {
   controller?.abort();
   turns.length = 0;
@@ -175,12 +229,20 @@ function refreshSetup(): void {
   $("aiSetupText").textContent = setupHint(readProvider(), providerReadiness(readProvider()));
   $("aiOpenSettings").querySelector("span")!.textContent = langText("Opcje asystenta…", "Assistant options…");
   $("aiSend").toggleAttribute("disabled", missing);
+  for (const id of ["aiSummarizeFolder", "aiFindContradictions"]) $(id).toggleAttribute("disabled", missing);
 }
 
 function labelButton(id: string, label: string): void {
   const control = $(id);
   control.dataset.tooltip = label;
   control.setAttribute("aria-label", label);
+}
+
+function labelQuick(id: string, label: string, tooltip: string): void {
+  const control = $(id);
+  control.querySelector("span")!.textContent = label;
+  control.dataset.tooltip = tooltip;
+  control.setAttribute("aria-label", tooltip);
 }
 
 function labelChip(id: string, label: string, on: boolean): void {
@@ -210,6 +272,12 @@ function refreshLabels(): void {
   $("aiContextList").setAttribute("aria-label", langText("Wysyłany kontekst", "Context that is sent"));
   labelChip("aiUseDocument", langText("Dokument", "Document"), useDocument);
   labelChip("aiUseSelection", selection ? langText(`Zaznaczenie (${selection})`, `Selection (${selection})`) : langText("Zaznaczenie", "Selection"), useSelection);
+  labelChip("aiUseProject", langText("Projekt", "Project"), useProject);
+  $("aiUseProject").dataset.tooltip = useProject
+    ? langText(`Przy każdym pytaniu pasujące fragmenty notatek z projektu są wysyłane do ${name} (lista pod wiadomością). Kliknij, aby nie wysyłać.`, `With every question the matching passages of the project's notes are sent to ${name} (listed under the message). Click to stop.`)
+    : langText("Notatki z projektu nie są wysyłane. Kliknij, aby przy każdym pytaniu wysyłać pasujące fragmenty; odpowiedź cytuje sekcje.", "No notes from the project are sent. Click to send the matching passages with every question; the answer cites the sections.");
+  labelQuick("aiSummarizeFolder", langText("Podsumuj folder", "Summarize folder"), langText(`Podsumuj folder otwartej notatki (jego notatki są wysyłane do ${name})`, `Summarize the folder of the open note (its notes are sent to ${name})`));
+  labelQuick("aiFindContradictions", langText("Znajdź sprzeczności", "Find contradictions"), langText(`Znajdź sprzeczności w folderze otwartej notatki (jego notatki są wysyłane do ${name})`, `Find contradictions in the folder of the open note (its notes are sent to ${name})`));
   input().placeholder = langText(`Napisz do ${name}… (Enter wysyła, Shift+Enter nowy wiersz)`, `Message ${name}… (Enter sends, Shift+Enter for a new line)`);
   input().setAttribute("aria-label", langText(`Wiadomość do ${name}`, `Message to ${name}`));
   const sendLabel = langText("Wyślij", "Send");
@@ -276,12 +344,17 @@ function initSplitter(): void {
 }
 
 export function initChatPanel(): void {
+  installAiEnabled();
+  document.addEventListener(AI_ENABLED_EVENT, () => { if (!aiEnabled()) setAiPaneOpen(false); });
   $("toggleAi").addEventListener("click", toggleAiPane);
   $("aiPaneClose").addEventListener("click", () => setAiPaneOpen(false));
   $("aiNewChat").addEventListener("click", newConversation);
   $("aiStop").addEventListener("click", () => controller?.abort());
   $("aiUseDocument").addEventListener("click", () => { useDocument = !useDocument; refreshLabels(); });
   $("aiUseSelection").addEventListener("click", () => { useSelection = !useSelection; refreshLabels(); });
+  $("aiUseProject").addEventListener("click", () => { useProject = !useProject; writePreferenceFlag(PROJECT_KEY, useProject); refreshLabels(); });
+  $("aiSummarizeFolder").addEventListener("click", () => runFolderTask("summary"));
+  $("aiFindContradictions").addEventListener("click", () => runFolderTask("contradictions"));
   $("aiOpenSettings").addEventListener("click", openAiOptions);
   $("aiForm").addEventListener("submit", event => { event.preventDefault(); void send(input().value); });
   input().addEventListener("keydown", event => {
@@ -296,5 +369,5 @@ export function initChatPanel(): void {
   initSplitter();
   setBusy(false);
   refreshLabels();
-  if (readPreferenceFlag(OPEN_KEY, false)) applyPane(true);
+  if (aiEnabled() && readPreferenceFlag(OPEN_KEY, false)) applyPane(true);
 }

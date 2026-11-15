@@ -40,6 +40,8 @@ import { updateActiveOutline } from "../outline/outline";
 import { printDocument } from "../preview/export-print";
 import { schedulePreview } from "../preview/preview-scheduler";
 import { hiddenSectionsExtension } from "./hidden-sections";
+import { gitGutterExtension } from "../git-ui/git-gutter";
+import { writerCompartment, writerExtensions, writerShortcut } from "../writer/writer-extension";
 import { bookmarkExtension } from "./bookmark-field";
 import { headingRenameTracking } from "./heading-rename";
 import { goToNeighbourBookmark, syncBookmarksFromEditor, toggleBookmark } from "./bookmarks";
@@ -92,7 +94,7 @@ export const editorExtensions = [
   highlightExtension,
   spellExtension,
   performanceCompartment.of(performanceExtensions(initialDocumentText.length)),
-  lineNumbersCompartment.of(lineNumbersEnabled ? lineNumbers() : []), drawSelection(), history(),
+  lineNumbersCompartment.of(lineNumbersEnabled ? lineNumbers() : []), gitGutterExtension, writerShortcut, writerCompartment.of(writerExtensions(readPreferenceFlag("typenova.writer", false))), drawSelection(), history(),
   wrapping.of(localStorage.getItem("typenova.wrap") === "true" ? EditorView.lineWrapping : []),
   whitespaceCompartment.of(whitespaceExtension(readPreferenceFlag(WHITESPACE_KEY, false))),
   languageCompartment.of([]),

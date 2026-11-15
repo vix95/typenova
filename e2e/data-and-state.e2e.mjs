@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { exeExists, startApp, tempOutside, workspace, writeFiles } from "./harness.mjs";
+import { ignorableProblem, waitForTreeFile } from "./helpers.mjs";
 
 const skip = !exeExists() && "the end-to-end build is missing (npm run e2e:build)";
-const inTree = name => `[...document.querySelectorAll('[data-file-path]')].some(x => x.dataset.filePath.replace(/\\\\/g, '/').endsWith('/${name}'))`;
 const clickTree = (app, name) => app.evaluate(`(() => { const e = [...document.querySelectorAll('[data-file-path]')].find(x => x.dataset.filePath.replace(/\\\\/g, '/').endsWith('/${name}')); if (!e) throw new Error('not in the tree: ${name}'); e.click(); return true; })()`);
 
 /** A CSV of about `megabytes` MB (a header and lines of ids, a category, an amount and a date). */
@@ -31,14 +31,14 @@ test("a large CSV opens in the data view, is read in pieces through the real fil
   const app = await startApp({ projects: [folder] });
   try {
     await app.ready();
-    await app.waitFor(inTree("big.csv"), { what: "big.csv in the tree", timeout: 30000 });
+    await waitForTreeFile(app, "big.csv");
     await clickTree(app, "big.csv");                          // 55 MB: opens in the data view, not the editor
     await app.waitFor(`!!document.querySelector('.data-dialog .preview-view-tab')`, { timeout: 120000, what: "the data view after reading the file" });
     const meta = await app.text(".data-dialog .data-meta");
     assert.ok(meta.replace(/\s| /g, "").includes(String(rows).replace(/\B(?=(\d{3})+(?!\d))/g, "")) || meta.includes(rows.toLocaleString("en-US")) || meta.includes(rows.toLocaleString("pl-PL")), `the row count ${rows} is shown (meta: ${meta})`);
     await app.evaluate(`[...document.querySelectorAll('.data-dialog .preview-view-tab')].find(t => /Charts|Wykresy/.test(t.textContent)).click()`);
     await app.waitFor(`!!document.querySelector('.data-dialog .data-stage svg')`, { timeout: 120000, what: "a chart computed from the whole file" });
-    assert.deepEqual(app.problems.filter(line => !/ResizeObserver/.test(line)), [], "no errors while reading a large file");
+    assert.deepEqual(app.problems.filter(line => !ignorableProblem(line)), [], "no errors while reading a large file");
   } finally { await app.stop(); }
 });
 
@@ -62,9 +62,9 @@ test("open folders and folded sections of the table of contents come back after 
   let app = await startApp({ projects: [folder] });
   try {
     await app.ready();
-    await app.waitFor(inTree("doc.md"), { timeout: 30000, what: "the tree" });
+    await waitForTreeFile(app, "doc.md");
     await app.evaluate(`[...document.querySelectorAll('#projectFiles .tree-entry')].find(e => e.dataset.entryType === 'directory' && /sub$/.test(e.dataset.filePath.replace(/\\\\/g, '/'))).click()`);
-    await app.waitFor(inTree("inner.md"), { what: "the sub folder opened" });
+    await waitForTreeFile(app, "inner.md");
     await clickTree(app, "doc.md");
     await app.waitFor(`document.querySelector('.cm-content')?.innerText.startsWith('# Top')`, { what: "doc.md" });
     await app.click("#sidebarOutlineTab");
@@ -77,7 +77,7 @@ test("open folders and folded sections of the table of contents come back after 
   app = await startApp({ projects: [folder], reset: false });
   try {
     await app.ready();
-    await app.waitFor(inTree("inner.md"), { timeout: 30000, what: "the sub folder open again after the restart" });
+    await waitForTreeFile(app, "inner.md");
     await clickTree(app, "doc.md");
     await app.waitFor(`document.querySelector('.cm-content')?.innerText.startsWith('# Top')`, { what: "doc.md again" });
     await app.click("#sidebarOutlineTab");

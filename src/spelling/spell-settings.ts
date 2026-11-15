@@ -6,6 +6,9 @@ const ENABLED_KEY = "typenova.spell.enabled";
 const LANGUAGES_KEY = "typenova.spell.languages";
 const WORDS_KEY = "typenova.spell.words";
 
+/** Dispatched when the misspelled words marked in an editor have changed (the count in the status bar follows it). */
+export const SPELL_MARKS_EVENT = "typenova:spell-marks-changed";
+
 /** Dispatched whenever a setting or the personal dictionary changes. */
 export const SPELL_CHANGED_EVENT = "typenova:spell-settings-changed";
 function changed(): void { document.dispatchEvent(new CustomEvent(SPELL_CHANGED_EVENT)); }
@@ -26,6 +29,23 @@ let personal: string[] | null = null;
 let personalKeys = new Set<string>();
 /** Words the user chose to ignore until the program is closed. */
 const ignored = new Set<string>();
+/** Words of the dictionaries of the repositories the open documents belong to (see repo-dictionary.ts): known words, like the personal ones, but kept in the repository. */
+let repositoryKeys = new Set<string>();
+
+/** Dispatched with the word when one is added to the personal dictionary (the repository dictionary may follow it). */
+export const SPELL_WORD_ADDED_EVENT = "typenova:spell-word-added";
+const AUTO_KEY = "typenova.spell.repoAuto";
+/** Whether a word added to the personal dictionary is also added to the dictionary of the repository the document is in. Off until the person turns it on. */
+export function repositoryDictionaryAuto(): boolean { return readPreferenceFlag(AUTO_KEY, false); }
+export function setRepositoryDictionaryAuto(on: boolean): void { writePreferenceFlag(AUTO_KEY, on); changed(); }
+
+/** Sets the words of the repository dictionaries (all of them, replacing the earlier ones). */
+export function setRepositoryWords(words: readonly string[]): void {
+  const next = new Set(words.map(wordKey));
+  if (next.size === repositoryKeys.size && [...next].every(key => repositoryKeys.has(key))) return;
+  repositoryKeys = next;
+  changed();
+}
 
 function loadPersonal(): string[] {
   if (personal) return personal;
@@ -51,6 +71,7 @@ export function addPersonalWord(word: string): boolean {
   // A word that is only ignored for now can still be added; a word that is already in the dictionary cannot.
   if (!clean || loadPersonal().length >= 5000 || personalKeys.has(wordKey(clean))) return false;
   savePersonal(addToWordList(loadPersonal(), clean));
+  document.dispatchEvent(new CustomEvent(SPELL_WORD_ADDED_EVENT, { detail: clean }));
   return true;
 }
 
@@ -64,5 +85,5 @@ export function ignoreWordForNow(word: string): void { ignored.add(wordKey(word)
 export function isUserWord(word: string): boolean {
   loadPersonal();
   const key = wordKey(word);
-  return personalKeys.has(key) || ignored.has(key);
+  return personalKeys.has(key) || ignored.has(key) || repositoryKeys.has(key);
 }

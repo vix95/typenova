@@ -1,6 +1,8 @@
 /** Ctrl+K command palette: command catalogue, filtering and keyboard navigation. */
 import { formatActiveDocument } from "../editor/format-command";
 import { openGitHistory } from "../git-ui/git-history";
+import { showGitPanel } from "../git-ui/git-panel";
+import { openGitSync } from "../git-ui/git-sync-dialog";
 import { openSearchPanel } from "@codemirror/search";
 import { undo, redo } from "@codemirror/commands";
 import { $ } from "./dom";
@@ -21,6 +23,7 @@ import { openSpellWordsDialog } from "../spelling/spell-options";
 import { showHighlightsPanel } from "./highlight-sidebar";
 import { editHighlightAtSelection } from "../editor/highlight-dialogs";
 import { copyHighlightsAsMarkdown, getHighlights, goToNeighbourHighlight, toggleHighlight } from "../editor/highlights";
+import { aiEnabled } from "../ai/ai-enabled";
 import { openAiEdit } from "../ai/edit-dialog";
 import { toggleAiPane } from "../ai/chat-panel";
 import { focusNeighborGroup, toggleSplit } from "../documents/groups";
@@ -28,7 +31,7 @@ import { goToNeighbourBookmark, toggleBookmark } from "../editor/bookmarks";
 import { insertChartFromFile, openActiveFileInDataViewer } from "../data/data-open";
 import { toggleSideMode, closeActiveTerminal, newTerminal, openTerminalSettings, renameActiveTerminal, restartActiveTerminal, splitActiveTerminal, toggleTerminalFullscreen, toggleTerminalPanel } from "../terminal/terminal-panel";
 
-type CommandItem = { labelPl: string; labelEn: string; shortcut?: string; run: () => void };
+type CommandItem = { labelPl: string; labelEn: string; shortcut?: string; run: () => void; ai?: true };
 const commandItems: CommandItem[] = [
   { labelPl: "Plik: nowy dokument", labelEn: "File: new document", shortcut: "Ctrl+N", run: () => ($("menuNew") as HTMLButtonElement).click() },
   { labelPl: "Plik: otwórz dokument", labelEn: "File: open document", shortcut: "Ctrl+O", run: () => void openDocument() },
@@ -38,6 +41,8 @@ const commandItems: CommandItem[] = [
   { labelPl: "Historia wersji", labelEn: "Version history", run: () => void showVersionHistory() },
   { labelPl: "Formatuj dokument (JSON, YAML, XML, tabele)", labelEn: "Format document (JSON, YAML, XML, tables)", shortcut: "Shift+Alt+F", run: () => formatActiveDocument() },
   { labelPl: "Importuj dokument Word/HTML jako Markdown…", labelEn: "Import Word/HTML document as Markdown…", run: () => void import("../documents/import-document").then(module => module.importDocument()) },
+  { labelPl: "Git: zatwierdź i wypchnij zmiany repozytorium", labelEn: "Git: commit and push the changes of the repository", run: () => void openGitSync() },
+  { labelPl: "Git: zmiany, stage, commit i gałęzie", labelEn: "Git: changes, stage, commit and branches", run: () => showGitPanel() },
   { labelPl: "Historia Git: commity i gałęzie", labelEn: "Git history: commits and branches", run: () => void openGitHistory() },
   { labelPl: "Linki: zamień [[Tytuł]] na [[plik#Tytuł]] w projekcie", labelEn: "Links: write [[Title]] as [[file#Title]] across the project", run: () => void import("../documents/link-rename-apply").then(module => module.qualifyProjectLinks()) },
   { labelPl: "Terminal: pokaż lub ukryj panel", labelEn: "Terminal: show or hide the panel", shortcut: "Ctrl+`", run: () => toggleTerminalPanel() },
@@ -60,8 +65,8 @@ const commandItems: CommandItem[] = [
   { labelPl: "Edytor: podziel w prawo / scal grupy", labelEn: "Editor: split to the right / merge the groups", shortcut: "Ctrl+\\", run: () => toggleSplit() },
   { labelPl: "Edytor: przejdź do następnej grupy", labelEn: "Editor: go to the next group", run: () => focusNeighborGroup(1) },
   { labelPl: "Edytor: przejdź do poprzedniej grupy", labelEn: "Editor: go to the previous group", run: () => focusNeighborGroup(-1) },
-  { labelPl: "Asystent AI: zapytaj o zaznaczenie lub wygeneruj tekst", labelEn: "AI assistant: ask about the selection or generate text", shortcut: "Ctrl+Shift+A", run: () => openAiEdit() },
-  { labelPl: "Asystent AI: pokaż / ukryj czat", labelEn: "AI assistant: show / hide the chat", shortcut: "Ctrl+Shift+M", run: () => toggleAiPane() },
+  { labelPl: "Asystent AI: zapytaj o zaznaczenie lub wygeneruj tekst", labelEn: "AI assistant: ask about the selection or generate text", shortcut: "Ctrl+Shift+A", run: () => openAiEdit(), ai: true },
+  { labelPl: "Asystent AI: pokaż / ukryj czat", labelEn: "AI assistant: show / hide the chat", shortcut: "Ctrl+Shift+M", run: () => toggleAiPane(), ai: true },
   { labelPl: "Wyróżnienia: wyróżnij zaznaczenie lub usuń wyróżnienie", labelEn: "Highlights: highlight the selection or remove the highlight", shortcut: "Ctrl+Shift+H", run: () => void toggleHighlight() },
   { labelPl: "Wyróżnienia: kolor, grupa i notatka", labelEn: "Highlights: colour, group and note", run: () => editHighlightAtSelection() },
   { labelPl: "Wyróżnienia: następne wyróżnienie", labelEn: "Highlights: next highlight", shortcut: "F4", run: () => goToNeighbourHighlight(1) },
@@ -108,7 +113,7 @@ export function renderCommandResults(query: string) {
   root.replaceChildren();
   const en = document.documentElement.lang === "en";
   const normalized = query.trim().toLocaleLowerCase(en ? "en" : "pl");
-  const items = commandItems.filter(item =>
+  const items = commandItems.filter(item => (!item.ai || aiEnabled()) &&
     `${item.labelPl} ${item.labelEn} ${item.shortcut || ""}`.toLocaleLowerCase(en ? "en" : "pl").includes(normalized)
   );
   for (const item of items) {

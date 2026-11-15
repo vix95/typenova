@@ -102,6 +102,8 @@ export async function startApp({ args = [], reset = true, projects = [], exe = E
      * Closes the program the way a user does (the window is asked to close, so that settings kept in the WebView are written to disk), and ends it by force only if it does not go.
      * A forced end loses what the WebView had not written yet, which is what a test of "after a restart" must not do.
      */
+    /** Saves a picture of the window (for looking at the real result; the tests do not compare pictures). */
+    async screenshot(file) { const { data } = await send("Page.captureScreenshot", { format: "png" }); fs.writeFileSync(file, Buffer.from(data, "base64")); },
     async stop({ force = false } = {}) {
       try { socket.close(); } catch { /* closed */ }
       const alive = () => { try { process.kill(child.pid, 0); return true; } catch { return false; } };

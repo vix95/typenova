@@ -124,6 +124,7 @@ export function renderTabs() {
   refreshGroupsUi();
   persistOpenSession();
   requestAnimationFrame(revealActiveEditorTab);
+  document.dispatchEvent(new CustomEvent("typenova:tabs-rendered"));
 }
 const editorTabList = $("editorTabList") as HTMLElement;
 // Right-click tab operations mirror the conventions used by desktop code editors.
@@ -256,6 +257,7 @@ export function showTab(target: DocumentTab, loadState: boolean): void {
   documentState.docRevision++;
   schedulePreview();
   requestAnimationFrame(() => view.requestMeasure());
+  document.dispatchEvent(new CustomEvent("typenova:document-shown"));
 }
 /** Puts a document's state into an editor (the editor of a group that is not in use, for instance) with its size profile and syntax mode. */
 export function loadStateIntoView(target: EditorView, tab: DocumentTab): void {
@@ -365,7 +367,7 @@ export function removeTabWithoutPrompt(id: string): void {
     else createNewTab("", "Untitled.md");
   } else renderTabs();
 }
-async function closeTab(id: string) {
+export async function closeTab(id: string) {
   const tab = documentState.tabs.find(item => item.id === id);
   if (!tab) return;
   if (tab.id === documentState.activeTabId) { tab.state = view.state; tab.dirty = documentState.dirty; tab.savedText = documentState.savedText; }

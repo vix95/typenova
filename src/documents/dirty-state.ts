@@ -7,7 +7,8 @@ import { view } from "../editor/editor-view";
 import { updateHeadingBreadcrumbs } from "../outline/breadcrumbs";
 
 export function iconForPath(path: string) {
-  const ext = path.split(".").pop()?.toLowerCase() || "";
+  const name = path.split(/[\\/]/).pop() ?? "";
+  const ext = name.includes(".") ? name.split(".").pop()!.toLowerCase() : "";
   if (["md", "markdown", "mdx", "mkd", "mdown"].includes(ext)) return "M";
   if (ext === "ipynb") return "NB";
   if (["py", "pyw"].includes(ext)) return "Py";

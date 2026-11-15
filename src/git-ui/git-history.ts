@@ -10,6 +10,9 @@ import { gitOverview, gitRepoRoot, type GitOverview } from "./git-api";
 import { createBranchPanel } from "./git-branches";
 import { createCommitList } from "./git-commit-list";
 import { createDetailPanel } from "./git-detail";
+import { installGitGutter } from "./git-gutter";
+import { installGitPanel } from "./git-panel";
+import { installGitSync } from "./git-sync-dialog";
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className = "", text = ""): HTMLElementTagNameMap[K] => {
   const node = document.createElement(tag); if (className) node.className = className; if (text) node.textContent = text; return node;
@@ -78,4 +81,7 @@ export async function openGitHistory(): Promise<void> {
 export function initGitHistory(): void {
   $("menuGit").addEventListener("click", () => void openGitHistory());
   $("openGitHistory").addEventListener("click", () => void openGitHistory());
+  installGitSync();
+  installGitPanel();
+  installGitGutter();
 }

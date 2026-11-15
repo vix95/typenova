@@ -2,6 +2,91 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.148] - 2026-11-15
+
+### Added
+
+- **Changes from outside are followed.** The project folders (and the folders of open documents outside them) are watched. When files change from outside (a pull, a branch switch, an agent, another editor) the tree of files is refreshed at once, an open document without unsaved changes is brought up to date (as a small edit that is neither unsaved nor in the undo history, so the caret and the scroll position stay where the text allows), and the Git view, the margin markers and the link index read the repository again. Unsaved changes are never overwritten: the person is told, and saving a document whose file changed on disk asks before it overwrites it (auto-save waits instead). A document whose file was deleted stays open and is saved to a new file.
+- The project tree follows the document in use: switching to another document opens its folders in the tree and selects and scrolls to its row. The setting "Tree follows the document" turns it off; it is on by default.
+- The status bar shows the number of spelling mistakes in the document ("Spelling: N"); a click goes to the next one.
+- The context menu of the project tree has "Add folder to workspace…".
+- A "Tabs" view next to the other views of the left panel lists only the open documents (name, folder, unsaved mark, a cross that closes the tab); the same button goes back to the project files.
+- **Settings → AI assistant → "AI features".** Off hides the AI button, the chat and its splitter, the options, the entries of the context menus and the command palette, and disables the shortcuts. On by default.
+- The views of the left panel that do not fit (Tabs, Graph, …) move into a "More panel views" menu instead of a second and third row; the rarely used icons of the Project heading (expand/collapse all, Git history, bookmarks, highlights) are always in its menu.
+
+### Fixed
+
+- The web view's "Reload the site? Changes you made may not be saved" question is gone. The session is stored when the page unloads, and unsaved text is offered back by the recovery.
+- Closing the project from the tree asks for confirmation first.
+- In Writer mode empty lines between blocks are short gaps, so a list with blank lines between its items is no longer spread out; code blocks and the line of the caret keep their height.
+- The file-type badge of a file without an extension showed the drive ("D:"); wide badges such as "PHP" now grow instead of spilling out.
+- The checkbox that adds new words to the repository dictionary looks like the other checkboxes of the program.
+- A toast that appeared while a modal dialog was open (the image viewer's copy button, for example) was hidden behind the dialog until it was closed. Toasts are popovers now, drawn above dialogs.
+- Tables in the preview were squeezed into narrow columns that broke words and dates in the middle (`Dat`/`a`, `202`/`6-`). Cells wrap at word boundaries only and keep a minimum width.
+- The Backlinks section of the table of contents could shrink to its heading when the outline was long, so its entries were not visible. It keeps a minimum height now.
+
+### Changed
+
+- Code and tests were tidied: the open-document helpers that several features asked in their own way are one module (`open-documents.ts`), the end-to-end tests share `e2e/helpers.mjs` instead of each declaring its own tree and Git helpers, and unused code was removed.
+
+## [0.5.147] - 2026-11-15
+
+### Added
+
+- **The dictionary in the repository.** When you work in a Git repository, the personal dictionary can be exported to a plain text file in it, `.typenova/dictionary.txt` (one word per line, sorted, with a comment on top, so two people adding words rarely conflict). The personal dictionary window has an "Export to the repository" button (it adds the words that are not in the file yet and leaves the others; the file is then a change you can commit) and a switch that adds each new word to the repository file right away. The words in a repository's file count as known words in the documents of that repository for everyone who opens it, so teammates see no false mistakes for your names and terms. Outside a repository nothing changes: the words stay in TypeNova on this computer and no file is written anywhere.
+
+## [0.5.146] - 2026-11-15
+
+### Added
+
+- **Writer** ("Pisarz"), a mode in the style of Typora. The editor itself shows the rendered Markdown and edits it in place: headings, bold, italic, strikethrough, inline code, links, quotes, lists with dots, task lists with working checkboxes, rules, code blocks (labelled with their language), images, and tables styled as aligned text. The syntax of the element under the caret (`**`, `#`, `[](…)`, the fences) is shown, and hidden again when the caret leaves it; the caret jumps over hidden syntax. It is the same text as in the source mode, so saving, search, undo, bookmarks, the Git markers and the AI chat work as before. The top-bar button (or Ctrl+/, as in Typora's source mode) switches it on and off, and the choice is remembered. While it is on the preview pane, the gutters and the minimap are hidden and the text sits in a readable column; Ctrl+click on a link opens it. Only what is on screen is decorated, and in a 28 000-line note a keystroke, a caret move and a scroll step cost no more than in the source mode.
+
+## [0.5.145] - 2026-11-15
+
+### Added
+
+- Git in the interface, without the terminal. A **Git view** in the left panel (the branch icon of the Project heading, or the command palette) shows the repository of the open document: the branch in use with a chooser to switch to a local branch, to track a remote one or to create a new one; the changes split into staged and not staged, with stage and unstage for a file or for all; the commit message (suggested from the staged files) with Commit, which commits only what is staged; and Push (or Publish branch for a branch without an upstream), with ahead and behind counts.
+- **Change markers in the margin** of the editor, compared with the committed text: green for added lines, blue for modified lines and a red mark where lines were removed. They follow the typing (also unsaved text) and are computed again shortly after each change; files that are ignored, binary or very large get none.
+- Switching branches is guarded: documents with unsaved changes inside the repository stop it (the files on disk would be written over them), and after it the open documents that did not change are read again from disk, so that none shows or saves the text of the branch that was left. Git's own refusals (changes that would be overwritten) are shown as they are. Nothing in the view forces, discards changes or skips hooks.
+
+## [0.5.144] - 2026-11-15
+
+### Fixed
+
+- In a narrow sidebar the icons of the Project heading were cut off. The ones that do not fit now move, last first and in their order, into a menu under a three-dot button (each item with its name), and come back when the sidebar is wide enough. The menu opens under the button, closes with Escape (the focus returns to the button), on a click outside and after choosing an item, and works with the arrow keys.
+
+## [0.5.142] - 2026-11-14
+
+### Added
+
+- The AI chat knows the project. A new "Project" switch (off until turned on) sends, with each question, the passages of the notes that match it, found by a local word search over the sections of the project's Markdown notes; the answer cites them as `[n]` buttons that open the section, and a folded list under the message shows exactly which passages were sent. Nothing goes through our servers: the request is made to the model on the computer or to the provider the person chose, with their own key.
+- Two folder tasks, in the chat and in the context menu of a folder: "Summarize folder" and "Find contradictions" (all the notes of the folder and its sub folders, shortened equally when they do not fit, and the answer says so).
+- Proposed changes are differences to approve. When the assistant wants to change a note it answers with edit blocks, shown as a card with the changed lines and their surroundings; Apply puts the change into the editor as an undoable edit (the file is saved only when the person saves), Reject drops it. A change whose text is no longer in the file, or occurs several times, is not offered.
+
+## [0.5.141] - 2026-11-14
+
+### Fixed
+
+- The New file dialog of the project tree selected the whole proposed name (`Untitled.md`), so typing a name replaced the extension too. Only the name is selected now (`selectBaseName`, shared with the rename dialog), and the extension stays; the same applies when the dialog selects the field again after an error.
+
+## [0.5.140] - 2026-11-14
+
+### Added
+
+- Commit and push. A button in the project panel (and a command palette entry) commits everything changed in the Git repository of the document in use (new, modified and deleted files, including new files in sub folders; ignored files stay out) and pushes the branch. A dialog first shows the files, the branch and where it is pushed, and a proposed commit message that can be edited. The document in use is saved first; other unsaved documents are named in a warning. A branch without an upstream is pushed to `origin` (or the only remote) and gets one. It never forces and never skips hooks, refuses a detached HEAD or a merge, rebase, cherry-pick or revert in progress, and a failed push keeps the commit and shows git's message.
+
+## [0.5.139] - 2026-11-14
+
+### Fixed
+
+- A light square showed in the corner where the vertical and the horizontal scrollbar of the editor meet. The corner now has the colour of the scrollbar track in the editor, the preview and the project tree, and the horizontal scrollbar has the same thickness as the vertical one.
+
+## [0.5.138] - 2026-11-14
+
+### Added
+
+- Scroll arrows. Every editor and the preview have a small pair of up and down arrows in the lower right corner (clear of the scrollbar, quiet until the pane is pointed at): a click scrolls one page, Shift or Ctrl + click goes to the start or the end of the document. An arrow with nothing behind it is disabled, and both are hidden for a document that fits in the view. Tooltips and accessible names are Polish and English and follow the language; smooth scrolling is off under reduced motion.
+
 ## [0.5.137] - 2026-11-14
 
 ### Added

@@ -1,4 +1,5 @@
 /** "Ask" the assistant about the selected text: an instruction, a streamed proposal shown as a comparison, and an Apply button. Nothing changes before the user applies it. */
+import { aiEnabled } from "./ai-enabled";
 import { button, el } from "../editor/bookmark-browser";
 import { view } from "../editor/editor-view";
 import { documentState } from "../documents/document-state";
@@ -70,6 +71,7 @@ function quickChips(replacing: boolean, instruction: HTMLTextAreaElement): HTMLE
 
 /** Opens the window for the current selection (or the caret, to write something new there). */
 export function openAiEdit(): void {
+  if (!aiEnabled()) return;
   if (!isAiReady()) {
     showToast(setupHint(readProvider(), providerReadiness(readProvider())));
     openAiOptions();
