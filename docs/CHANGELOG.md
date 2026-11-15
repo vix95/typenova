@@ -2,6 +2,13 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.151] - 2026-11-15
+
+### Fixed
+
+- Opening or adding a project no longer freezes the window. The Git commands that read the repository (the repository folder, the overview, the history, a commit, a file's diff), the list of shells, the clipboard files and the secret store ran on the thread of the window itself, so every `git` they started stopped the whole interface until it ended; they run on a worker thread now.
+- The project tree lists a folder without a call to the host for every entry, and reads the folders that were open at the same time instead of one after another (the same for the check that follows a change on disk).
+
 ## [0.5.150] - 2026-11-15
 
 ### Fixed

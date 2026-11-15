@@ -104,14 +104,14 @@ fn grant_e2e_folders<R: tauri::Runtime>(app: &impl Manager<R>) {
 /// Paths given on the command line at startup, until the page asks for them.
 static PENDING_LAUNCH_PATHS: Mutex<Vec<String>> = Mutex::new(Vec::new());
 
-#[tauri::command]
+#[tauri::command(async)]
 fn take_launch_paths() -> Vec<String> {
   PENDING_LAUNCH_PATHS.lock().map(|mut paths| std::mem::take(&mut *paths)).unwrap_or_default()
 }
 
 /// Registers the folder of an HTML page for the `tnpage` scheme and returns the URL path to load it from; its relative
 /// links then resolve inside `root` (a project folder holding the page) or the page's own folder.
-#[tauri::command]
+#[tauri::command(async)]
 fn open_page(path: String, root: Option<String>) -> Result<String, String> {
   let file = grant_path(&path, &page_server::PAGE_EXTENSIONS)?;
   page_server::register_page(&file, root.as_deref())

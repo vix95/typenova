@@ -109,7 +109,7 @@ pub fn paste_into(sources: &[PathBuf], dest_dir: &Path, label: &str) -> Result<V
   Ok(created)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn clipboard_file_list() -> ClipboardFiles {
   let names = clipboard_paths()
     .iter()
@@ -118,7 +118,7 @@ pub fn clipboard_file_list() -> ClipboardFiles {
   ClipboardFiles { names, sequence: clipboard_sequence() }
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn paste_clipboard_files(dest_dir: String, copy_label: String) -> Result<Vec<String>, String> {
   paste_into(&clipboard_paths(), Path::new(&dest_dir), &copy_label)
 }

@@ -184,7 +184,7 @@ fn default_shell_id(shells: &[ShellProfile]) -> Option<String> {
   login.filter(|name| shells.iter().any(|shell| &shell.id == name)).or_else(|| shells.first().map(|shell| shell.id.clone()))
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn terminal_shells() -> ShellList {
   let shells = detect_shells();
   let default_id = default_shell_id(&shells);
