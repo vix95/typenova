@@ -17,7 +17,7 @@ export type PathClass = "ignore" | "content" | "git-state";
 /** What inside `.git` says that the repository changed: the branch in use, the index, the references, an operation in progress. The rest of it (objects, logs, hooks, lock files) is noise. */
 const GIT_STATE = new Set(["HEAD", "index", "refs", "packed-refs", "MERGE_HEAD", "ORIG_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply"]);
 /** Folders whose files are never the user's documents and change by the thousand. */
-const IGNORED_FOLDERS = new Set(["node_modules"]);
+const IGNORED_FOLDERS = new Set(["node_modules", "__pycache__", "site-packages", ".venv", "venv"]);
 
 export function classifyPath(path: string): PathClass {
   const segments = path.split(/[\\/]+/);
