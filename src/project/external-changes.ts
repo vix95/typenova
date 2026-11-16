@@ -1,5 +1,5 @@
 /** Watches the project folders (and the folders of open documents outside them) for changes made from outside the program, and brings the interface up to date: the tree of files, the open documents, the Git view and the markers in the margin, the link index. */
-import { watch, type UnwatchFn } from "@tauri-apps/plugin-fs";
+import { watchImmediate, type UnwatchFn } from "@tauri-apps/plugin-fs";
 import { documentState } from "../documents/document-state";
 import { recheckIndex } from "../documents/project-index";
 import { syncOpenDocument } from "../documents/external-reload";
@@ -75,8 +75,9 @@ async function startWatching(targets: readonly Target[]): Promise<void> {
   for (const unwatch of unwatchers) unwatch();
   unwatchers = [];
   for (const target of targets) {
+    // `watchImmediate`, not `watch` (which adds a delay of 2 s by default): with a delay the host builds, on the thread of the window, a cache of the identity of every file under the folder (a walk of the whole tree, minutes for 100,000 files); the batching is done by `collect` below.
     // A folder the program may not watch (outside what the person opened) is simply left to the tree's own polling.
-    try { unwatchers.push(await watch(target.path, collect, { recursive: target.recursive, delayMs: SETTLE_MS })); } catch { /* not watched */ }
+    try { unwatchers.push(await watchImmediate(target.path, collect, { recursive: target.recursive })); } catch { /* not watched */ }
   }
 }
 

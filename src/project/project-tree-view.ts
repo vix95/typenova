@@ -3,7 +3,6 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { normalizedFsPath } from "../filesystem/project-tree-operations";
 import { basename, isEditableTextFile, isViewableImageFile, isViewerFile } from "../filesystem/path-utils";
 import { readDir } from "@tauri-apps/plugin-fs";
-import { join } from "@tauri-apps/api/path";
 import { $ } from "../app/dom";
 import { activeSidebarTab } from "../app/sidebar";
 import { documentState } from "../documents/document-state";
@@ -164,6 +163,15 @@ function createRemoveRootControl(root: string): HTMLElement {
   return control;
 }
 
+/** `folder` and `name` joined with the separator the folder uses. Done here, not by the host: a call to the host per entry made listing a folder of thousands of files take seconds. */
+function joinPath(folder: string, name: string): string {
+  const separator = folder.includes("\\") || !folder.includes("/") ? "\\" : "/";
+  return folder.endsWith("/") || folder.endsWith("\\") ? folder + name : folder + separator + name;
+}
+
+/** One collator for sorting names: `localeCompare` with a locale builds a new one on every call, which dominates the time of sorting a big folder. */
+const nameCollator = new Intl.Collator("pl");
+
 let renderChain: Promise<void> = Promise.resolve();
 
 /** Draws the tree. Calls run one after another: a render clears the container and then appends rows after awaiting the folder listings, so two at once (quick clicks on expand/collapse, a refresh during one) would both append and duplicate every row. */
@@ -239,7 +247,7 @@ async function renderProjectTreeNow(): Promise<void> {
     // Directories are listed first for familiar explorer behavior; contents stay lazy-loaded.
     // Clear an earlier error placeholder before rendering a successful retry.
     parent.replaceChildren();
-    entries.sort((a, b) => Number(!!b.isDirectory) - Number(!!a.isDirectory) || a.name.localeCompare(b.name, "pl"));
+    entries.sort((a, b) => Number(!!b.isDirectory) - Number(!!a.isDirectory) || nameCollator.compare(a.name, b.name));
     if (entries.length === 0) {
       const empty = document.createElement("div");
       empty.className = "tree-empty";
@@ -249,13 +257,16 @@ async function renderProjectTreeNow(): Promise<void> {
       return true;
     }
 
+    // Every row is added at once, in order; the folders that were open are then read at the same time, not one after another.
+    const expanding: Promise<void>[] = [];
     for (const entry of entries) {
-      const full = await join(path, entry.name);
-      if (entry.isDirectory) { await addDirectory(parent, entry.name, full, depth); continue; }
+      const full = joinPath(path, entry.name);
+      if (entry.isDirectory) { expanding.push(addDirectory(parent, entry.name, full, depth)); continue; }
       const { row } = createTreeEntryRow(entry, full, depth);
       parent.append(row);
       row.addEventListener("click", () => void openProjectTreeEntry(full, false));
     }
+    await Promise.all(expanding);
     return true;
   };
 

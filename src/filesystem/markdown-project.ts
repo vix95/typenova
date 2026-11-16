@@ -1,6 +1,5 @@
 import { readDir } from "@tauri-apps/plugin-fs";
 import { readTextAuto } from "./text-io";
-import { join } from "@tauri-apps/api/path";
 import { isMarkdownPath } from "./path-utils";
 
 export interface ProjectMarkdownFile {
@@ -14,7 +13,9 @@ export interface MarkdownProjectScanOptions {
   onError?: (issue: { path: string; operation: "read-directory" | "read-file"; message: string }) => void;
   yieldControl?: () => Promise<void>;
 }
-const SKIPPED_DIRECTORY_NAMES = new Set(["node_modules", "target", "dist", "build", "vendor"]);
+const SKIPPED_DIRECTORY_NAMES = new Set(["node_modules", "target", "dist", "build", "vendor", "__pycache__", "site-packages", "venv"]);
+/** Joined here, not by the host: a host call per entry is far too slow for a folder of tens of thousands of files. */
+const joinLocal = (folder: string, name: string): string => (folder.endsWith("/") || folder.endsWith("\\") ? folder + name : folder + (folder.includes("\\") || !folder.includes("/") ? "\\" : "/") + name);
 const yieldTask = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 
 /** Reads the project's Markdown inputs without knowing anything about graph renderers. */
@@ -35,10 +36,12 @@ export async function scanMarkdownProject(
       options.onError?.({ path: directoryPath, operation: "read-directory", message: error instanceof Error ? error.message : String(error) });
       return;
     }
+    // A Python virtual environment (it has pyvenv.cfg) holds tens of thousands of files and no notes.
+    if (entries.some(entry => !entry.isDirectory && entry.name === "pyvenv.cfg")) return;
     for (const entry of entries) {
       if (cancelled()) return;
       if (entry.name.startsWith(".") || SKIPPED_DIRECTORY_NAMES.has(entry.name)) continue;
-      const fullPath = await join(directoryPath, entry.name);
+      const fullPath = joinLocal(directoryPath, entry.name);
       if (entry.isDirectory) { await walk(fullPath); continue; }
       if (!isMarkdownPath(entry.name)) continue;
       try {

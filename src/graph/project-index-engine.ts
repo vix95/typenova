@@ -35,7 +35,9 @@ export interface IndexOptions {
 
 export interface IndexSnapshot { files: IndexedFile[]; tooLarge: boolean; problem: string | undefined }
 
-const SKIPPED_DIRECTORIES = new Set(["node_modules", "target", "dist", "build", "vendor"]);
+const SKIPPED_DIRECTORIES = new Set(["node_modules", "target", "dist", "build", "vendor", "__pycache__", "site-packages", "venv"]);
+/** `folder` and `name` joined without asking the host: one host call per entry made a folder of 100,000 files take minutes and kept the window busy the whole time. */
+const joinLocal = (folder: string, name: string): string => (folder.endsWith("/") || folder.endsWith("\\") ? folder + name : folder + (folder.includes("\\") || !folder.includes("/") ? "\\" : "/") + name);
 const yieldTask = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 
 /** A short key of the folders an index belongs to (its file name in storage). */
@@ -61,7 +63,7 @@ interface State {
   problem: string | undefined;
 }
 
-interface WalkContext { port: IndexPort; maxFiles: number; checkpointEvery: number; store: (state: State) => void }
+interface WalkContext { port: IndexPort; maxFiles: number; checkpointEvery: number; store: (state: State) => void; /** Entries looked at so far: the walk gives the window a turn every so often, also while it passes files that are not Markdown. */ visited: number }
 
 /** Walks a folder; a file whose stamp is the one already known is not read. */
 async function walk(ctx: WalkContext, current: State, previous: ReadonlyMap<string, IndexedFile>, seen: Set<string>, directory: string): Promise<void> {
@@ -69,10 +71,13 @@ async function walk(ctx: WalkContext, current: State, previous: ReadonlyMap<stri
   if (current.tooLarge) return;
   let entries: { name: string; isDirectory: boolean }[] = [];
   try { entries = await port.readDir(directory); } catch (error) { current.problem ??= `${directory}: ${String(error)}`; port.warn("Project index", directory, error); return; }
+  // A Python virtual environment (it has pyvenv.cfg) holds tens of thousands of files and no notes.
+  if (entries.some(entry => !entry.isDirectory && entry.name === "pyvenv.cfg")) return;
   for (const entry of entries) {
     if (current.tooLarge) return;
+    if (++ctx.visited % 200 === 0) await yieldTask();
     if (entry.name.startsWith(".") || SKIPPED_DIRECTORIES.has(entry.name)) continue;
-    const path = await port.join(directory, entry.name);
+    const path = joinLocal(directory, entry.name);
     if (entry.isDirectory) { await walk(ctx, current, previous, seen, path); continue; }
     if (!isMarkdownPath(entry.name)) continue;
     try {
@@ -121,7 +126,7 @@ export function createProjectIndex(port: IndexPort, options: IndexOptions = {}) 
     current.tooLarge = false;
     current.problem = undefined;
     for (const root of current.roots) {
-      await walk({ port, maxFiles, checkpointEvery, store }, current, previous, seen, root);
+      await walk({ port, maxFiles, checkpointEvery, store, visited: 0 }, current, previous, seen, root);
       if (current.tooLarge) break;
     }
     if (!current.tooLarge) for (const path of [...current.files.keys()]) if (!seen.has(path)) { current.files.delete(path); current.dirty = true; }

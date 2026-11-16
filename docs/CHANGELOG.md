@@ -2,6 +2,25 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.153] - 2026-11-15
+
+### Fixed
+
+- **Adding a very large folder (100,000 files, 13 GB) froze the window for about 36 seconds ("not responding").** The watcher of changes from outside used `watch` of the file plugin, which has a delay of 2 s by default; with a delay the host walks the whole tree on the thread of the window to learn the identity of every file. It uses `watchImmediate` now (the batching is done by the program), and the window is not blocked any more (measured on a folder of that size: before 36 s, after nothing over 250 ms). The link index and the graph no longer ask the host to join every path, give the window a turn also while they pass files that are not Markdown, and skip Python virtual environments (a folder with `pyvenv.cfg`), `__pycache__` and `site-packages`; events from those folders are ignored by the watcher. (0.5.152 carried an attempt that did not change the delay.)
+
+## [0.5.152] - 2026-11-15
+
+### Fixed
+
+- The link index and the graph join paths locally and skip Python virtual environments (see 0.5.153 for the freeze they did not cure).
+
+## [0.5.151] - 2026-11-15
+
+### Fixed
+
+- Opening or adding a project no longer freezes the window. The Git commands that read the repository (the repository folder, the overview, the history, a commit, a file's diff), the list of shells, the clipboard files and the secret store ran on the thread of the window itself, so every `git` they started stopped the whole interface until it ended; they run on a worker thread now.
+- The project tree lists a folder without a call to the host for every entry, and reads the folders that were open at the same time instead of one after another (the same for the check that follows a change on disk).
+
 ## [0.5.150] - 2026-11-15
 
 ### Fixed

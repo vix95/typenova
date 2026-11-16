@@ -224,12 +224,12 @@ fn parse_changes(name_status: &str, numstat: &str) -> Vec<FileChange> {
     .collect()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn git_repo_root(path: String) -> Option<String> {
   run_git(&path, &["rev-parse", "--show-toplevel"]).ok().map(|text| text.trim().to_string()).filter(|text| !text.is_empty())
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn git_overview(repo: String) -> Result<Overview, String> {
   let head = run_git(&repo, &["rev-parse", "--abbrev-ref", "HEAD"]).map(|text| text.trim().to_string()).unwrap_or_default();
   let refs = run_git(
@@ -242,7 +242,7 @@ pub fn git_overview(repo: String) -> Result<Overview, String> {
 }
 
 /// One page of the history of `rev` (a branch, tag or hash), or of every branch when `rev` is empty.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn git_log(repo: String, rev: String, skip: u32, limit: u32) -> Result<Vec<Commit>, String> {
   let skip_arg = format!("--skip={skip}");
   let count_arg = format!("--max-count={}", limit.clamp(1, 500));
@@ -267,7 +267,7 @@ fn first_parent(repo: &str, hash: &str) -> Result<Option<String>, String> {
   Ok(line.split_whitespace().nth(1).map(str::to_owned))
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn git_commit_detail(repo: String, hash: String) -> Result<CommitDetail, String> {
   if !valid_hash(&hash) {
     return Err("invalid commit".into());
@@ -302,7 +302,7 @@ pub fn git_commit_detail(repo: String, hash: String) -> Result<CommitDetail, Str
 }
 
 /// Unified diff of one file in a commit against its first parent (or against nothing for the first commit).
-#[tauri::command]
+#[tauri::command(async)]
 pub fn git_file_diff(repo: String, hash: String, path: String, old_path: Option<String>) -> Result<String, String> {
   if !valid_hash(&hash) || !safe_relative_path(&path) || old_path.as_deref().is_some_and(|old| !safe_relative_path(old)) {
     return Err("invalid argument".into());

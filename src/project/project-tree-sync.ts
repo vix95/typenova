@@ -26,10 +26,9 @@ function watchedDirectories(): string[] {
 /** Records what the watched folders contain right now; called after every tree rebuild so only later changes count. */
 export async function captureTreeBaseline(): Promise<void> {
   const fresh = new Map<string, string>();
-  for (const directory of watchedDirectories()) {
-    const signature = await signatureOf(directory);
-    if (signature !== null) fresh.set(normalizedFsPath(directory), signature);
-  }
+  const directories = watchedDirectories();
+  const found = await Promise.all(directories.map(signatureOf));
+  directories.forEach((directory, index) => { const signature = found[index]; if (signature !== null) fresh.set(normalizedFsPath(directory), signature); });
   signatures.clear();
   for (const [key, signature] of fresh) signatures.set(key, signature);
 }
@@ -59,9 +58,12 @@ async function checkForExternalChanges(): Promise<void> {
   checking = true;
   try {
     let changed = false;
-    for (const directory of watchedDirectories()) {
+    // The folders are read at the same time: one after another, every expanded folder added a wait of its own to each check.
+    const directories = watchedDirectories();
+    const found = await Promise.all(directories.map(signatureOf));
+    for (const [index, directory] of directories.entries()) {
       const key = normalizedFsPath(directory);
-      const signature = await signatureOf(directory);
+      const signature = found[index];
       if (signature === null) continue;
       const previous = signatures.get(key);
       signatures.set(key, signature);

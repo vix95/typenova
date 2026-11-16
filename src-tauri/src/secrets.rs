@@ -165,14 +165,14 @@ pub fn delete_in(dir: &Path, name: &str) -> Result<(), String> {
 pub fn read_secret(app: &AppHandle, name: &str) -> Option<Zeroizing<String>> { read_from(&data_dir(app).ok()?, name) }
 
 /// Stores a secret. The interface gets back only whether it is stored and its last characters.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn secret_store(app: AppHandle, name: String, value: String) -> Result<SecretInfo, String> { store_in(&data_dir(&app)?, &name, &value) }
 
 /// Whether a secret is stored, whether it can be read here, and its last characters.
-#[tauri::command]
+#[tauri::command(async)]
 pub fn secret_info(app: AppHandle, name: String) -> Result<SecretInfo, String> { Ok(info_in(&data_dir(&app)?, &name)) }
 
-#[tauri::command]
+#[tauri::command(async)]
 pub fn secret_delete(app: AppHandle, name: String) -> Result<(), String> { delete_in(&data_dir(&app)?, &name) }
 
 #[cfg(test)]
