@@ -2,6 +2,24 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.155] - 2026-11-17
+
+### Changed
+
+- The "Tabs" view comes before "Graph" in the row of the left panel, and the number of open documents in it is the same pill as the number of headings in "Outline".
+- The "Unsaved" mark is in the status bar at the bottom (next to the status text), not in the strip of tabs, where it made the buttons beside it jump.
+
+### Fixed
+
+- **The spelling count covers the whole document.** A document over 300,000 characters was checked only around what is on screen, and so was the count in the status bar. It is now counted in the background over the whole text (in slices, so that the window keeps answering; every different word is asked about once and the answers are kept), the count is re-made when the typing has paused, and "next error" walks over all of the mistakes. Smaller documents were already checked whole.
+- **A tab dragged out of the window left its drag ghost on the screen.** The ghost ("Release to open in a new window") is a window of its own, made on first use; when the tab was released before it existed it appeared afterwards and stayed. It is kept hidden if the drag is over, it is placed at most once per frame (it was asked for at every move of the mouse), and the new window of a torn-off document is brought to the front.
+
+## [0.5.154] - 2026-11-17
+
+### Fixed
+
+- **The Writer mode draws tables, formulas and code blocks.** A table is a real table (the same renderer as the preview, so the cells keep their bold, code and links), a `$$ … $$` formula is drawn by KaTeX as a block, and `$x$` / `$$x$$` inside a line are drawn in the line (not in code, a table or an address; `$5 and $6` stay text). The Markdown of any of them is shown again when the caret or the selection is in it (a click does that). A code block inside a quote no longer shows the `>` marks and its closing fence, a block made by indentation is one block like a fenced one, and a fenced block without a language has no empty line above it.
+
 ## [0.5.153] - 2026-11-15
 
 ### Fixed

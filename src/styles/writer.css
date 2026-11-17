@@ -38,12 +38,22 @@ body.writer-mode .cm-activeLine { background: transparent; }
 .cm-writer-code-last { padding-bottom: 8px !important; border-radius: 0 0 8px 8px; }
 .cm-writer-fence-hidden.cm-writer-code-first { text-align: right; line-height: 1.2; }
 .cm-writer-fence-hidden.cm-writer-code-last { min-height: 8px; line-height: 8px; font-size: 0; }
+.cm-writer-fence-hidden.cm-writer-no-label { min-height: 8px; line-height: 8px; font-size: 0; }
 .cm-writer-language { color: var(--ui-muted); font-size: 11px; letter-spacing: .04em; text-transform: lowercase; }
 
-/* Tables stay as text (aligned pipes), styled: a header row, a quiet delimiter row. */
+/* Tables and formulas: drawn as a table and as KaTeX output (the same as the preview) until the caret is in them; the Markdown of a table in the source is styled as text. */
+.cm-writer-table { margin: .5em 0; overflow-x: auto; cursor: default; }
+.cm-writer-table table { border-collapse: collapse; margin: 0; font-size: .95em; }
+.cm-writer-table th, .cm-writer-table td { padding: 6px 12px; border: 1px solid var(--ui-border); }
+.cm-writer-table th { background: var(--ui-panel2); font-weight: 700; }
+.cm-writer-table tr:nth-child(even) td { background: color-mix(in srgb, var(--ui-panel2) 45%, transparent); }
+.cm-writer-table code { padding: .1em .35em; border-radius: 4px; background: var(--ui-panel2); font-family: Consolas, "JetBrains Mono", monospace; font-size: .9em; }
 .cm-writer-table-row { padding: 0 12px !important; background: var(--ui-panel2); font-family: Consolas, "JetBrains Mono", monospace; font-size: .9em; line-height: 1.6; }
 .cm-writer-table-head { font-weight: 700; }
 .cm-writer-table-delim { color: var(--ui-muted); }
+.cm-writer-math-block { margin: .4em 0; padding: .3em 0; overflow-x: auto; text-align: center; cursor: default; }
+.cm-writer-math-block .katex-display { margin: 0; }
+.cm-writer-math { cursor: default; }
 
 html[data-theme="contrast"] .cm-writer-quote { border-left-color: #fff; }
 html[data-theme="contrast"] .cm-writer-code, html[data-theme="contrast"] .cm-writer-table-row, html[data-theme="contrast"] .cm-writer-code-inline { background: #000; outline: 1px solid #fff; }
