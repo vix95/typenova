@@ -2,6 +2,18 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.156] - 2026-11-17
+
+### Added
+
+- **A picture that comes from a link can be opened at that link.** For an image loaded from the web (not for a file of the project), the image viewer has a button for it among the controls at the top right, its right-click menu has "Open image link", and so has the right-click menu of the preview.
+- **References follow a file that is moved or renamed in the project tree.** Moving `assets/pic.png` to another folder (or renaming it, or moving a whole folder) rewrites the links and images that point at it in the open Markdown documents: `[x](…)`, `![x](…)`, `[id]: …` and `src` / `href` of HTML, relative paths and addresses written with `%20` or `<…>`; code, web addresses and anchors are left alone. A document that is moved itself gets its relative links written again from its new place. The edits are ordinary changes of the open documents (unsaved until saved, and in the undo history), and the message "Updated N references in M documents" has an Undo. It follows the setting that keeps links up to date. Files that are not open are not changed.
+
+### Fixed
+
+- **Opening a link in the browser was not allowed.** The permission for the command that opens an address (`opener:allow-open-url`) was missing in the capabilities of the window, so the host refused it ("opener.open_url not allowed"); only the scope of addresses was there. It is added, and addresses other than http, https, mailto and tel are still refused.
+- **"Could not copy the image — SecurityError: Failed to execute toBlob".** The picture was drawn on a canvas, which the web view marks as tainted when it comes from the asset protocol or from the web. The bytes are now read from the file (also for images of the Writer mode, which carry no file name, and for SVG) or fetched by the program (a new command for pictures on the web, https and http only, up to 25 MB), and decoded for the clipboard.
+
 ## [0.5.155] - 2026-11-17
 
 ### Changed

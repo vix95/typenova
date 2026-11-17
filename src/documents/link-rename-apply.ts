@@ -27,10 +27,10 @@ const liveGroup = (tab: DocumentTab) => groupsState.groups.find(group => group.v
 /** The current text of a tab: what its editor holds when it is shown, else its saved state. */
 export const textOfTab = (tab: DocumentTab): Text => (liveGroup(tab)?.view?.state ?? tab.state).doc;
 
-interface Undo { run: () => Promise<boolean> }
+export interface Undo { run: () => Promise<boolean> }
 
 /** Applies edits to an open document. Returns how to undo it, or null when the text is no longer what the plan was made from. */
-function editOpenTab(tab: DocumentTab, planned: Text, edits: FilePlan["edits"]): Undo | null {
+export function editOpenTab(tab: DocumentTab, planned: Text, edits: FilePlan["edits"]): Undo | null {
   const group = liveGroup(tab);
   const view = group?.view ?? null;
   const before = (view?.state ?? tab.state).doc;

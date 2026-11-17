@@ -6,6 +6,7 @@ mod git_sync;
 mod git_work;
 mod repo_dictionary;
 mod page_server;
+mod remote_image;
 mod secrets;
 mod spell;
 mod terminal;
@@ -446,7 +447,7 @@ pub fn run() {
         }
       }
     })
-    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, git_sync::git_sync_plan, git_sync::git_commit_push, git_work::git_work_state, git_work::git_stage, git_work::git_unstage, git_work::git_commit_staged, git_work::git_push, git_work::git_switch, git_work::git_head_text, repo_dictionary::repo_dictionary_read, repo_dictionary::repo_dictionary_write, spell::spell_check, terminal::terminal_shells, terminal::terminal_spawn, terminal::terminal_write, terminal::terminal_resize, terminal::terminal_kill, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
+    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, git_sync::git_sync_plan, git_sync::git_commit_push, git_work::git_work_state, git_work::git_stage, git_work::git_unstage, git_work::git_commit_staged, git_work::git_push, git_work::git_switch, git_work::git_head_text, remote_image::fetch_remote_image, repo_dictionary::repo_dictionary_read, repo_dictionary::repo_dictionary_write, spell::spell_check, terminal::terminal_shells, terminal::terminal_spawn, terminal::terminal_write, terminal::terminal_resize, terminal::terminal_kill, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
     .build(tauri::generate_context!())
     .expect("error while building TypeNova")
     .run(|app, event| {
