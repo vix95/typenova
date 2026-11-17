@@ -1,10 +1,13 @@
 /** The few widgets of the Writer mode: a bullet, a checkbox, a rule, a language label and an image. Each stands in for Markdown syntax that is hidden while the caret is elsewhere; clicking one puts the caret into its element, which shows the syntax again. */
 import { EditorView, WidgetType } from "@codemirror/view";
+import katex from "katex";
+import type MarkdownIt from "markdown-it";
+import { createMarkdownRenderer } from "../preview/markdown-renderer";
 import { localImageUrl } from "../preview/code-blocks";
 import { BULLET, toggledTask } from "./writer-model";
 import type { ImageSource } from "./writer-paths";
 
-function caretInto(view: EditorView, element: HTMLElement): void {
+export function caretInto(view: EditorView, element: HTMLElement): void {
   view.dispatch({ selection: { anchor: view.posAtDOM(element) } });
   view.focus();
 }
@@ -61,4 +64,38 @@ export class ImageWidget extends WidgetType {
   }
   // The height is measured again when the picture arrives.
   get estimatedHeight(): number { return 120; }
+}
+
+/** A formula drawn by KaTeX (as the preview does): `display` is a block of its own, otherwise it sits in the line. A click puts the caret in the formula, which shows its TeX again. */
+export class MathWidget extends WidgetType {
+  constructor(private readonly latex: string, private readonly display: boolean, private readonly block: boolean) { super(); }
+  eq(other: WidgetType): boolean { return other instanceof MathWidget && other.latex === this.latex && other.display === this.display && other.block === this.block; }
+  toDOM(view: EditorView): HTMLElement {
+    const host = document.createElement(this.block ? "div" : "span");
+    host.className = this.block ? "cm-writer-math-block" : "cm-writer-math";
+    try { host.innerHTML = katex.renderToString(this.latex, { displayMode: this.display, throwOnError: false, strict: "ignore", trust: false }); } catch { host.textContent = this.latex; }
+    host.addEventListener("mousedown", event => { event.preventDefault(); caretInto(view, host); });
+    return host;
+  }
+  get estimatedHeight(): number { return this.block ? 56 : -1; }
+  ignoreEvent(): boolean { return false; }
+}
+
+let renderer: MarkdownIt | null = null;
+
+/** A table drawn as a real table, by the same Markdown renderer as the preview (so the cells have their formatting, and raw HTML is never let through). A click puts the caret in the table, which shows its Markdown again. */
+export class TableWidget extends WidgetType {
+  constructor(private readonly source: string, private readonly rows: number) { super(); }
+  eq(other: WidgetType): boolean { return other instanceof TableWidget && other.source === this.source; }
+  toDOM(view: EditorView): HTMLElement {
+    renderer ??= createMarkdownRenderer();
+    const host = document.createElement("div");
+    host.className = "cm-writer-table";
+    host.innerHTML = renderer.render(this.source);
+    host.addEventListener("click", event => { if ((event.target as Element | null)?.closest("a")) event.preventDefault(); });
+    host.addEventListener("mousedown", event => { event.preventDefault(); caretInto(view, host); });
+    return host;
+  }
+  get estimatedHeight(): number { return this.rows * 30; }
+  ignoreEvent(): boolean { return false; }
 }

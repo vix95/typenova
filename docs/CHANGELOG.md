@@ -2,6 +2,36 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.156] - 2026-11-17
+
+### Added
+
+- **A picture that comes from a link can be opened at that link.** For an image loaded from the web (not for a file of the project), the image viewer has a button for it among the controls at the top right, its right-click menu has "Open image link", and so has the right-click menu of the preview.
+- **References follow a file that is moved or renamed in the project tree.** Moving `assets/pic.png` to another folder (or renaming it, or moving a whole folder) rewrites the links and images that point at it in the open Markdown documents: `[x](…)`, `![x](…)`, `[id]: …` and `src` / `href` of HTML, relative paths and addresses written with `%20` or `<…>`; code, web addresses and anchors are left alone. A document that is moved itself gets its relative links written again from its new place. The edits are ordinary changes of the open documents (unsaved until saved, and in the undo history), and the message "Updated N references in M documents" has an Undo. It follows the setting that keeps links up to date. Files that are not open are not changed.
+
+### Fixed
+
+- **Opening a link in the browser was not allowed.** The permission for the command that opens an address (`opener:allow-open-url`) was missing in the capabilities of the window, so the host refused it ("opener.open_url not allowed"); only the scope of addresses was there. It is added, and addresses other than http, https, mailto and tel are still refused.
+- **"Could not copy the image — SecurityError: Failed to execute toBlob".** The picture was drawn on a canvas, which the web view marks as tainted when it comes from the asset protocol or from the web. The bytes are now read from the file (also for images of the Writer mode, which carry no file name, and for SVG) or fetched by the program (a new command for pictures on the web, https and http only, up to 25 MB), and decoded for the clipboard.
+
+## [0.5.155] - 2026-11-17
+
+### Changed
+
+- The "Tabs" view comes before "Graph" in the row of the left panel, and the number of open documents in it is the same pill as the number of headings in "Outline".
+- The "Unsaved" mark is in the status bar at the bottom (next to the status text), not in the strip of tabs, where it made the buttons beside it jump.
+
+### Fixed
+
+- **The spelling count covers the whole document.** A document over 300,000 characters was checked only around what is on screen, and so was the count in the status bar. It is now counted in the background over the whole text (in slices, so that the window keeps answering; every different word is asked about once and the answers are kept), the count is re-made when the typing has paused, and "next error" walks over all of the mistakes. Smaller documents were already checked whole.
+- **A tab dragged out of the window left its drag ghost on the screen.** The ghost ("Release to open in a new window") is a window of its own, made on first use; when the tab was released before it existed it appeared afterwards and stayed. It is kept hidden if the drag is over, it is placed at most once per frame (it was asked for at every move of the mouse), and the new window of a torn-off document is brought to the front.
+
+## [0.5.154] - 2026-11-17
+
+### Fixed
+
+- **The Writer mode draws tables, formulas and code blocks.** A table is a real table (the same renderer as the preview, so the cells keep their bold, code and links), a `$$ … $$` formula is drawn by KaTeX as a block, and `$x$` / `$$x$$` inside a line are drawn in the line (not in code, a table or an address; `$5 and $6` stay text). The Markdown of any of them is shown again when the caret or the selection is in it (a click does that). A code block inside a quote no longer shows the `>` marks and its closing fence, a block made by indentation is one block like a fenced one, and a fenced block without a language has no empty line above it.
+
 ## [0.5.153] - 2026-11-15
 
 ### Fixed

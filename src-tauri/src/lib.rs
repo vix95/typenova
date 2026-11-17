@@ -6,6 +6,7 @@ mod git_sync;
 mod git_work;
 mod repo_dictionary;
 mod page_server;
+mod remote_image;
 mod secrets;
 mod spell;
 mod terminal;
@@ -146,7 +147,7 @@ async fn open_document_window(app: AppHandle, token: String) -> Result<(), Strin
     .inner_size(1200.0, 800.0)
     .min_inner_size(900.0, 500.0)
     .build()
-    .map(|window| { harden_webview(&window); window_fit::fit_to_work_area(&window); })
+    .map(|window| { harden_webview(&window); window_fit::fit_to_work_area(&window); let _ = window.show(); let _ = window.set_focus(); })
     .map_err(|error| error.to_string())
 }
 
@@ -215,16 +216,21 @@ fn percent_encode(text: &str) -> String {
   out
 }
 
+/// Whether the drag ghost should be on screen: set when a drag asks for it, cleared when the drag ends. Creating the ghost window takes a while (it is a web view),
+/// and the drag may be over before that: the ghost must then stay hidden once it exists, or it would hang on the screen for good.
+static GHOST_WANTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 /// Shows (creating it on first use) the drag ghost: a transparent, borderless, always-on-top window that ignores the
 /// mouse, so the dragged tab stays visible above any other window, including other TypeNova windows. `payload` is a JSON
 /// object with the texts and colours the page `ghost.html` displays.
 #[tauri::command]
 async fn drag_ghost_show(app: AppHandle, payload: String) -> Result<(), String> {
+  GHOST_WANTED.store(true, std::sync::atomic::Ordering::SeqCst);
   if let Some(ghost) = app.get_webview_window(DRAG_GHOST_LABEL) {
     let literal = serde_json::to_string(&payload).map_err(|error| error.to_string())?;
     let _ = ghost.eval(format!("window.setGhost && window.setGhost(JSON.parse({literal}))"));
     drag_ghost_follow(&app);
-    let _ = ghost.show();
+    if GHOST_WANTED.load(std::sync::atomic::Ordering::SeqCst) { let _ = ghost.show(); }
     return Ok(());
   }
   let url = format!("ghost.html#{}", percent_encode(&payload));
@@ -244,7 +250,7 @@ async fn drag_ghost_show(app: AppHandle, payload: String) -> Result<(), String> 
   harden_webview(&ghost);
   let _ = ghost.set_ignore_cursor_events(true);
   drag_ghost_follow(&app);
-  let _ = ghost.show();
+  if GHOST_WANTED.load(std::sync::atomic::Ordering::SeqCst) { let _ = ghost.show(); }
   Ok(())
 }
 
@@ -262,6 +268,7 @@ fn drag_ghost_move(app: AppHandle) {
 
 #[tauri::command]
 fn drag_ghost_hide(app: AppHandle) {
+  GHOST_WANTED.store(false, std::sync::atomic::Ordering::SeqCst);
   if let Some(ghost) = app.get_webview_window(DRAG_GHOST_LABEL) {
     let _ = ghost.hide();
   }
@@ -440,7 +447,7 @@ pub fn run() {
         }
       }
     })
-    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, git_sync::git_sync_plan, git_sync::git_commit_push, git_work::git_work_state, git_work::git_stage, git_work::git_unstage, git_work::git_commit_staged, git_work::git_push, git_work::git_switch, git_work::git_head_text, repo_dictionary::repo_dictionary_read, repo_dictionary::repo_dictionary_write, spell::spell_check, terminal::terminal_shells, terminal::terminal_spawn, terminal::terminal_write, terminal::terminal_resize, terminal::terminal_kill, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
+    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, git_sync::git_sync_plan, git_sync::git_commit_push, git_work::git_work_state, git_work::git_stage, git_work::git_unstage, git_work::git_commit_staged, git_work::git_push, git_work::git_switch, git_work::git_head_text, remote_image::fetch_remote_image, repo_dictionary::repo_dictionary_read, repo_dictionary::repo_dictionary_write, spell::spell_check, terminal::terminal_shells, terminal::terminal_spawn, terminal::terminal_write, terminal::terminal_resize, terminal::terminal_kill, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
     .build(tauri::generate_context!())
     .expect("error while building TypeNova")
     .run(|app, event| {
