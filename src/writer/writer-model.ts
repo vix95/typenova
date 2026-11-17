@@ -37,3 +37,23 @@ export function classifyLink(target: string): LinkTarget {
   try { path = decodeURIComponent(path); } catch { /* a literal percent stays */ }
   return path ? { kind: "file", path } : { kind: "none" };
 }
+
+/** The TeX of a paragraph that is one display formula (`$$ … $$`, on one line or several); null when the paragraph is anything else. */
+export function mathBlock(text: string): string | null {
+  const match = /^\s*\$\$([\s\S]+?)\$\$\s*$/.exec(text);
+  const latex = match?.[1].trim();
+  return latex && !latex.includes("$$") ? latex : null;
+}
+
+export interface InlineMath { from: number; to: number; latex: string; display: boolean }
+
+/** The formulas inside one line of text: `$x$` (the same rules as the preview: no space inside the dollars, no digit after the closing one) and `$$x$$`. */
+export function inlineMath(line: string): InlineMath[] {
+  const found: InlineMath[] = [];
+  const pattern = /\$\$(?!\s)([^$\n]+?)(?<!\s)\$\$|(?<![\\$])\$(?!\s)((?:\\.|[^$\\\n])+?)(?<!\s)\$(?![\d$])/g;
+  for (let match = pattern.exec(line); match; match = pattern.exec(line)) {
+    const display = match[1] !== undefined;
+    found.push({ from: match.index, to: match.index + match[0].length, latex: (display ? match[1] : match[2]).trim(), display });
+  }
+  return found;
+}

@@ -83,20 +83,35 @@ function ghostColors(): Record<string, string> {
  * Shows the dragged tab next to the cursor while it is outside the strip. It is a window of its own (not an element of
  * this page), so it stays visible over other TypeNova windows too; the Rust side places it at the real cursor position.
  */
+/** The request that shows the ghost, while it is on its way (the window of the ghost is made on first use and that takes a while). */
+let ghostShowing: Promise<unknown> | null = null;
+let ghostMovedAt = 0;
+/** The ghost is placed at most once per frame: a request for every move of the mouse (hundreds in a second) kept the host busy until the window did not answer. */
+const GHOST_MOVE_INTERVAL_MS = 16;
+
 function showGhost(state: Drag): void {
   const hint = state.targetWindow
     ? langText("Zwolnij, aby przenieść do tego okna", "Release to move to that window")
     : langText("Zwolnij, aby otworzyć w nowym oknie", "Release to open in a new window");
-  if (state.ghostHint === hint) { void invoke("drag_ghost_move").catch(() => undefined); return; }
+  if (state.ghostHint === hint) {
+    const now = performance.now();
+    if (now - ghostMovedAt >= GHOST_MOVE_INTERVAL_MS) { ghostMovedAt = now; void invoke("drag_ghost_move").catch(() => undefined); }
+    return;
+  }
   state.ghostHint = hint;
   const title = state.element.querySelector(".editor-tab-label")?.textContent || "";
-  void invoke("drag_ghost_show", { payload: JSON.stringify({ title, hint, colors: ghostColors() }) }).catch(() => { state.ghostHint = null; });
+  const request = invoke("drag_ghost_show", { payload: JSON.stringify({ title, hint, colors: ghostColors() }) }).catch(() => { state.ghostHint = null; });
+  ghostShowing = request;
+  void request.finally(() => { if (ghostShowing === request) ghostShowing = null; });
 }
 
 function hideGhost(state: Drag): void {
-  if (state.ghostHint === null) return;
+  const pending = ghostShowing;
+  if (state.ghostHint === null && !pending) return;
   state.ghostHint = null;
   void invoke("drag_ghost_hide").catch(() => undefined);
+  // The ghost may not exist yet; the host then keeps it hidden when it is made (and this is asked again once the request is over, to be sure).
+  if (pending) void pending.finally(() => invoke("drag_ghost_hide").catch(() => undefined));
 }
 
 /** Asks (at most every 60 ms) which other TypeNova window, if any, is under the cursor; that window shows a placeholder tab. */

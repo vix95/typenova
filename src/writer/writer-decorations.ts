@@ -4,8 +4,8 @@ import type { EditorState, Range } from "@codemirror/state";
 import { Decoration, type DecorationSet, type WidgetType } from "@codemirror/view";
 import type { SyntaxNode } from "@lezer/common";
 import { documentState } from "../documents/document-state";
-import { BulletWidget, CheckboxWidget, ImageWidget, LanguageWidget, RuleWidget } from "./writer-widgets";
-import { isTaskDone, languageLabel, touches, type Span } from "./writer-model";
+import { BulletWidget, CheckboxWidget, ImageWidget, LanguageWidget, MathWidget, RuleWidget } from "./writer-widgets";
+import { inlineMath, isTaskDone, languageLabel, touches, type Span } from "./writer-model";
 import { imageSource } from "./writer-paths";
 
 export interface WriterDecorations { shown: DecorationSet; /** What the caret must jump over (the hidden syntax). */ atomic: DecorationSet }
@@ -103,17 +103,32 @@ function fencedCode(context: Context, node: SyntaxNode, from: number, to: number
   const doc = context.state.doc;
   const first = doc.lineAt(node.from), last = doc.lineAt(node.to);
   const open = touches(context.selection, node.from, node.to);
-  const closed = last.number > first.number && /^\s*(?:```|~~~)/.test(last.text);
-  for (let number = Math.max(first.number, doc.lineAt(from).number); number <= Math.min(last.number, doc.lineAt(to).number); number++) {
-    const at = doc.line(number);
-    const edge = number === first.number ? " cm-writer-code-first" : number === last.number && closed ? " cm-writer-code-last" : "";
-    lineClass(context, at.from, `cm-writer-code${edge}${open ? "" : number === first.number || (closed && number === last.number) ? " cm-writer-fence-hidden" : ""}`);
-  }
-  if (open) return;
+  // The closing fence may sit behind the marks of a quote (`> ```).
+  const closed = last.number > first.number && /^[\s>]*(?:```|~~~)/.test(last.text);
   const info = node.getChild("CodeInfo");
   const label = info ? languageLabel(context.state.sliceDoc(info.from, info.to)) : "";
+  for (let number = Math.max(first.number, doc.lineAt(from).number); number <= Math.min(last.number, doc.lineAt(to).number); number++) {
+    const at = doc.line(number);
+    const fence = number === first.number || (closed && number === last.number);
+    const edge = number === first.number ? " cm-writer-code-first" : number === last.number && closed ? " cm-writer-code-last" : "";
+    const bare = !open && number === first.number && !label ? " cm-writer-no-label" : "";
+    lineClass(context, at.from, `cm-writer-code${edge}${open || !fence ? "" : " cm-writer-fence-hidden"}${bare}`);
+    // The code of a block inside a quote: the marks of the quote are not code.
+    const marks = !open && !fence ? /^(?:\s*>)+ ?/.exec(at.text) : null;
+    if (marks) hide(context, at.from, at.from + marks[0].length);
+  }
+  if (open) return;
   if (first.to > first.from) replaceWith(context, first.from, first.to, new LanguageWidget(label));
   if (closed && last.to > last.from) hide(context, last.from, last.to);
+}
+
+/** A block of code made by indentation (no fences): its lines are one block, like a fenced one. */
+function indentedCode(context: Context, node: SyntaxNode, from: number, to: number): void {
+  const doc = context.state.doc;
+  const first = doc.lineAt(node.from), last = doc.lineAt(node.to);
+  for (let number = Math.max(first.number, doc.lineAt(from).number); number <= Math.min(last.number, doc.lineAt(to).number); number++) {
+    lineClass(context, doc.line(number).from, `cm-writer-code${number === first.number ? " cm-writer-code-first" : ""}${number === last.number ? " cm-writer-code-last" : ""}`);
+  }
 }
 
 function rule(context: Context, node: SyntaxNode): void {
@@ -121,6 +136,8 @@ function rule(context: Context, node: SyntaxNode): void {
 }
 
 function table(context: Context, node: SyntaxNode, from: number, to: number): void {
+  // A top-level table is drawn as a table (writer-blocks.ts); its lines are styled as text only while its Markdown is shown, and for tables inside a list or a quote.
+  if (node.parent?.name === "Document" && !lineTouched(context, node.from, node.to)) return;
   const doc = context.state.doc;
   const first = doc.lineAt(node.from).number;
   for (let number = Math.max(first, doc.lineAt(from).number); number <= Math.min(doc.lineAt(node.to).number, doc.lineAt(to).number); number++) {
@@ -141,12 +158,33 @@ function blankLines(context: Context, from: number, to: number): void {
   }
 }
 
+const NOT_MATH = new Set(["FencedCode", "CodeBlock", "InlineCode", "HTMLBlock", "URL", "Table", "Image"]);
+
+/** `$x$` and `$$x$$` inside the lines of a range become formulas (the TeX again while the caret is in one); not in code, a table or an address. A display formula that is a paragraph of its own is a block (writer-blocks.ts). */
+function formulas(context: Context, from: number, to: number): void {
+  const { doc } = context.state;
+  const tree = syntaxTree(context.state);
+  for (let number = doc.lineAt(from).number; number <= doc.lineAt(to).number; number++) {
+    const row = doc.line(number);
+    if (!row.text.includes("$")) continue;
+    for (const item of inlineMath(row.text)) {
+      const start = row.from + item.from, end = row.from + item.to;
+      let skip = false;
+      for (let node: SyntaxNode | null = tree.resolveInner(start, 1); node && !skip; node = node.parent) skip = NOT_MATH.has(node.name);
+      if (skip) continue;
+      if (touches(context.selection, start, end)) context.shown.push(mark("cm-writer-syntax").range(start, end));
+      else replaceWith(context, start, end, new MathWidget(item.latex, false, false));
+    }
+  }
+}
+
 /** Decorations for the given ranges of the document (the visible ones), for the selection the state has. */
 export function buildWriterDecorations(state: EditorState, ranges: readonly Span[]): WriterDecorations {
   const context: Context = { state, selection: state.selection.ranges, shown: [], atomic: [], lines: new Set() };
   const tree = syntaxTree(state);
   for (const { from, to } of ranges) {
     blankLines(context, from, to);
+    formulas(context, from, to);
     tree.iterate({
       from, to,
       enter(ref) {
@@ -163,6 +201,7 @@ export function buildWriterDecorations(state: EditorState, ranges: readonly Span
         else if (name === "ListMark") listMark(context, node);
         else if (name === "TaskMarker") taskMarker(context, node);
         else if (name === "FencedCode") { fencedCode(context, node, from, to); return false; }
+        else if (name === "CodeBlock") { indentedCode(context, node, from, to); return false; }
         else if (name === "HorizontalRule") { rule(context, node); return false; }
         else if (name === "Table") table(context, node, from, to);
         return undefined;

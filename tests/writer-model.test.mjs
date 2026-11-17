@@ -40,3 +40,22 @@ test("links are told apart: web, file, anchor", async () => {
   assert.deepEqual(classifyLink("javascript:alert(1)"), { kind: "none" });
   assert.deepEqual(classifyLink(""), { kind: "none" });
 });
+
+import { inlineMath, mathBlock } from "../.test-build/writer/writer-model.js";
+
+test("a display formula paragraph gives its TeX, anything else gives null", () => {
+  assert.equal(mathBlock("$$\n\\frac13\n$$"), "\\frac13");
+  assert.equal(mathBlock("$$ x^2 $$"), "x^2");
+  assert.equal(mathBlock("text $$x$$"), null);
+  assert.equal(mathBlock("$$a$$ and $$b$$"), null);
+  assert.equal(mathBlock("$$$$"), null);
+});
+
+test("inline formulas follow the rules of the preview", () => {
+  assert.deepEqual(inlineMath("Euler: $e^{i\\pi}+1=0$ done").map(item => item.latex), ["e^{i\\pi}+1=0"]);
+  assert.deepEqual(inlineMath("costs $5 and $6").map(item => item.latex), []);
+  assert.deepEqual(inlineMath("a $ b $ c"), []);
+  assert.deepEqual(inlineMath("escaped \\$x\\$ here"), []);
+  const [first, second] = inlineMath("$a$ then $$b$$");
+  assert.deepEqual([first.latex, first.display, second.latex, second.display], ["a", false, "b", true]);
+});

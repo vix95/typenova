@@ -4,7 +4,7 @@ import { basename } from "../filesystem/path-utils";
 import { langText } from "../i18n/language";
 import { showToast } from "../ui/toast";
 import { localImageUrl } from "./code-blocks";
-import { attachMediaContextMenu, copyShownMedia } from "./media-context-menu";
+import { attachMediaContextMenu, copyShownMedia, imageWebAddress, openShownMediaLink } from "./media-context-menu";
 import { tiffObjectUrl } from "./tiff";
 
 const MIN_SCALE_FACTOR = 0.25;   // relative to the fitted scale
@@ -17,6 +17,7 @@ const ICONS = {
   in: '<path d="M12 5v14M5 12h14"/>',
   fit: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>',
   copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+  link: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4"/>',
   fullscreen: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
   restore: '<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>'
@@ -24,7 +25,7 @@ const ICONS = {
 
 type Viewer = {
   dialog: HTMLDialogElement; stage: HTMLElement; content: HTMLElement; caption: HTMLElement; level: HTMLElement;
-  buttons: Record<"out" | "in" | "fit" | "copy" | "fullscreen" | "close", HTMLButtonElement>;
+  buttons: Record<"out" | "in" | "fit" | "copy" | "link" | "fullscreen" | "close", HTMLButtonElement>;
 };
 const view = { scale: 1, x: 0, y: 0, fit: 1, width: 1, height: 1, maxInitial: 1, stageWidth: 0, stageHeight: 0 };
 /** Compact stage size chosen on open; restored when leaving the full-window mode. */
@@ -45,9 +46,10 @@ function createViewer(): Viewer {
   const header = document.createElement("div"); header.className = "media-viewer-header";
   const caption = document.createElement("span"); caption.className = "media-viewer-caption";
   const level = document.createElement("span"); level.className = "media-viewer-level"; level.setAttribute("aria-live", "polite");
-  const buttons = { out: iconButton("out"), in: iconButton("in"), fit: iconButton("fit"), copy: iconButton("copy"), fullscreen: iconButton("fullscreen"), close: iconButton("close") };
+  const buttons = { out: iconButton("out"), in: iconButton("in"), fit: iconButton("fit"), copy: iconButton("copy"), link: iconButton("link"), fullscreen: iconButton("fullscreen"), close: iconButton("close") };
   const tools = document.createElement("div"); tools.className = "media-viewer-tools";
-  tools.append(buttons.out, level, buttons.in, buttons.fit, buttons.copy, buttons.fullscreen);
+  buttons.link.hidden = true;
+  tools.append(buttons.out, level, buttons.in, buttons.fit, buttons.copy, buttons.link, buttons.fullscreen);
   header.append(caption, tools, buttons.close);
   const stage = document.createElement("div"); stage.className = "media-viewer-stage"; stage.tabIndex = -1;
   const content = document.createElement("div"); content.className = "media-viewer-content";
@@ -128,6 +130,7 @@ function bindViewer(v: Viewer) {
   });
   v.dialog.addEventListener("close", () => { if (isMaximized(v)) setMaximized(v, false); });
   v.buttons.copy.addEventListener("click", () => copyShownMedia(v.stage));
+  v.buttons.link.addEventListener("click", () => openShownMediaLink(v.stage));
   v.buttons.fullscreen.addEventListener("click", () => setMaximized(v, !isMaximized(v)));
   const { dialog, stage, buttons } = v;
   // A click on the backdrop targets the dialog itself; the header and the stage stay inert.
@@ -178,7 +181,7 @@ function localizeControls(v: Viewer) {
   const labels: Record<keyof Viewer["buttons"], string> = {
     out: langText("Pomniejsz", "Zoom out"), in: langText("Powiększ", "Zoom in"),
     fit: langText("Dopasuj i wyśrodkuj", "Fit and center"),
-    copy: langText("Kopiuj do schowka (obraz, a dla diagramu kod SVG)", "Copy to the clipboard (the image, or SVG code for a diagram)"), fullscreen: langText("Pełny ekran", "Full screen"), close: langText("Zamknij podgląd", "Close viewer")
+    copy: langText("Kopiuj do schowka (obraz, a dla diagramu kod SVG)", "Copy to the clipboard (the image, or SVG code for a diagram)"), link: langText("Otwórz link obrazu w przeglądarce", "Open the image link in the browser"), fullscreen: langText("Pełny ekran", "Full screen"), close: langText("Zamknij podgląd", "Close viewer")
   };
   for (const key of Object.keys(labels) as (keyof typeof labels)[]) { v.buttons[key].setAttribute("aria-label", labels[key]); v.buttons[key].dataset.tooltip = labels[key]; }
   updateFullscreenButton(v);
@@ -195,6 +198,8 @@ function openViewer(element: HTMLElement, width: number, height: number, label: 
   v.dialog.setAttribute("aria-label", label); v.caption.textContent = label;
   element.style.width = `${width}px`; element.style.height = `${height}px`;
   v.content.replaceChildren(element);
+  // A picture that comes from a link on the web can be opened at that link.
+  v.buttons.link.hidden = !(element instanceof HTMLImageElement && imageWebAddress(element));
   view.width = width; view.height = height; view.maxInitial = maxInitial;
   // Size the stage to the fitted content so small media gets a compact dialog and large media fills the window.
   const availWidth = Math.max(STAGE_MIN.width, window.innerWidth - 64), availHeight = Math.max(STAGE_MIN.height, window.innerHeight - 64 - 48);

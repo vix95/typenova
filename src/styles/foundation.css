@@ -2224,6 +2224,7 @@ dialog.media-viewer .media-viewer-tools{display:flex;align-items:center;gap:2px;
 dialog.media-viewer .media-viewer-level{min-width:48px;text-align:center;color:var(--ui-muted);font-size:12px;font-variant-numeric:tabular-nums}
 dialog.media-viewer .media-viewer-button{flex:none;width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--ui-muted);cursor:pointer;transition:background-color .12s,color .12s,border-color .12s}
 dialog.media-viewer .media-viewer-button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+dialog.media-viewer .media-viewer-button[hidden]{display:none}
 dialog.media-viewer .media-viewer-button:hover{background:var(--ui-hover);color:var(--ui-text);border-color:var(--ui-border)}
 dialog.media-viewer .media-viewer-button:active{background:var(--ui-active)}
 dialog.media-viewer .media-viewer-button.is-active{background:var(--ui-active);color:var(--ui-text);border-color:var(--ui-border)}

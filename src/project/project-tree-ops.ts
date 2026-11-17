@@ -10,6 +10,7 @@ import { activeSidebarTab } from "../app/sidebar";
 import { documentState } from "../documents/document-state";
 import { markProjectTreeSelection } from "../documents/file-actions";
 import { activeTab, renderTabs } from "../documents/tabs";
+import { announceReferenceUpdate, openDocumentPaths, updateReferencesAfterMove } from "../documents/move-references";
 import { buildGraph } from "../graph-ui/indexing";
 import { langText } from "../i18n/language";
 import { renderProjectTree } from "./project-tree-view";
@@ -33,10 +34,13 @@ export const projectTreeController = createProjectTreeController({
 });
 function remapOpenProjectPaths(oldPath: string, newPath: string) {
   const mapPath = (path: string) => remapPathPrefix(path, oldPath, newPath);
+  const openBefore = openDocumentPaths();
   for (const tab of documentState.tabs) { if (tab.path) { const next = mapPath(tab.path); if (next !== tab.path) { tab.path = next; tab.label = basename(next); } } }
   if (documentState.currentPath) documentState.currentPath = mapPath(documentState.currentPath);
   const active = activeTab(); if (active && active.path) { documentState.currentPath = active.path; documentState.untitledLabel = active.label; }
   renderTabs();
+  // The links and images of the open documents that point at what moved (or that moved themselves) follow it.
+  updateReferencesAfterMove(openBefore, { from: oldPath, to: newPath });
 }
 export function markTreeClipboardState() {
   document.querySelectorAll<HTMLElement>("#projectFiles .tree-entry").forEach(row => {
@@ -61,6 +65,7 @@ export async function performTreeRename(path: string, newName: string): Promise<
   markProjectTreeSelection(documentState.currentPath);
   if (activeSidebarTab === "brain") void buildGraph();
   showToast(`${langText("Zmieniono nazwę", "Renamed")}: ${basename(destination)}`);
+  announceReferenceUpdate();
   return destination;
 }
 
@@ -77,4 +82,5 @@ export async function performTreeMoveOrCopy(source: string, destinationFolder: s
   showToast(result.status === "moved"
     ? `${langText("Przeniesiono", "Moved")}: ${basename(result.destination)}`
     : `${langText("Utworzono kopię", "Created copy")}: ${basename(result.destination)}`);
+  announceReferenceUpdate();
 }

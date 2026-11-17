@@ -6,7 +6,7 @@ import { langText } from "../i18n/language";
 import { showToast } from "../ui/toast";
 import { prepareSpellSectionFor } from "./spell-menu";
 import { setSpellEnabled, spellEnabled } from "./spell-settings";
-import { misspelledAt, misspelledRanges } from "./spellcheck";
+import { misspelledAt, misspelledRanges, wholeDocumentRanges } from "./spellcheck";
 
 /** Opens the context menu for the misspelled word at the caret (the word the caret is in or right after). */
 export function openSpellSuggestionsAtCaret(): void {
@@ -24,7 +24,7 @@ export function openSpellSuggestionsAtCaret(): void {
 
 /** Goes to the next (1) or previous (-1) misspelled word, continuing from the end to the start of the document. */
 export function goToMisspelling(direction: 1 | -1): void {
-  const found = misspelledRanges(view.state);
+  const found = wholeDocumentRanges(view.state) ?? misspelledRanges(view.state);
   if (!found.length) { showToast(spellEnabled() ? langText("Nie znaleziono błędów pisowni.", "No spelling mistakes found.") : langText("Sprawdzanie pisowni jest wyłączone.", "Spell checking is off.")); return; }
   const range = view.state.selection.main;
   const target = direction === 1

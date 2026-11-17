@@ -2,7 +2,7 @@
 import { preview } from "../app/workspace-dom";
 import { langText } from "../i18n/language";
 import { copyTextToClipboard } from "./code-blocks";
-import { copyImage } from "./media-context-menu";
+import { copyImage, imageWebAddress, openImageLink } from "./media-context-menu";
 import { showToast } from "../ui/toast";
 
 let previewContextSelection = "";
@@ -27,6 +27,7 @@ function showPreviewContextMenu(event: MouseEvent) {
     if (shortcut) { const key = document.createElement("kbd"); key.textContent = shortcut; button.append(key); } menu.append(button); return button;
   };
   if (previewContextImage) add(langText("Kopiuj obraz", "Copy image"), "image");
+  if (imageWebAddress(previewContextImage)) add(langText("Otwórz link obrazu", "Open image link"), "image-link");
   // With an image under the pointer the selection entry only shows up when there is something selected.
   if (!previewContextImage || previewContextSelection.trim()) add(langText("Kopiuj zaznaczenie", "Copy selection"), "selection", !previewContextSelection.trim(), "Ctrl+C");
   if (previewContextCodeText !== null) add(langText("Kopiuj kod", "Copy code"), "code", false);
@@ -43,6 +44,7 @@ export function initPreviewContextMenu(): void {
     const button = (event.target as Element | null)?.closest<HTMLButtonElement>("button[data-preview-context]"); if (!button || button.disabled) return;
     previewContextMenu.hidden = true;
     if (button.dataset.previewContext === "image") { if (previewContextImage) await copyImage(previewContextImage); return; }
+    if (button.dataset.previewContext === "image-link") { await openImageLink(previewContextImage); return; }
     const text = button.dataset.previewContext === "code" ? (previewContextCodeText || "") : previewContextSelection;
     const copied = await copyTextToClipboard(text);
     showToast(copied ? langText("Skopiowano do schowka.", "Copied to clipboard.") : langText("Nie udało się skopiować treści.", "Could not copy the content."));
