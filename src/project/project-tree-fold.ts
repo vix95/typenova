@@ -1,5 +1,6 @@
 /** Expand all / collapse all for the Project tree. */
-import { readDir } from "@tauri-apps/plugin-fs";
+import type { readDir } from "@tauri-apps/plugin-fs";
+import { readVisibleDir } from "./own-files-setting";
 import { join } from "@tauri-apps/api/path";
 import { documentState } from "../documents/document-state";
 import { langText } from "../i18n/language";
@@ -26,7 +27,7 @@ export async function expandAllFolders(): Promise<void> {
   while (queue.length && !cut) {
     const directory = queue.shift()!;
     let entries: Awaited<ReturnType<typeof readDir>>;
-    try { entries = await readDir(directory); } catch { continue; }
+    try { entries = await readVisibleDir(directory); } catch { continue; }
     if (mine !== latest) return;
     for (const entry of entries) {
       if (!entry.isDirectory || SKIPPED_FOLDERS.has(entry.name)) continue;

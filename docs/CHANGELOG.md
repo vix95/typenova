@@ -2,6 +2,23 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.168] - 2026-11-25
+
+### Added
+
+- **Setting "Hide TypeNova's files", on by default.** The project tree, "expand all", image-path completion and the folder choice of a pasted image no longer list the files the program writes itself: `name.md.config.json` beside a document, `typenova.config.json` and the `.typenova` folder. The files stay on disk and keep working; turning the setting off shows them again.
+
+### Changed
+
+- **A document's config file now follows it** when the document is moved (drag and drop, cut and paste), copied, duplicated or deleted in the tree, not only when it is renamed, so hidden sections, bookmarks and highlights are not left behind where the hidden file can no longer be seen. A file already at the new name is never overwritten, and renaming a folder never takes a look-alike file with it.
+- The agent instructions require every change to be thought through and verified in the running application.
+
+### Fixed
+
+- **The status bar kept saying "Checking for updates…" after the check had ended.** When the check or download finishes the line shows again what it showed before (a message written in the meantime is left alone).
+- **"What's new" did not appear after an update.** It now opens once by itself at the first start in a new version, in the main window only and not on a fresh install (the program tells the two apart by whether it had been closed here before); when another dialog is open at the start it waits for it to close. The shown version is remembered, so it does not repeat.
+- **A tooltip could appear over a control the focus had already left** (for example the cross of a dialog that moves the focus to its button when it opens). A tooltip waiting for its delay is now cancelled when its control loses the focus.
+
 ## [0.5.167] - 2026-11-25
 
 ### Fixed

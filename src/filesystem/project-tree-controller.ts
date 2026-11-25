@@ -10,6 +10,7 @@ import {
   type ProjectTreeFileSystem,
 } from "./project-tree-operations.js";
 import { isProjectRoot, rootContaining } from "./project-roots.js";
+import { COMPANION_SUFFIXES } from "../project/own-files.js";
 import type { ProjectTreeState, TreeClipboard, ProjectTreeTarget } from "./project-tree-state.js";
 
 export interface ProjectTreeControllerFileSystem extends ProjectTreeFileSystem {
@@ -98,6 +99,26 @@ export class ProjectTreeController {
   }
 
   /**
+   * After a document was moved, copied or deleted, does the same to its companion files (`notes.md.config.json`, see `own-files.ts`), which are usually hidden
+   * from the tree and could not be carried by hand. The document's own operation has already succeeded, so a companion that cannot follow (or whose new name
+   * is taken) stays where it is rather than failing the whole operation.
+   */
+  private async followCompanions(source: string, destination: string | null, mode: "move" | "copy" | "remove"): Promise<void> {
+    const fs = this.options.fs;
+    for (const suffix of COMPANION_SUFFIXES) {
+      const from = `${source}${suffix}`;
+      try {
+        if (!await fs.exists(from)) continue;
+        if (mode === "remove" || destination === null) { await fs.remove(from); continue; }
+        const to = `${destination}${suffix}`;
+        if (await fs.exists(to)) continue;
+        if (mode === "copy") { await fs.copyFile(from, to); continue; }
+        try { await fs.rename(from, to); } catch { await fs.copyFile(from, to); await fs.remove(from); }
+      } catch { /* the companion stays where it was */ }
+    }
+  }
+
+  /**
    * Move/copy with collision-safe naming. The rename fallback copies before deleting the source;
    * if source removal fails after a completed copy, only that operation's destination is rolled back.
    * Recursive partial-directory cleanup is handled by copyTreeEntry.
@@ -159,6 +180,7 @@ export class ProjectTreeController {
           throw fallbackError;
         }
       }
+      if (!isDirectory) await this.followCompanions(source, destination, "move");
       this.remapStatePaths(source, destination);
       this.options.onPathMoved?.(source, destination);
       if (this.state.clipboard?.operation === "cut" && normalizedFsPath(this.state.clipboard.path) === normalizedFsPath(destination)) {
@@ -169,12 +191,13 @@ export class ProjectTreeController {
     }
 
     await copyTreeEntry(source, destination, isDirectory, this.options.fs, this.options.getAlreadyExistsMessage());
+    if (!isDirectory) await this.followCompanions(source, destination, "copy");
     this.state.expandedFolders.add(destinationFolder);
     return { status: "copied", source, destination };
   }
 
   /** Renames an entry inside its own folder; the name must not be taken (a change of letter case only is allowed). */
-  async renameEntry(path: string, newName: string): Promise<string> {
+  async renameEntry(path: string, newName: string, isDirectory: boolean): Promise<string> {
     const roots = this.roots();
     if (!roots.length) throw new Error(this.options.getProjectRequiredMessage());
     if (isProjectRoot(roots, path)) throw new Error(this.options.getProjectRootMutationMessage());
@@ -183,6 +206,8 @@ export class ProjectTreeController {
     const onlyCaseChanged = normalizedFsPath(destination).toLowerCase() === normalizedFsPath(path).toLowerCase();
     if (!onlyCaseChanged && await this.options.fs.exists(destination)) throw new Error(this.options.getAlreadyExistsMessage());
     await this.options.fs.rename(path, destination);
+    // A folder has no companions: a person's `webpack.config.json` beside a folder `webpack` must not be renamed with it.
+    if (!isDirectory) await this.followCompanions(path, destination, "move");
     this.remapStatePaths(path, destination);
     this.options.onPathMoved?.(path, destination);
     return destination;
@@ -197,6 +222,7 @@ export class ProjectTreeController {
     }
     if (!rootContaining(roots, path)) throw new Error(this.options.getOutsideProjectMessage());
     await removeTreeEntry(path, isDirectory, this.options.fs);
+    if (!isDirectory) await this.followCompanions(path, null, "remove");
     this.forgetRemovedPath(path, isDirectory);
   }
 

@@ -1,5 +1,5 @@
 /** Keeps the project tree in step with the disk: files added, renamed or removed outside TypeNova show up without reopening the folder. */
-import { readDir } from "@tauri-apps/plugin-fs";
+import { readVisibleDir } from "./own-files-setting";
 import { $ } from "../app/dom";
 import { documentState } from "../documents/document-state";
 import { markProjectTreeSelection } from "../documents/file-actions";
@@ -45,7 +45,8 @@ export async function refreshProjectTree(): Promise<void> {
 
 async function signatureOf(directory: string): Promise<string | null> {
   try {
-    const entries = await readDir(directory);
+    // What the tree shows: a hidden file of TypeNova written meanwhile (hiding a section) does not rebuild the tree.
+    const entries = await readVisibleDir(directory);
     return entries.map(entry => `${entry.isDirectory ? "d" : "f"}:${entry.name}`).sort().join("|");
   } catch { return null; }
 }

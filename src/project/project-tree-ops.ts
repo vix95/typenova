@@ -57,9 +57,9 @@ export function setTreeClipboard(path: string, operation: "copy" | "cut", isDire
     ? `${langText("Skopiowano do schowka TypeNova", "Copied to TypeNova's file clipboard")}: ${label}. ${langText("Kliknij prawym przyciskiem folder docelowy i wybierz Wklej.", "Right-click a destination folder and choose Paste.")}`
     : `${langText("Wycięto", "Cut")}: ${label}. ${langText("Kliknij prawym przyciskiem folder docelowy i wybierz Wklej.", "Right-click a destination folder and choose Paste.")}`);
 }
-/** Renames an entry in place, refreshes the tree and keeps open tabs pointing at the new path. */
-export async function performTreeRename(path: string, newName: string): Promise<string> {
-  const destination = await projectTreeController.renameEntry(path, newName);
+/** Renames an entry in place (a document with its config file beside it), refreshes the tree and keeps open tabs pointing at the new path. */
+export async function performTreeRename(path: string, newName: string, isDirectory: boolean): Promise<string> {
+  const destination = await projectTreeController.renameEntry(path, newName, isDirectory);
   await renderProjectTree();
   markTreeClipboardState();
   markProjectTreeSelection(documentState.currentPath);

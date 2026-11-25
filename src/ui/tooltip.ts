@@ -8,6 +8,8 @@ const appTooltipShortcut = document.createElement("kbd");
 const appTooltipImage = document.createElement("img");
 let tooltipTarget: HTMLElement | null = null;
 let tooltipTimer: number | undefined;
+/** The element whose tooltip waits for its delay; it is cancelled when that element loses the focus before it appears. */
+let tooltipPending: HTMLElement | null = null;
 let tooltipToken = 0;
 let tooltipPreviousDescribedBy: string | null = null;
 function translatedTooltip(value: string) {
@@ -61,6 +63,7 @@ export function showAppTooltip(target: HTMLElement, delay = 420, preferredPlacem
   if (!text || target.matches(":disabled,[hidden]") || target.closest("[hidden]")) return;
   if (window.matchMedia("(pointer: coarse)").matches && document.activeElement !== target) return;
   if (tooltipTimer !== undefined) window.clearTimeout(tooltipTimer);
+  tooltipPending = target;
   const token = ++tooltipToken;
   const present = (withThumbnail: boolean) => {
     hideAppTooltip();
@@ -173,6 +176,8 @@ export function initTooltips(): void {
     const leaving = tooltipTargetFromEvent(event.target);
     const entering = tooltipTargetFromEvent(event.relatedTarget);
     if (leaving && leaving !== entering && leaving === tooltipTarget) hideAppTooltip();
+    // A tooltip still waiting for its delay must not appear over an element the focus has already left (a dialog that moves the focus at once).
+    else if (leaving && leaving !== entering && leaving === tooltipPending && tooltipTimer !== undefined) { window.clearTimeout(tooltipTimer); tooltipTimer = undefined; tooltipPending = null; tooltipToken++; }
   });
   window.addEventListener("resize", hideAppTooltip);
   window.addEventListener("scroll", hideAppTooltip, true);

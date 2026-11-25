@@ -3,7 +3,7 @@ import { CompletionContext, type Completion, startCompletion } from "@codemirror
 import { isMarkdownPath } from "../filesystem/path-utils";
 import { syntaxTree } from "@codemirror/language";
 import { pathIsInside } from "../filesystem/project-tree-operations";
-import { readDir } from "@tauri-apps/plugin-fs";
+import { readVisibleDir } from "../project/own-files-setting";
 import { EditorView } from "@codemirror/view";
 import { documentState } from "../documents/document-state";
 import { encodeMarkdownImagePath, parentDirectoryPath } from "./image-insert";
@@ -74,7 +74,7 @@ let directoryCache: { path: string; at: number; entries: { name: string; isDirec
 async function readCompletionDirectory(path: string): Promise<{ name: string; isDirectory?: boolean }[] | null> {
   if (directoryCache && directoryCache.path === path && Date.now() - directoryCache.at < DIRECTORY_CACHE_MS) return directoryCache.entries;
   try {
-    const entries = await readDir(path);
+    const entries = await readVisibleDir(path);
     directoryCache = { path, at: Date.now(), entries };
     return entries;
   } catch { return null; }
