@@ -1,13 +1,7 @@
-/** Pure rules of the update check: when the start of the program should ask GitHub again, how far a download is, and the note of a release as one short line. */
+/** Pure rules of the update check: how often an open program asks again, how far a download is, and the note of a release as one short line. */
 
-export const CHECK_INTERVAL_MS = 12 * 60 * 60 * 1000;
-
-/** Whether the check at the start is due: never done, done longer ago than the interval, or the clock went back. */
-export function checkIsDue(lastCheck: number | null, now: number, interval = CHECK_INTERVAL_MS): boolean {
-  if (lastCheck === null || !Number.isFinite(lastCheck)) return true;
-  const age = now - lastCheck;
-  return age < 0 || age >= interval;
-}
+/** While the program stays open it asks again this often (it also asks at every start). */
+export const RECHECK_MS = 6 * 60 * 60 * 1000;
 
 /** Whole percent of a download, or null when the size is not known. */
 export function downloadPercent(downloaded: number, total: number | null | undefined): number | null {

@@ -2,6 +2,16 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.167] - 2026-11-25
+
+### Fixed
+
+- **A new version was not announced when the program had been started shortly before.** The check at the start was skipped for 12 hours after the last check, so a release made in between was missed until the next day. The check is now made at every start (after a few seconds) and again every 6 hours while the program stays open.
+
+### Changed
+
+- **A check that nobody asked for announces a new version at the corner of the window** ("A new version of TypeNova is available" with an "Update" button, for 45 seconds, also in the status bar), so it does not interrupt the work; the button opens the confirmation. A check made by hand (Help → "Check for updates") still opens the confirmation at once.
+
 ## [0.5.166] - 2026-11-25
 
 ### Changed

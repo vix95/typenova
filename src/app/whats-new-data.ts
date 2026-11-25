@@ -10,6 +10,7 @@ export interface NewsEntry {
 
 /** The entries shown; add the new version at the top and the list keeps the last five. */
 const ENTRIES: readonly NewsEntry[] = [
+  { version: "0.5.167", date: "2026-11-25", pl: "Powiadomienie o nowej wersji w rogu okna i częstsze sprawdzanie.", en: "A notice of a new version at the corner of the window, and more frequent checks." },
   { version: "0.5.166", date: "2026-11-25", pl: "Nowości w dużym oknie z datami i wyraźniejsze sprawdzanie aktualizacji.", en: "A large What's new window with dates, and a clearer update check." },
   { version: "0.5.165", date: "2026-11-25", pl: "Automatyczne aktualizacje: nowe wersje instalują się po potwierdzeniu.", en: "Automatic updates: new versions install after you confirm." },
   { version: "0.5.164", date: "2026-11-25", pl: "Czytelniejszy graf gałęzi w oknie Git.", en: "A clearer branch graph in the Git window." },
