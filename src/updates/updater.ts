@@ -5,18 +5,21 @@ import { $ } from "../app/dom";
 import { documentState } from "../documents/document-state";
 import { langText } from "../i18n/language";
 import { appAlert, appConfirm } from "../ui/dialogs";
-import { showToast } from "../ui/toast";
-import { checkIsDue, downloadPercent, releaseNote } from "./update-model";
-import { lastUpdateCheck, rememberUpdateCheck, setUpdateCheckEnabled, updateCheckEnabled } from "./update-settings";
+import { showActionToast, showToast } from "../ui/toast";
+import { RECHECK_MS, downloadPercent, releaseNote } from "./update-model";
+import { setUpdateCheckEnabled, updateCheckEnabled } from "./update-settings";
 
 interface UpdateInfo { version: string; current: string; notes: string }
 type Phase = "idle" | "checking" | "downloading";
 
 const START_DELAY_MS = 6000;
+/** How long the notice of a new version stays at the corner of the window. */
+const NOTICE_MS = 45000;
 /** A manual check that finishes at once is still shown for this long, so that the person sees that something was done. */
 const MIN_VISIBLE_MS = 700;
 const sleep = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms));
 let busy = false;
+let offering = false;
 
 /** The bars: one at the top of the window (for the checks made at the start and from the menu) and one in the settings, under the button. */
 function bars(): HTMLElement[] { return [...document.querySelectorAll<HTMLElement>(".update-bar")]; }
@@ -57,6 +60,12 @@ async function install(info: UpdateInfo): Promise<void> {
 
 /** Tells the person about the new version and goes on only when they agree and nothing unsaved would be lost. */
 async function offer(info: UpdateInfo): Promise<void> {
+  if (offering) return;
+  offering = true;
+  try { await askAndInstall(info); } finally { offering = false; }
+}
+
+async function askAndInstall(info: UpdateInfo): Promise<void> {
   const note = releaseNote(info.notes);
   const intro = langText(`Dostępna jest nowa wersja TypeNova ${info.version} (masz ${info.current}).`, `A new version of TypeNova is available: ${info.version} (you have ${info.current}).`);
   const outro = langText("Program zamknie się, zaktualizuje i uruchomi ponownie. Ustawienia zostaną zachowane.", "The program will close, update and start again. Your settings are kept.");
@@ -72,16 +81,21 @@ async function offer(info: UpdateInfo): Promise<void> {
   }
 }
 
+/** A check that nobody asked for found a new version: a notice at the corner of the window (it does not interrupt the work) whose button opens the confirmation. */
+function announce(info: UpdateInfo): void {
+  $("statusText").textContent = langText(`Dostępna nowa wersja TypeNova ${info.version}.`, `A new version of TypeNova is available: ${info.version}.`);
+  showActionToast(langText(`Dostępna nowa wersja TypeNova ${info.version}.`, `A new version of TypeNova is available: ${info.version}.`), langText("Aktualizuj", "Update"), () => { void offer(info); }, NOTICE_MS);
+}
+
 /** One check. At the start it is silent when nothing is found or the network fails; from the menu it always answers. */
 async function checkNow(manual: boolean): Promise<void> {
   if (busy) return;
   busy = true;
   showPhase("checking");
   try {
-    rememberUpdateCheck(Date.now());
     const [info] = await Promise.all([invoke<UpdateInfo | null>("update_check"), manual ? sleep(MIN_VISIBLE_MS) : Promise.resolve()]);
     showPhase("idle");
-    if (info) await offer(info);
+    if (info) { if (manual) await offer(info); else announce(info); }
     else if (manual) showToast(langText("Masz najnowszą wersję TypeNova.", "TypeNova is up to date."));
   } catch (error) {
     showPhase("idle");
@@ -104,5 +118,6 @@ export function installUpdater(): void {
       : langText("TypeNova nie będzie sprawdzać aktualizacji. Możesz to zrobić ręcznie w menu Pomoc.", "TypeNova will not check for updates. You can do it by hand in the Help menu.");
   });
   const extraWindow = new URLSearchParams(location.search).has("detach");
-  if (!extraWindow && updateCheckEnabled() && checkIsDue(lastUpdateCheck(), Date.now())) window.setTimeout(() => { if (updateCheckEnabled()) void checkNow(false); }, START_DELAY_MS);
+  if (!extraWindow && updateCheckEnabled()) window.setTimeout(() => { if (updateCheckEnabled()) void checkNow(false); }, START_DELAY_MS);
+  if (!extraWindow) window.setInterval(() => { if (updateCheckEnabled()) void checkNow(false); }, RECHECK_MS);
 }

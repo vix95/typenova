@@ -1,14 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CHECK_INTERVAL_MS, checkIsDue, downloadPercent, releaseNote } from "../.test-build/updates/update-model.js";
+import { RECHECK_MS, downloadPercent, releaseNote } from "../.test-build/updates/update-model.js";
 
-test("the check at the start is done when it was never done or the interval has passed", () => {
-  const now = 1_000_000_000_000;
-  assert.equal(checkIsDue(null, now), true);
-  assert.equal(checkIsDue(now - 1000, now), false);
-  assert.equal(checkIsDue(now - CHECK_INTERVAL_MS, now), true);
-  assert.equal(checkIsDue(now + 5000, now), true, "a clock that went back asks again");
-  assert.equal(checkIsDue(Number.NaN, now), true);
+test("an open program asks again every few hours, not more often than every hour", () => {
+  assert.ok(RECHECK_MS >= 60 * 60 * 1000 && RECHECK_MS <= 24 * 60 * 60 * 1000);
 });
 
 test("the progress of a download is whole percent, and unknown without a size", () => {
