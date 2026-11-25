@@ -2,6 +2,14 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.160] - 2026-11-25
+
+### Changed
+
+- **The installer updates an installed TypeNova in place.** When an older (or the same) version is installed, the installer no longer asks "Uninstall before installing" and no longer uninstalls and installs again: it replaces the files and keeps everything else as it is. The settings of the program, the shortcuts, the pins to the Start menu and the taskbar and the file associations stay. The files the previous version installed and the new one does not are removed (the installer writes the list of its files, `installed-files.txt`, into the folder of the program). Only a downgrade, or a migration from an installation made with the MSI file, still asks.
+- **An uninstall that is still needed runs in the background.** It is silent, it is made as an update (`/UPDATE`), so it leaves the settings, the shortcuts and the pins alone; an MSI installation is removed with `/qn /norestart`.
+- The installer is made from a copy of the template of the Tauri bundler (`src-tauri/installer.nsi`) in which the three changes are marked "TypeNova:".
+
 ## [0.5.159] - 2026-11-25
 
 ### Added
