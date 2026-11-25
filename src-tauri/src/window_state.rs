@@ -59,7 +59,9 @@ fn on_some_monitor(window: &WebviewWindow, state: &WindowState) -> bool {
 /// Puts the main window back as it was left. A place that is no longer on a screen is dropped (the size is kept).
 pub fn restore(app: &AppHandle, window: &WebviewWindow) {
   let Some(state) = state_path(app).and_then(|path| read(&path)) else { return };
-  let _ = window.set_size(PhysicalSize::new(state.width, state.height));
+  // The saved size is the outer one (with the frame); the size to set is the one of the page, so the frame is taken off, or the window would grow at every start.
+  let frame = match (window.outer_size(), window.inner_size()) { (Ok(outer), Ok(inner)) => (outer.width.saturating_sub(inner.width), outer.height.saturating_sub(inner.height)), _ => (0, 0) };
+  let _ = window.set_size(PhysicalSize::new(state.width.saturating_sub(frame.0).max(1), state.height.saturating_sub(frame.1).max(1)));
   if on_some_monitor(window, &state) { let _ = window.set_position(PhysicalPosition::new(state.x, state.y)); }
   if let Ok(mut current) = CURRENT.lock() { *current = Some(state); }
   if state.fullscreen { let _ = window.set_fullscreen(true); } else if state.maximized { let _ = window.maximize(); }
@@ -74,11 +76,14 @@ pub fn track(window: &WebviewWindow) {
   state.fullscreen = fullscreen;
   if !maximized && !fullscreen && !window.is_minimized().unwrap_or(false) {
     if let (Ok(size), Ok(position)) = (window.outer_size(), window.outer_position()) {
-      (state.x, state.y, state.width, state.height) = (position.x, position.y, size.width, size.height);
+      // The events of a window that is becoming maximized can arrive before it says so: a size that covers the whole work area of the screen is not a normal size.
+      let covers_screen = matches!(window.current_monitor(), Ok(Some(monitor)) if size.width >= monitor.work_area().size.width && size.height >= monitor.work_area().size.height);
+      if !covers_screen { (state.x, state.y, state.width, state.height) = (position.x, position.y, size.width, size.height); }
     }
   }
-  // A state that never had a normal size (the first start, maximized at once) is not worth saving yet.
-  if state.width >= MIN_WIDTH { *current = Some(state); }
+  // A window that was maximized before it ever had a normal size gets the size it opens with.
+  if state.width < MIN_WIDTH { (state.x, state.y, state.width, state.height) = (100, 100, 1665, 896); }
+  *current = Some(state);
 }
 
 /// Writes the last known state; called when the main window closes.

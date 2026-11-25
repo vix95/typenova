@@ -2,6 +2,12 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.163] - 2026-11-25
+
+### Fixed
+
+- Leaving the maximized mode of the main window returned it to the size of the whole screen instead of the size it had before; the normal size is now kept. A window that was maximized before it ever had a normal size opens at its usual size when restored.
+
 ## [0.5.162] - 2026-11-25
 
 ### Fixed
