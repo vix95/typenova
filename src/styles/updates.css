@@ -1,0 +1,28 @@
+/* Updates (src/updates/updater.ts): the turning icon of "Check now" and the bar that shows the check and the download. */
+#updateCheckNow .button-icon { transform-origin: 50% 50%; }
+#updateCheckNow.is-checking .button-icon { animation: update-spin 900ms linear infinite; }
+#updateCheckNow:disabled { cursor: progress; }
+/* While it checks the button is not dimmed like a disabled one: the turning icon is what the person should see. */
+#updateCheckNow.is-checking:disabled { opacity: 1; }
+@keyframes update-spin { to { transform: rotate(360deg); } }
+
+.update-bar { position: relative; height: 4px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--ui-accent) 20%, transparent); }
+.update-bar[hidden] { display: none; }
+.update-bar::before { content: ""; position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--ui-accent); }
+.update-bar[data-state="determinate"]::before { width: var(--progress, 0%); transition: width 160ms linear; }
+.update-bar[data-state="indeterminate"]::before { width: 38%; animation: update-sweep 1.15s ease-in-out infinite; }
+@keyframes update-sweep { from { transform: translateX(-105%); } to { transform: translateX(270%); } }
+/* The bar at the top of the window shows the checks made at the start and from the menu; it sits above the application, below the open dialogs. */
+.update-bar-top { position: fixed; top: 0; left: 0; right: 0; z-index: 7000; height: 3px; border-radius: 0; }
+#updateCheckBarSlot { margin-top: 10px; }
+#updateCheckBarSlot:empty { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  #updateCheckNow.is-checking .button-icon { animation: none; }
+  .update-bar[data-state="indeterminate"]::before { width: 100%; animation: none; opacity: .55; }
+  .update-bar[data-state="determinate"]::before { transition: none; }
+}
+@media (forced-colors: active) {
+  .update-bar { border: 1px solid CanvasText; background: Canvas; }
+  .update-bar::before { background: Highlight; }
+}

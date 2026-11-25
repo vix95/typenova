@@ -2,6 +2,13 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.166] - 2026-11-25
+
+### Changed
+
+- **"What's new" is a large modal window with the date of every release.** It opens from Help → "What's new" in the style of the settings window, lists the last five versions (the newest marked "Latest") with the day each was released, written in the language of the program, and closes with its button, the cross or Escape. It replaces the small panel that stayed beside the work.
+- **The update check shows that it works.** The icon of "Check now" turns and the button waits while a check is made, and a bar runs: at the top of the window for the checks made at the start and from the menu, and under the button in the settings. It is endless while the program asks GitHub and fills while the update is downloaded (the status bar says the percent). A check made by hand is shown for at least a moment even when the answer is at once. With reduced motion the icon does not turn and the bar stands still.
+
 ## [0.5.165] - 2026-11-25
 
 ### Added
