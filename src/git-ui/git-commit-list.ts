@@ -1,7 +1,7 @@
 /** The commit list of the Git panel: rows with the graph, reference labels, author, date and hash, loaded page by page. */
 import { langText } from "../i18n/language";
 import { gitLog, type GitCommit } from "./git-api";
-import { classifyRefs, layoutGraph, relativeTime, shortHash, type GraphRow, type GraphState } from "./git-graph";
+import { classifyRefs, graphCommit, layoutGraph, relativeTime, shortHash, type GraphRow, type GraphState } from "./git-graph";
 
 const PAGE = 200, LANE_WIDTH = 14, ROW_HEIGHT = 28, MAX_LANES = 10;
 
@@ -28,7 +28,14 @@ function buildRow(commit: GitCommit, row: GraphRow, width: number, remotes: Read
   const item = el("div", "git-row"); item.setAttribute("role", "option"); item.setAttribute("aria-selected", "false"); item.dataset.hash = commit.hash;
   item.insertAdjacentHTML("afterbegin", graphSvg(row, commit, width));
   const message = el("div", "git-subject");
-  for (const ref of classifyRefs(commit.refs, remotes)) message.append(el("span", `git-ref ${ref.kind}${ref.current ? " current" : ""}`, ref.label));
+  for (const ref of classifyRefs(commit.refs, remotes)) {
+    const badge = el("span", `git-ref ${ref.kind}${ref.current ? " current" : ""}`, ref.label);
+    if (ref.kind === "branch" || ref.kind === "remote") {
+      badge.style.setProperty("--ref-colour", laneColour(row.lane));
+      badge.title = ref.kind === "remote" ? langText(`${ref.label}: stan tej gałęzi na serwerze (koniec jej linii na serwerze)`, `${ref.label}: the branch on the server (where its line ends there)`) : langText(`${ref.label}: koniec (najnowszy commit) tej gałęzi, jej linia biegnie stąd w dół do miejsca, z którego odeszła`, `${ref.label}: the tip (newest commit) of this branch; its line runs down from here to the place it left`);
+    }
+    message.append(badge);
+  }
   const text = el("span", "git-msg", commit.subject); text.title = commit.subject; message.append(text);
   const date = el("span", "git-date", relativeTime(commit.date, now, language)); date.title = new Date(commit.date).toLocaleString(language);
   const author = el("span", "git-author", commit.author); author.title = `${commit.author} <${commit.email}>`;
@@ -70,7 +77,7 @@ export function createCommitList(onSelect: (hash: string) => void, onMenu?: (eve
       const [page, names] = await Promise.all([gitLog(repo, rev, loaded, PAGE), remotesReady.catch(() => new Set<string>() as ReadonlySet<string>)]);
       remotes = names;
       if (mine !== `${repo}\u0000${rev}`) return; // another branch was chosen meanwhile
-      const laid = layoutGraph(page, graphState);
+      const laid = layoutGraph(page.map(graphCommit), graphState);
       graphState = laid.state; loaded += page.length; commits = commits.concat(page);
       const widest = Math.max(maxLanes, ...laid.rows.map(row => row.width));
       if (widest !== maxLanes) { maxLanes = widest; element.querySelectorAll("svg.git-graph").forEach(svg => svg.setAttribute("width", String(columnWidth(maxLanes)))); }

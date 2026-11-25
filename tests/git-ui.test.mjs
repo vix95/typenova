@@ -25,9 +25,27 @@ test("the commit graph keeps a straight line for linear history and splits and j
 
   // a page boundary: the open lanes carry over into the next page
   const first = layoutGraph([{ hash: "c", parents: ["b"] }, { hash: "x", parents: ["b"] }]);
-  assert.deepEqual(first.state, ["b", "b"].slice(0, 1).concat(first.state.slice(1)));
+  assert.equal(first.state[0].hash, "b");
   const second = layoutGraph([{ hash: "b", parents: [] }], first.state);
   assert.deepEqual(second.rows[0].joins.length >= 1, true);
+});
+
+test("branches stacked on one another keep a line each, down to the main line", async () => {
+  const { layoutGraph, graphCommit } = await import("../.test-build/git-ui/git-graph.js");
+  const commit = (hash, parents, refs = []) => graphCommit({ hash, parents, refs });
+  const { rows, state } = layoutGraph([
+    commit("c3", ["c2"], ["issue/337"]), commit("c2", ["b2"]),
+    commit("b2", ["b1"], ["issue/336"]), commit("b1", ["m"]),
+    commit("m", ["root"], ["origin/main", "main"]), commit("root", []),
+  ]);
+  assert.deepEqual(rows.map(row => row.lane), [0, 0, 1, 1, 0, 0]); // 337 on lane 0, 336 starts beside it on lane 1, the main line is lane 0 again
+  assert.deepEqual(rows[2].passes, [0]); // the line of 337 goes on past the tip of 336
+  assert.deepEqual(rows[3].passes, [0]); // and past its commits
+  assert.deepEqual(rows[4].joins.sort(), [0, 1]); // both end where they left the main line
+  assert.deepEqual(state, []);
+  assert.equal(graphCommit({ hash: "x", parents: [], refs: ["refs/stash"] }).branch, false);
+  assert.equal(graphCommit({ hash: "x", parents: [], refs: ["tag: v1"] }).branch, false);
+  assert.equal(graphCommit({ hash: "x", parents: [], refs: ["HEAD -> master"] }).trunk, true);
 });
 
 test("labels, dates and diffs of the Git panel", async () => {

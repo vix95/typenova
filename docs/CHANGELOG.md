@@ -2,6 +2,12 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.164] - 2026-11-25
+
+### Changed
+
+- **The graph of the Git window shows where every branch comes from and how far it reaches.** Branches that are stacked on one another (a branch that contains the commits of the branch below it) used to be drawn as one line. Now each branch has its own coloured line that starts at its tip (the newest commit, where its label is) and runs down to the place it left the main line (main or master), where the lines end. The labels of a branch and of its copy on the server have the colour of its line, and their tooltip says what the label marks.
+
 ## [0.5.163] - 2026-11-25
 
 ### Fixed
