@@ -10,6 +10,7 @@
 4. Hand work back as changes in the working tree and say which files changed. Build a ZIP or installers only when the user asks; such a package contains the whole project (hidden agent files included) without `.git/`, and is verified before it is linked.
 5. State which checks actually ran. Never describe a build, runtime workflow, or UI behavior as tested if it was not. If dependency installation, a platform limitation, or a timeout blocks verification, report that precisely.
 6. Keep delivery notes factual and concise.
+7. **Do every change properly, never as a quick patch** (the user's standing instruction). Re-read this file and the relevant skills before coding, also after a context reset. Think the whole flow through: every state the person sees (start, working, success, nothing found, failure, repeated, other windows, both languages) and what is left on screen afterwards. Look at how the rest of the application already does the same thing and follow it. Verify every visible state you touched in the running application, not only with unit tests, before calling the work done or releasing it.
 
 
 ## Version control

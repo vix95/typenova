@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, WebviewWindow};
 
@@ -24,6 +25,14 @@ pub struct WindowState {
 
 /// The last known state, kept while the program runs and written when the window closes.
 static CURRENT: Mutex<Option<WindowState>> = Mutex::new(None);
+/// Whether the program was used here before this start: the state file is written when the window closes, so on the first start of a fresh install it is not there yet.
+static EARLIER_SESSION: AtomicBool = AtomicBool::new(false);
+
+/// For the page: true when the program had been started and closed here before (an update or an ordinary start), false on the first start of a fresh install.
+#[tauri::command]
+pub fn earlier_session() -> bool {
+  EARLIER_SESSION.load(Ordering::Relaxed)
+}
 
 fn state_path(app: &AppHandle) -> Option<PathBuf> {
   app.path().app_data_dir().ok().map(|dir| dir.join(FILE_NAME))
@@ -58,7 +67,9 @@ fn on_some_monitor(window: &WebviewWindow, state: &WindowState) -> bool {
 
 /// Puts the main window back as it was left. A place that is no longer on a screen is dropped (the size is kept).
 pub fn restore(app: &AppHandle, window: &WebviewWindow) {
-  let Some(state) = state_path(app).and_then(|path| read(&path)) else { return };
+  let path = state_path(app);
+  EARLIER_SESSION.store(path.as_deref().is_some_and(Path::exists), Ordering::Relaxed);
+  let Some(state) = path.and_then(|path| read(&path)) else { return };
   // The saved size is the outer one (with the frame); the size to set is the one of the page, so the frame is taken off, or the window would grow at every start.
   let frame = match (window.outer_size(), window.inner_size()) { (Ok(outer), Ok(inner)) => (outer.width.saturating_sub(inner.width), outer.height.saturating_sub(inner.height)), _ => (0, 0) };
   let _ = window.set_size(PhysicalSize::new(state.width.saturating_sub(frame.0).max(1), state.height.saturating_sub(frame.1).max(1)));

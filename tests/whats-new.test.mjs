@@ -42,3 +42,11 @@ test("the dates of the news do not go back as the versions go up", () => {
   const news = recentNews();
   for (let index = 1; index < news.length; index++) assert.ok(news[index - 1].date >= news[index].date, `${news[index - 1].version} is not older than ${news[index].version}`);
 });
+
+test("the news open by themselves only after a version change, not on a fresh install", async () => {
+  const { shouldShowAfterUpdate } = await import("../.test-build/app/whats-new-data.js");
+  assert.equal(shouldShowAfterUpdate("0.5.167", "0.5.168", true), true);
+  assert.equal(shouldShowAfterUpdate("0.5.168", "0.5.168", true), false);
+  assert.equal(shouldShowAfterUpdate(null, "0.5.168", true), true, "an update from a version that did not remember");
+  assert.equal(shouldShowAfterUpdate(null, "0.5.168", false), false, "a fresh install");
+});

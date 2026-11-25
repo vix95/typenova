@@ -1,5 +1,6 @@
 /** Dialog for a pasted image: description, file name and a small explorer limited to the open project folders. */
-import { exists, mkdir, readDir } from "@tauri-apps/plugin-fs";
+import { exists, mkdir } from "@tauri-apps/plugin-fs";
+import { readVisibleDir } from "../project/own-files-setting";
 import { join } from "@tauri-apps/api/path";
 import { slugifyForFileName } from "../filesystem/file-names";
 import { basename } from "../filesystem/path-utils";
@@ -50,7 +51,7 @@ function folderRow(name: string, path: string, depth: number): { row: HTMLButton
 /** Lists a folder: sub-folders (selectable) first, then the image files already there (shown muted, for orientation). */
 async function listFolder(path: string): Promise<{ folders: string[]; images: string[] } | null> {
   try {
-    const entries = await readDir(path);
+    const entries = await readVisibleDir(path);
     const collator = new Intl.Collator(document.documentElement.lang || "pl", { sensitivity: "base", numeric: true });
     return {
       folders: entries.filter(entry => entry.isDirectory).map(entry => entry.name).sort(collator.compare),

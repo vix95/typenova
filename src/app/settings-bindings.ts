@@ -8,6 +8,8 @@ import { documentState } from "../documents/document-state";
 import { autoSaveTimer, renderRecentFiles, scheduleAutoSave } from "../documents/file-actions";
 import { bookmarkFilesEnabled } from "../editor/bookmark-files";
 import { autoRenameLinksEnabled, setAutoRenameLinks } from "../documents/link-rename-apply";
+import { hideOwnFilesEnabled, setHideOwnFiles } from "../project/own-files-setting";
+import { refreshProjectTree } from "../project/project-tree-sync";
 import { applyBookmarkFilesSetting } from "../editor/bookmarks";
 import { applyHighlightFilesSetting } from "../editor/highlights";
 import { insertAtCursor } from "../editor/editing-commands";
@@ -70,6 +72,16 @@ export function initSettingsBindings(): void {
     $("statusText").textContent = enabled
       ? langText("Zakładki i wyróżnienia będą zapisywane w pliku .config.json obok dokumentu Markdown.", "Bookmarks and highlights will be saved in a .config.json file next to the Markdown document.")
       : langText("Zakładki i wyróżnienia zostają tylko w programie. Istniejące pliki .config.json nie są zmieniane.", "Bookmarks and highlights stay only in the program. Existing .config.json files are left unchanged.");
+  });
+  const hideOwnFilesToggle = $<HTMLInputElement>("hideOwnFilesToggle");
+  hideOwnFilesToggle.checked = hideOwnFilesEnabled();
+  hideOwnFilesToggle.addEventListener("change", (event: Event) => {
+    const enabled = (event.target as HTMLInputElement).checked;
+    setHideOwnFiles(enabled);
+    void refreshProjectTree();
+    $("statusText").textContent = enabled
+      ? langText("Pliki TypeNova są ukryte w drzewie projektu.", "TypeNova's files are hidden in the project tree.")
+      : langText("Pliki TypeNova są widoczne w drzewie projektu.", "TypeNova's files are shown in the project tree.");
   });
   applyFontSize("editor", localStorage.getItem("typenova.editorFontSize") || "small", false);
   applyFontSize("preview", localStorage.getItem("typenova.previewFontSize") || "small", false);

@@ -20,6 +20,19 @@ const MIN_VISIBLE_MS = 700;
 const sleep = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms));
 let busy = false;
 let offering = false;
+/** The status line while the update works: what it wrote last (`shown`) and what was there before it began (`before`), so that the line comes back when the work ends; a message written by something else in the meantime is left alone. */
+let statusLine: { shown: string; before: string } | null = null;
+
+function showStatus(text: string | null): void {
+  const status = $("statusText");
+  if (text !== null) {
+    statusLine = { shown: text, before: statusLine?.before ?? status.textContent ?? "" };
+    status.textContent = text;
+  } else if (statusLine) {
+    if (status.textContent === statusLine.shown) status.textContent = statusLine.before;
+    statusLine = null;
+  }
+}
 
 /** The bars: one at the top of the window (for the checks made at the start and from the menu) and one in the settings, under the button. */
 function bars(): HTMLElement[] { return [...document.querySelectorAll<HTMLElement>(".update-bar")]; }
@@ -39,7 +52,7 @@ function showPhase(phase: Phase, percent: number | null = null, version = ""): v
     bar.setAttribute("aria-label", label);
     if (percent === null) bar.removeAttribute("aria-valuenow"); else bar.setAttribute("aria-valuenow", String(percent));
   }
-  if (working) $("statusText").textContent = `${label}…${percent === null ? "" : ` ${percent}%`}`;
+  showStatus(working ? `${label}…${percent === null ? "" : ` ${percent}%`}` : null);
 }
 
 function createBar(extraClass = ""): HTMLElement {
@@ -76,7 +89,6 @@ async function askAndInstall(info: UpdateInfo): Promise<void> {
     return;
   }
   try { await install(info); } catch (error) {
-    $("statusText").textContent = "";
     await appAlert(langText(`Nie udało się zaktualizować programu: ${error}`, `The program could not be updated: ${error}`));
   }
 }

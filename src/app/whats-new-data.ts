@@ -10,6 +10,7 @@ export interface NewsEntry {
 
 /** The entries shown; add the new version at the top and the list keeps the last five. */
 const ENTRIES: readonly NewsEntry[] = [
+  { version: "0.5.168", date: "2026-11-25", pl: "Pliki TypeNova ukryte w drzewie projektu i Nowości po aktualizacji.", en: "TypeNova's files hidden in the project tree, and What's new after an update." },
   { version: "0.5.167", date: "2026-11-25", pl: "Powiadomienie o nowej wersji w rogu okna i częstsze sprawdzanie.", en: "A notice of a new version at the corner of the window, and more frequent checks." },
   { version: "0.5.166", date: "2026-11-25", pl: "Nowości w dużym oknie z datami i wyraźniejsze sprawdzanie aktualizacji.", en: "A large What's new window with dates, and a clearer update check." },
   { version: "0.5.165", date: "2026-11-25", pl: "Automatyczne aktualizacje: nowe wersje instalują się po potwierdzeniu.", en: "Automatic updates: new versions install after you confirm." },
@@ -40,4 +41,10 @@ export function formatNewsDate(date: string, language: string): string {
   if (Number.isNaN(day.getTime()) || day.getUTCDate() !== Number(match[3])) return date;
   const polish = language.startsWith("pl");
   return new Intl.DateTimeFormat(polish ? "pl-PL" : "en-GB", { day: "numeric", month: polish ? "long" : "short", year: "numeric", timeZone: "UTC" }).format(day);
+}
+
+/** Whether "What's new" should open by itself: the program was started in a version other than the one it last showed. With nothing stored it counts only when the program had been used here before (an update from a version that did not remember), never on the first start of a fresh install. */
+export function shouldShowAfterUpdate(seenVersion: string | null, currentVersion: string, earlierSession: boolean): boolean {
+  if (seenVersion === currentVersion) return false;
+  return seenVersion !== null || earlierSession;
 }

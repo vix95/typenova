@@ -1,7 +1,12 @@
 /** "What's new": a large modal window with the last five versions, each with the day of its release and a few general words. It opens from the Help menu and closes with its button, the cross or Escape. */
+import { invoke } from "@tauri-apps/api/core";
 import { $ } from "./dom";
 import { langText } from "../i18n/language";
-import { formatNewsDate, recentNews } from "./whats-new-data";
+import { APP_VERSION } from "./app-version";
+import { formatNewsDate, recentNews, shouldShowAfterUpdate } from "./whats-new-data";
+
+const SEEN_KEY = "typenova.whatsNewSeenVersion";
+const AFTER_UPDATE_DELAY_MS = 1200;
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className = "", text = ""): HTMLElementTagNameMap[K] => {
   const node = document.createElement(tag); if (className) node.className = className; if (text) node.textContent = text; return node;
@@ -40,6 +45,9 @@ function list(language: string): HTMLElement {
 function draw(dialog: HTMLDialogElement): void {
   const language = document.documentElement.lang || "en";
   const done = el("button", "primary", langText("Gotowe", "Done")); done.type = "button";
+  // The window opens with the focus on this button; a tooltip repeating its visible words would only cover the list.
+  done.dataset.tooltipDisabled = "true";
+  done.autofocus = true;
   done.addEventListener("click", () => dialog.close());
   const footer = el("footer", "whats-new-actions"); footer.append(done);
   const content = el("div", "dialog-content whats-new-content"); content.append(header(dialog), list(language), footer);
@@ -58,4 +66,25 @@ export function installWhatsNew(): void {
     dialog.querySelector<HTMLElement>(".whats-new-actions .primary")?.focus({ preventScroll: true });
   });
   document.addEventListener("typenova:language-changed", () => draw(dialog));
+  void openAfterUpdate(dialog);
+}
+
+function rememberSeen(): void { try { localStorage.setItem(SEEN_KEY, APP_VERSION); } catch { /* storage unavailable: it may show again, nothing is lost */ } }
+
+/** After an update the window opens by itself once, in the main window only, so that the person sees what changed. When another dialog is open at that moment (a question at the start) it waits for it to close; the version is remembered when the window is shown, so it never repeats and is never skipped. */
+async function openAfterUpdate(dialog: HTMLDialogElement): Promise<void> {
+  if (new URLSearchParams(location.search).has("detach")) return;
+  let seen: string | null;
+  try { seen = localStorage.getItem(SEEN_KEY); } catch { return; }
+  // The settings of the page cannot tell an update from a fresh install (the start itself writes some), so the host is asked whether the program was used here before.
+  const earlierSession = seen === null && await invoke<boolean>("earlier_session").catch(() => false);
+  if (!shouldShowAfterUpdate(seen, APP_VERSION, earlierSession)) { rememberSeen(); return; }
+  const tryOpen = (): void => {
+    if (dialog.open) { rememberSeen(); return; }
+    if (document.querySelector("dialog[open]")) { window.setTimeout(tryOpen, AFTER_UPDATE_DELAY_MS); return; }
+    dialog.showModal();
+    rememberSeen();
+    dialog.querySelector<HTMLElement>(".whats-new-actions .primary")?.focus({ preventScroll: true });
+  };
+  window.setTimeout(tryOpen, AFTER_UPDATE_DELAY_MS);
 }

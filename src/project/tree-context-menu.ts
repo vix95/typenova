@@ -4,7 +4,7 @@ import { pasteSystemFiles, systemClipboardFiles, systemFilesAreNewer } from "./s
 import { normalizedFsPath, pathIsInside, parentPath } from "../filesystem/project-tree-operations";
 import { basename, isEditableTextFile, isViewerFile } from "../filesystem/path-utils";
 import { openViewerFile } from "../preview/open-media";
-import { exists, mkdir, rename, writeTextFile } from "@tauri-apps/plugin-fs";
+import { exists, mkdir, writeTextFile } from "@tauri-apps/plugin-fs";
 import { BinaryFileError, loadTextFile } from "../filesystem/text-io";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { copyTextToClipboard } from "../preview/code-blocks";
@@ -29,7 +29,6 @@ import { appAlert, appConfirm } from "../ui/dialogs";
 import { showToast } from "../ui/toast";
 import { renameBookmarkPaths } from "../editor/bookmarks";
 import { renameHighlightPaths } from "../editor/highlights";
-import { bookmarkFilePath } from "../editor/bookmarks-model";
 
 export function treeContextMenuElement() {
   let menu = document.getElementById("treeContextMenu") as HTMLDivElement | null;
@@ -118,7 +117,7 @@ ${langText(`Zamknięte zostaną też otwarte dokumenty (${unsaved.length}) z nie
   showToast(`${langText("Usunięto", "Deleted")}: ${itemName}`);
 }
 /** Asks for a name and creates a folder inside `directoryPath` (which must be inside an open project folder). */
-/** Asks for a new name and renames the entry; a Markdown file takes its hidden-sections config file along. */
+/** Asks for a new name and renames the entry; a document takes its config file along. */
 async function promptAndRenameProjectEntry(path: string, isDirectory: boolean): Promise<void> {
   const current = basename(path);
   const name = await askForName({
@@ -136,13 +135,8 @@ async function promptAndRenameProjectEntry(path: string, isDirectory: boolean): 
     },
   });
   if (!name || name === current) return;
-  const oldConfig = `${path}.config.json`;
-  const hadConfig = !isDirectory && await exists(oldConfig);
-  const oldBookmarkFile = bookmarkFilePath(path);
-  const hadBookmarkFile = !isDirectory && await exists(oldBookmarkFile);
-  const renamed = await performTreeRename(path, name);
-  if (hadConfig) { try { await rename(oldConfig, `${renamed}.config.json`); } catch { /* the sidecar stays under the old name */ } }
-  if (hadBookmarkFile) { try { await rename(oldBookmarkFile, bookmarkFilePath(renamed)); } catch { /* the bookmarks file stays under the old name */ } }
+  // The controller renames the document's config file (and a former bookmarks file) with it.
+  const renamed = await performTreeRename(path, name, isDirectory);
   // After the files moved: the bookmarks follow the new path and read their file from its new place.
   renameBookmarkPaths(path, renamed);
   renameHighlightPaths(path, renamed);

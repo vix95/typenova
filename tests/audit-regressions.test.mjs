@@ -521,3 +521,28 @@ test("flowchart edits by node and link keep the rest of the source", async () =>
   const odd = "flowchart TD" + "\n  subgraph G\n    A & B --> C\n  end";
   assert.equal(fe.removeNode(odd, "Z"), odd);
 });
+
+test("a document's companion files follow it when it is moved, copied, renamed or deleted", async () => {
+  const { files, directories, controller } = createControllerHarness();
+  files.add("/project/sub/note.md.config.json"); files.add("/project/sub/note.md.bookmarks.json");
+  await controller.moveOrCopy("/project/sub/note.md", "/project/dest", "cut", false);
+  assert.deepEqual([...files].sort(), ["/project/dest/note.md", "/project/dest/note.md.bookmarks.json", "/project/dest/note.md.config.json"]);
+  await controller.moveOrCopy("/project/dest/note.md", "/project/dest", "copy", false, true);
+  assert.ok(files.has("/project/dest/note (copy).md.config.json") && files.has("/project/dest/note.md.config.json"), "a duplicate gets a copy of the config, the original keeps its own");
+  const renamed = await controller.renameEntry("/project/dest/note.md", "renamed.md", false);
+  assert.equal(renamed, "/project/dest/renamed.md");
+  assert.ok(files.has("/project/dest/renamed.md.config.json") && !files.has("/project/dest/note.md.config.json"));
+  await controller.remove("/project/dest/renamed.md", false);
+  assert.ok(!files.has("/project/dest/renamed.md.config.json") && !files.has("/project/dest/renamed.md.bookmarks.json"));
+  assert.ok(directories.has("/project/dest"));
+});
+
+test("a companion never overwrites a file at its new place, and a folder takes no look-alike file with it", async () => {
+  const { files, directories, controller } = createControllerHarness();
+  files.add("/project/sub/note.md.config.json"); files.add("/project/dest/note.md.config.json");
+  await controller.moveOrCopy("/project/sub/note.md", "/project/dest", "cut", false);
+  assert.ok(files.has("/project/sub/note.md.config.json"), "the companion stays where it was when its new name is taken");
+  directories.add("/project/webpack"); files.add("/project/webpack.config.json");
+  await controller.renameEntry("/project/webpack", "bundler", true);
+  assert.ok(files.has("/project/webpack.config.json") && !files.has("/project/bundler.config.json"));
+});

@@ -2,7 +2,7 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { normalizedFsPath } from "../filesystem/project-tree-operations";
 import { basename, isEditableTextFile, isViewableImageFile, isViewerFile } from "../filesystem/path-utils";
-import { readDir } from "@tauri-apps/plugin-fs";
+import { readVisibleDir } from "./own-files-setting";
 import { $ } from "../app/dom";
 import { activeSidebarTab } from "../app/sidebar";
 import { documentState } from "../documents/document-state";
@@ -234,7 +234,7 @@ async function renderProjectTreeNow(): Promise<void> {
   walk = async (path: string, depth: number, parent: HTMLElement): Promise<boolean> => {
     let entries: any[] = [];
     try {
-      entries = await readDir(path);
+      entries = await readVisibleDir(path);
     } catch (error) {
       parent.replaceChildren(createTreeLoadErrorRow(error, async () => {
         parent.replaceChildren();
@@ -244,7 +244,7 @@ async function renderProjectTreeNow(): Promise<void> {
       return false;
     }
 
-    // Show every filesystem entry (including dotfiles and non-text formats).
+    // Show every filesystem entry (including dotfiles and non-text formats), except TypeNova's own files while "Hide TypeNova's files" is on.
     // Directories are listed first for familiar explorer behavior; contents stay lazy-loaded.
     // Clear an earlier error placeholder before rendering a successful retry.
     parent.replaceChildren();
