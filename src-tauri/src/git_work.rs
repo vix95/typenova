@@ -12,7 +12,7 @@ use serde::Serialize;
 const MAX_LISTED: usize = 2000;
 const MAX_MESSAGE: usize = 2000;
 /// A committed file bigger than this gets no change markers.
-const MAX_BASE_BYTES: usize = 2_000_000;
+const MAX_BASE_BYTES: usize = 20_000_000;
 
 #[derive(Serialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]

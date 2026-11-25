@@ -6,7 +6,7 @@ test("files are told apart by their names", async () => {
   const expect = {
     "notes.md": "markdown", "paper.qmd": "markdown", "report.Rmd": "markdown", "page.mdc": "markdown",
     "photo.JPG": "image", "scan.tif": "image", "logo.svg": "image",
-    "manual.pdf": "pdf", "song.mp3": "audio", "clip.mp4": "video", "letter.docx": "docx",
+    "manual.pdf": "pdf", "song.mp3": "audio", "clip.mp4": "video", "letter.docx": "docx", "app.sqlite": "database", "data.SQLITE3": "database", "cache.db": "database", "query.sql": "text",
     "main.rs": "text", "flow.mmd": "text", "data.jsonl": "text", "infra.tf": "text", "layout.xaml": "text", "Dockerfile": "text", "Dockerfile.dev": "text",
     ".env.local": "text", ".gitignore": "text", "CMakeLists.txt": "text", "Procfile": "text", "program.hs": "text", "shader.glsl": "text",
     "setup.exe": "binary", "archive.zip": "binary", "font.woff2": "binary", "sheet.xlsx": "binary", "picture.heic": "binary",

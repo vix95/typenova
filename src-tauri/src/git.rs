@@ -231,13 +231,19 @@ pub fn git_repo_root(path: String) -> Option<String> {
 
 #[tauri::command(async)]
 pub fn git_overview(repo: String) -> Result<Overview, String> {
-  let head = run_git(&repo, &["rev-parse", "--abbrev-ref", "HEAD"]).map(|text| text.trim().to_string()).unwrap_or_default();
-  let refs = run_git(
-    &repo,
-    &["for-each-ref", "--format=%(refname)%09%(objectname)%09%(HEAD)%09%(upstream:short)%09%(upstream:track,nobracket)", "refs/heads", "refs/remotes"],
-  )?;
-  let tags = run_git(&repo, &["for-each-ref", "--sort=-creatordate", "--format=%(refname:short)%09%(objectname)%09%(*objectname)", "refs/tags"])?;
-  let dirty = run_git(&repo, &["status", "--porcelain"]).map(|text| text.lines().count() as u32).unwrap_or(0);
+  // Starting `git` takes the most of the time of each of these (about 150 ms on Windows), so the four run at the same time instead of one after another.
+  let repo = repo.as_str();
+  let (head, refs, tags, dirty) = std::thread::scope(|scope| {
+    let head = scope.spawn(|| run_git(repo, &["rev-parse", "--abbrev-ref", "HEAD"]).map(|text| text.trim().to_string()).unwrap_or_default());
+    let refs = scope.spawn(|| {
+      run_git(repo, &["for-each-ref", "--format=%(refname)%09%(objectname)%09%(HEAD)%09%(upstream:short)%09%(upstream:track,nobracket)", "refs/heads", "refs/remotes"])
+    });
+    let tags = scope.spawn(|| run_git(repo, &["for-each-ref", "--sort=-creatordate", "--format=%(refname:short)%09%(objectname)%09%(*objectname)", "refs/tags"]));
+    let dirty = scope.spawn(|| run_git(repo, &["status", "--porcelain"]).map(|text| text.lines().count() as u32).unwrap_or(0));
+    (head.join().unwrap_or_default(), refs.join(), tags.join(), dirty.join().unwrap_or(0))
+  });
+  let refs = refs.map_err(|_| "git stopped unexpectedly".to_string())??;
+  let tags = tags.map_err(|_| "git stopped unexpectedly".to_string())??;
   Ok(Overview { detached: head == "HEAD", head, branches: parse_branches(&refs), tags: parse_tags(&tags), dirty })
 }
 

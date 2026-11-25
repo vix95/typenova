@@ -68,3 +68,15 @@ html[data-theme="contrast"] .git-branch-button, html[data-theme="contrast"] .git
 .spell-repo-info { margin: 0; }
 .spell-repo .ai-flat-button:disabled { opacity: .5; cursor: default; }
 .spell-repo-auto { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+
+/* Making, cloning and pulling repositories (src/git-ui/git-repo-actions.ts, git-history.ts) */
+.git-toolbar .git-small-btn { flex: 0 0 auto; }
+.git-dialog-empty { width: min(560px, calc(100vw - 32px)); height: auto; }
+.git-dialog-empty .git-content { gap: 14px; }
+.git-empty-note { margin: 0; color: var(--ui-muted); font-size: 13px; line-height: 1.5; }
+dialog.git-clone-dialog { width: min(560px, calc(100vw - 32px)); }
+.git-clone-row { display: flex; align-items: flex-end; gap: 8px; }
+.git-clone-row .name-dialog-field { flex: 1 1 auto; min-width: 0; }
+.git-clone-row .git-small-btn { flex: 0 0 auto; min-height: 36px; }
+.git-clone-add { margin-top: 2px; }
+#gitPullButton.is-busy { opacity: .55; pointer-events: none; }

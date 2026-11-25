@@ -19,18 +19,19 @@ test("icons that do not fit move into a menu, which opens, closes and gives them
   try {
     await app.ready();
     await app.waitFor(`document.getElementById('projectActionsMore') !== null`, { what: "the overflow button" });
-    await width(app, 330);
+    await width(app, 460);
     await app.sleep(500);
     let now = await state(app);
     assert.equal(now.moreHidden, false, "the rarely used icons are always in the menu");
-    assert.equal(now.inBar.length, 5);
-    assert.deepEqual(now.inMenu.map(item => item.id), ["expandAllFolders", "collapseAllFolders", "openGitHistory", "openBookmarks", "openHighlights"]);
+    assert.equal(now.inBar.length, 7);
+    assert.deepEqual(now.inBar.slice(2, 5), ["refreshProject", "expandAllFolders", "collapseAllFolders"], "expand and collapse are beside Refresh");
+    assert.deepEqual(now.inMenu.map(item => item.id), ["openGitPanel", "openBookmarks", "openHighlights"]);
 
     await width(app, 190);
     await app.waitFor(`!document.getElementById('projectActionsMore').hidden`, { what: "the More button in a narrow sidebar" });
     now = await state(app);
     assert.equal(now.cut, false, "no icon is cut off");
-    assert.ok(now.inMenu.length > 5 && now.inBar.length + now.inMenu.length === 10, "no icon is lost");
+    assert.ok(now.inMenu.length > 3 && now.inBar.length + now.inMenu.length === 10, "no icon is lost");
     assert.equal(now.inMenu.at(-1).id, "openHighlights", "the menu keeps the order of the icons");
     assert.ok(now.inMenu.every(item => item.label && item.label.length > 2), "every item in the menu has a name");
     assert.equal(now.menuHidden, true);
@@ -44,10 +45,10 @@ test("icons that do not fit move into a menu, which opens, closes and gives them
     await app.waitFor(`document.querySelector('.project-actions-menu[data-for=projectActionsMore]').hidden`, { what: "Escape to close the menu" });
     assert.equal(await app.evaluate(`document.activeElement.id`), "projectActionsMore", "the focus returns to the button");
 
-    await width(app, 330);
-    await app.waitFor(`document.querySelectorAll('#filesView .sidebar-heading-actions > button').length === 6`, { what: "the icons to come back" });
+    await width(app, 460);
+    await app.waitFor(`document.querySelectorAll('#filesView .sidebar-heading-actions > button').length === 8`, { what: "the icons to come back" });
     now = await state(app);
-    assert.deepEqual([now.inBar.length, now.inMenu.length], [5, 5]);
+    assert.deepEqual([now.inBar.length, now.inMenu.length], [7, 3]);
 
     // A button moved into the menu still works: Highlights switches the sidebar, and the menu closes.
     await width(app, 190);

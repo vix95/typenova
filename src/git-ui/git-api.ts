@@ -12,6 +12,12 @@ export const gitRepoRoot = (path: string) => invoke<string | null>("git_repo_roo
 export const gitOverview = (repo: string) => invoke<GitOverview>("git_overview", { repo });
 /** One page of the history of `rev`, or of every branch when `rev` is empty. */
 export const gitLog = (repo: string, rev: string, skip: number, limit: number) => invoke<GitCommit[]>("git_log", { repo, rev, skip, limit });
+/** Makes a repository (branch main) in an existing folder; resolves with the folder. */
+export const gitInit = (path: string) => invoke<string>("git_init", { path });
+/** Clones `url` into the new folder `name` of `parent`; resolves with the path of the clone. */
+export const gitClone = (url: string, parent: string, name: string) => invoke<string>("git_clone", { url, parent, name });
+/** Fetches the latest changes of the current branch and fast-forwards to them; resolves with what git said. */
+export const gitPull = (repo: string) => invoke<string>("git_pull", { repo });
 export const gitCommitDetail = (repo: string, hash: string) => invoke<GitCommitDetail>("git_commit_detail", { repo, hash });
 export const gitFileDiff = (repo: string, hash: string, path: string, oldPath: string | null) => invoke<string>("git_file_diff", { repo, hash, path, oldPath });
 

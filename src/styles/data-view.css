@@ -137,3 +137,26 @@ html[data-theme="contrast"] .data-goal.is-active { outline: 2px solid var(--ui-a
 
 /* High contrast: the application's own tab keeps the theme's accent instead of its fixed blue (the Data / Charts tabs of the Preview pane and of the data view). */
 html[data-theme="contrast"] .preview-view-tab.active { background: var(--ui-accent); color: #000; border-color: #fff; }
+
+/* The window that looks into a SQLite database file (src/preview/sqlite-viewer.ts) */
+dialog.sqlite-dialog { width: min(1100px, calc(100vw - 32px)); height: min(720px, calc(100vh - 32px)); padding: 0; }
+dialog.sqlite-dialog[open] { display: flex; flex-direction: column; }
+.sqlite-content { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; width: auto; padding: 18px 20px; gap: 12px; }
+.sqlite-body { display: flex; flex: 1 1 auto; min-height: 0; gap: 12px; }
+.sqlite-tables { flex: 0 0 220px; min-width: 0; overflow: auto; display: flex; flex-direction: column; gap: 2px; padding-right: 8px; border-right: 1px solid var(--ui-border); }
+.sqlite-table { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--ui-text); font-size: 12.5px; text-align: left; cursor: pointer; box-shadow: none; }
+.sqlite-table:hover { background: var(--ui-hover); }
+.sqlite-table.selected { background: var(--ui-active); }
+.sqlite-table-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sqlite-table-count { flex: none; color: var(--ui-muted); font-size: 11px; }
+.sqlite-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.sqlite-sql { width: 100%; box-sizing: border-box; resize: vertical; min-height: 40px; max-height: 160px; padding: 8px 10px; border-radius: 8px; font: 12.5px Consolas, "JetBrains Mono", monospace; }
+.sqlite-bar { display: flex; align-items: center; gap: 8px; }
+.sqlite-status { margin-left: 4px; color: var(--ui-muted); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sqlite-status.sqlite-error { color: #e5534b; }
+.sqlite-results { flex: 1 1 auto; min-height: 0; overflow: auto; border: 1px solid var(--ui-border); border-radius: 8px; }
+.sqlite-grid { border-collapse: collapse; font-size: 12.5px; width: max-content; min-width: 100%; }
+.sqlite-grid th { position: sticky; top: 0; background: var(--ui-panel2); text-align: left; font-weight: 650; }
+.sqlite-grid th, .sqlite-grid td { padding: 5px 10px; border-bottom: 1px solid var(--ui-border); border-right: 1px solid var(--ui-border); max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sqlite-grid td.sqlite-null { color: var(--ui-muted); font-style: italic; }
+.sqlite-empty { margin: 12px; color: var(--ui-muted); font-size: 13px; }
