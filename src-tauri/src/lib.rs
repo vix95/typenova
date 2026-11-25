@@ -13,6 +13,7 @@ mod secrets;
 mod spell;
 mod sqlite_view;
 mod terminal;
+mod updates;
 mod window_fit;
 mod window_state;
 
@@ -438,6 +439,7 @@ pub fn run() {
     // Persist filesystem grants created when users choose files or folders in native dialogs.
     .plugin(tauri_plugin_persisted_scope::init())
     .plugin(tauri_plugin_opener::init())
+    .plugin(tauri_plugin_updater::Builder::new().build())
     .setup(|app| {
       cache_cleanup::claim_profile();
       if let Some(window) = app.get_webview_window("main") {
@@ -457,6 +459,7 @@ pub fn run() {
     // The hidden drag-ghost window must not keep the process alive: when the last editor window is gone the app ends.
     // Otherwise an invisible instance would remain and the single-instance guard would swallow the next launch.
     .manage(terminal::Terminals::default())
+    .manage(updates::PendingUpdate::default())
     .on_window_event(|window, event| {
       if window.label() == "main" {
         let app = window.app_handle();
@@ -475,7 +478,7 @@ pub fn run() {
         }
       }
     })
-    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, git_sync::git_sync_plan, git_sync::git_commit_push, git_work::git_work_state, git_work::git_stage, git_work::git_unstage, git_work::git_commit_staged, git_work::git_push, git_work::git_switch, git_work::git_head_text, git_ops::git_fetch, git_ops::git_branch_create, git_ops::git_branch_delete, git_ops::git_branch_rename, git_ops::git_remote_branch_delete, git_ops::git_merge, git_ops::git_rebase, git_ops::git_cherry_pick, git_ops::git_revert, git_ops::git_reset, git_ops::git_checkout_commit, git_ops::git_tag_create, git_ops::git_tag_delete, git_ops::git_operation, git_ops::git_stash_push, git_ops::git_stash_list, git_ops::git_stash_action, git_remote::git_init, git_remote::git_clone, git_remote::git_pull, sqlite_view::sqlite_tables, sqlite_view::sqlite_query, remote_image::fetch_remote_image, repo_dictionary::repo_dictionary_read, repo_dictionary::repo_dictionary_write, spell::spell_check, terminal::terminal_shells, terminal::terminal_spawn, terminal::terminal_write, terminal::terminal_resize, terminal::terminal_kill, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
+    .invoke_handler(tauri::generate_handler![take_launch_paths, updates::update_check, updates::update_install, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, git_sync::git_sync_plan, git_sync::git_commit_push, git_work::git_work_state, git_work::git_stage, git_work::git_unstage, git_work::git_commit_staged, git_work::git_push, git_work::git_switch, git_work::git_head_text, git_ops::git_fetch, git_ops::git_branch_create, git_ops::git_branch_delete, git_ops::git_branch_rename, git_ops::git_remote_branch_delete, git_ops::git_merge, git_ops::git_rebase, git_ops::git_cherry_pick, git_ops::git_revert, git_ops::git_reset, git_ops::git_checkout_commit, git_ops::git_tag_create, git_ops::git_tag_delete, git_ops::git_operation, git_ops::git_stash_push, git_ops::git_stash_list, git_ops::git_stash_action, git_remote::git_init, git_remote::git_clone, git_remote::git_pull, sqlite_view::sqlite_tables, sqlite_view::sqlite_query, remote_image::fetch_remote_image, repo_dictionary::repo_dictionary_read, repo_dictionary::repo_dictionary_write, spell::spell_check, terminal::terminal_shells, terminal::terminal_spawn, terminal::terminal_write, terminal::terminal_resize, terminal::terminal_kill, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
     .build(tauri::generate_context!())
     .expect("error while building TypeNova")
     .run(|app, event| {

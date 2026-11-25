@@ -174,6 +174,7 @@ export const translations: Record<string, string> = {
   "Przeciągnij, aby zmienić szerokość podglądu": "Drag to resize preview",
   "Przełącz pełny ekran podglądu": "Toggle preview fullscreen",
   "Odśwież podgląd": "Refresh preview",
+  "Sprawdź teraz, czy jest nowa wersja": "Check now whether a new version exists",
   "Więcej akcji podglądu": "More preview actions",
   "Zamknij ustawienia": "Close settings",
   "Nagłówek poziomu 1": "Heading level 1",

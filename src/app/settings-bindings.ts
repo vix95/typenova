@@ -1,5 +1,6 @@
 /** Settings dialog controls (theme, auto-save, wrapping, line numbers, minimap, fonts, welcome) and help dialogs. */
 import { installWhatsNew } from "./whats-new";
+import { installUpdater } from "../updates/updater";
 import { aiEnabled, setAiEnabled } from "../ai/ai-enabled";
 import { followActiveDocument, revealActiveDocument, setFollowActiveDocument } from "../project/reveal-active-document";
 import { $ } from "./dom";
@@ -86,6 +87,7 @@ export function initSettingsBindings(): void {
   $("aboutOpen").addEventListener("click", () => ($("aboutDialog") as HTMLDialogElement).showModal());
   $("aboutClose").addEventListener("click", () => ($("aboutDialog") as HTMLDialogElement).close());
   installWhatsNew();
+  installUpdater();
   $("cheatsheetOpen").addEventListener("click", () => ($("cheatsheetDialog") as HTMLDialogElement).showModal());
   $("helpCheatsheet").addEventListener("click", () => { ($("helpDialog") as HTMLDialogElement).close(); ($("cheatsheetDialog") as HTMLDialogElement).showModal(); });
   $("cheatsheetClose").addEventListener("click", () => ($("cheatsheetDialog") as HTMLDialogElement).close());
