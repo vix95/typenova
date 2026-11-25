@@ -2,6 +2,13 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.165] - 2026-11-25
+
+### Added
+
+- **The program updates itself from the releases on GitHub.** At the start (when the setting is on, as it is by default; no more often than every 12 hours) and from Help → "Check for updates" TypeNova asks GitHub whether a newer release exists. When there is one it says so, with a short note, and after the person confirms it downloads the installer, checks its signature against the public key built into the program, installs it in place (the settings, shortcuts and pins stay) and starts again. It will not go on while a document has unsaved changes. The check can be turned off in Settings → Updates; it is a plain HTTPS request that carries nothing about the person.
+- The releases are signed for the updater (`scripts/build-release.ps1`, `scripts/make-latest-json.mjs`); the installer, its `.sig` and `latest.json` are uploaded to each release.
+
 ## [0.5.164] - 2026-11-25
 
 ### Changed

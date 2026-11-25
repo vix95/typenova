@@ -78,6 +78,7 @@ For Rust-only changes, consider `cargo check` from `src-tauri/` when the native 
 
 - For a user-visible behavior change, update the matching section of `docs/ARCHITECTURE.md` when an architectural rule changes; do not add per-feature note files. `docs/CHANGELOG.md` is built from the commit history (Keep a Changelog, one entry per release, each item linked to its commit): add the entry for a release together with the version-bump commit, and do not invent entries for work that is not committed.
 - **Always bump the application version when handing work back to the user** (the user's standing instruction): `package.json`, `package-lock.json` (both version fields), `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and the `typenova` entry of `src-tauri/Cargo.lock`, plus the release entry in `docs/CHANGELOG.md`. Only edits to agent instructions or documentation alone do not need a bump. Installers and ZIP files, when requested, carry the new version in their names.
+- **Releases carry the signed update files.** Build a release installer with `scripts/build-release.ps1` (it signs for the updater with the key in `D:/KeysCerts/typenova`; never copy that key or its password into the repository, a release or a message) and upload the installer, its `.sig` and `latest.json` to the GitHub release; without them the installed programs cannot update themselves.
 - Do not mark runtime behavior as verified based only on static code inspection.
 
 ## Before handing work back
