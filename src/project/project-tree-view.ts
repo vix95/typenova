@@ -75,8 +75,9 @@ export async function addProjectFolderPath(chosen: string) {
     if (result.status === "duplicate") { showToast(langText("Ten folder jest już w drzewie.", "This folder is already in the tree.")); return; }
     if (result.status === "inside") { showToast(langText(`Ten folder jest już częścią otwartego folderu: ${basename(result.existing)}.`, `This folder is already part of an open folder: ${basename(result.existing)}.`)); return; }
     if (result.status === "contains") { showToast(langText(`Ten folder zawiera otwarty folder (${basename(result.existing)}). Najpierw usuń go z drzewa.`, `This folder contains an open folder (${basename(result.existing)}). Remove that one from the tree first.`)); return; }
-    // Folders shown as roots start expanded, including the one that was the only folder until now.
-    for (const root of result.roots) projectTreeState.expandedFolders.add(root);
+    // The folder that was added starts open, and so does the one that was the only folder until now (its content was on show, and it becomes a row of its own). The others stay as the person left them, open or closed.
+    projectTreeState.expandedFolders.add(result.roots.find(root => !previous.some(old => normalizedFsPath(old) === normalizedFsPath(root))) ?? chosen);
+    if (previous.length === 1) projectTreeState.expandedFolders.add(previous[0]);
     const first = previous.length === 0;
     await applyProjectRoots(result.roots, { resetGraphSelection: first, resetTransient: first });
   } catch (error) { await reportOpenError(error); }

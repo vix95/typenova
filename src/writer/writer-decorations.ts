@@ -100,6 +100,8 @@ function taskMarker(context: Context, node: SyntaxNode): void {
 }
 
 function fencedCode(context: Context, node: SyntaxNode, from: number, to: number): void {
+  // A top-level block is drawn as a widget (writer-blocks.ts); its Markdown is styled here only while the caret is in it, and for blocks inside a list or a quote.
+  if (node.parent?.name === "Document" && !lineTouched(context, node.from, node.to)) return;
   const doc = context.state.doc;
   const first = doc.lineAt(node.from), last = doc.lineAt(node.to);
   const open = touches(context.selection, node.from, node.to);

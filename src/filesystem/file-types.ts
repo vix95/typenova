@@ -1,6 +1,6 @@
 /** Which kind of file a name stands for: Markdown, text (opened in the editor), an image, PDF, audio, video, a Word document to import, a known binary format, or unknown (tried as text). Generated lists live here so the sets stay in one place. */
 
-export type FileKind = "markdown" | "text" | "image" | "pdf" | "audio" | "video" | "docx" | "binary" | "unknown";
+export type FileKind = "markdown" | "text" | "image" | "pdf" | "audio" | "video" | "docx" | "database" | "binary" | "unknown";
 
 const words = (text: string): Set<string> => new Set(text.split(/\s+/).filter(Boolean));
 
@@ -30,9 +30,11 @@ export const PDF_EXTENSIONS = words("pdf");
 export const AUDIO_EXTENSIONS = words("mp3 wav ogg oga m4a flac aac opus weba");
 export const VIDEO_EXTENSIONS = words("mp4 m4v webm ogv mov mkv");
 const DOCX_EXTENSIONS = words("docx");
+/** SQLite database files: they open in a window that lists their tables and shows their rows. */
+const DATABASE_EXTENSIONS = words("sqlite sqlite3 db db3 s3db sdb");
 
 /** Formats that are certainly not text: they stay greyed out in the project tree. */
-const BINARY_EXTENSIONS = words("exe dll so dylib bin dat o obj a lib class jar war ear msi dmg iso img apk ipa zip 7z rar tar gz tgz bz2 xz zst cab doc xls ppt xlsx pptx odt ods odp rtf psd ai indd sketch fig xd eps raw cr2 nef dng heic heif jxl woff woff2 ttf otf eot sqlite sqlite3 db mdb accdb pyc pyd wasm swf flv avi wmv wma mid midi 3gp ogx psb blend fbx obj3ds stl glb gltf");
+const BINARY_EXTENSIONS = words("exe dll so dylib bin dat o obj a lib class jar war ear msi dmg iso img apk ipa zip 7z rar tar gz tgz bz2 xz zst cab doc xls ppt xlsx pptx odt ods odp rtf psd ai indd sketch fig xd eps raw cr2 nef dng heic heif jxl woff woff2 ttf otf eot mdb accdb pyc pyd wasm swf flv avi wmv wma mid midi 3gp ogx psb blend fbx obj3ds stl glb gltf");
 
 const extensionOf = (base: string): string => (base.includes(".") ? base.split(".").pop() || "" : "");
 
@@ -46,6 +48,7 @@ export function fileKind(name: string): FileKind {
   if (AUDIO_EXTENSIONS.has(extension)) return "audio";
   if (VIDEO_EXTENSIONS.has(extension)) return "video";
   if (DOCX_EXTENSIONS.has(extension)) return "docx";
+  if (DATABASE_EXTENSIONS.has(extension)) return "database";
   if (TEXT_NAMES.has(base) || base.startsWith(".env") || base.startsWith("dockerfile.") || base.endsWith(".dockerfile")) return "text";
   if (TEXT_EXTENSIONS.has(extension)) return "text";
   if (BINARY_EXTENSIONS.has(extension)) return "binary";

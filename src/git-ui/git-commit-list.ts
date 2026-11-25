@@ -39,15 +39,17 @@ function buildRow(commit: GitCommit, row: GraphRow, width: number, remotes: Read
 export interface CommitList {
   element: HTMLElement;
   /** Starts the list again for a repository and a branch, tag or hash (empty = every branch). */
-  reset(repo: string, rev: string, remotes: ReadonlySet<string>): Promise<void>;
+  /** `remotes` may still be on its way: the log is read at the same time, and the names are waited for only when the rows are drawn. */
+  reset(repo: string, rev: string, remotes: ReadonlySet<string> | Promise<ReadonlySet<string>>): Promise<void>;
   select(hash: string, scroll?: boolean): void;
   /** Selects a commit, loading further pages until it is found; false when it is not in this list. */
   jumpTo(hash: string): Promise<boolean>;
 }
 
-export function createCommitList(onSelect: (hash: string) => void): CommitList {
+export function createCommitList(onSelect: (hash: string) => void, onMenu?: (event: MouseEvent, commit: GitCommit) => void): CommitList {
   const element = el("div", "git-commits"); element.tabIndex = 0; element.setAttribute("role", "listbox"); element.setAttribute("aria-label", langText("Commity", "Commits"));
   const rows = new Map<string, HTMLElement>();
+  let remotesReady: Promise<ReadonlySet<string>> = Promise.resolve(new Set<string>());
   let repo = "", rev = "", remotes: ReadonlySet<string> = new Set(), loading = false, finished = false, loaded = 0, maxLanes = 1, selected = "";
   let commits: GitCommit[] = [], graphState: GraphState = [];
 
@@ -65,7 +67,8 @@ export function createCommitList(onSelect: (hash: string) => void): CommitList {
     loading = true;
     const mine = `${repo}\u0000${rev}`;
     try {
-      const page = await gitLog(repo, rev, loaded, PAGE);
+      const [page, names] = await Promise.all([gitLog(repo, rev, loaded, PAGE), remotesReady.catch(() => new Set<string>() as ReadonlySet<string>)]);
+      remotes = names;
       if (mine !== `${repo}\u0000${rev}`) return; // another branch was chosen meanwhile
       const laid = layoutGraph(page, graphState);
       graphState = laid.state; loaded += page.length; commits = commits.concat(page);
@@ -75,6 +78,7 @@ export function createCommitList(onSelect: (hash: string) => void): CommitList {
       page.forEach((commit, index) => {
         const row = buildRow(commit, laid.rows[index], columnWidth(maxLanes), remotes);
         row.addEventListener("click", () => { select(commit.hash, false); element.focus(); });
+        if (onMenu) row.addEventListener("contextmenu", event => { select(commit.hash, false); onMenu(event, commit); });
         rows.set(commit.hash, row); fragment.append(row);
       });
       element.append(fragment);
@@ -98,7 +102,7 @@ export function createCommitList(onSelect: (hash: string) => void): CommitList {
   return {
     element, select,
     async reset(nextRepo, nextRev, nextRemotes) {
-      repo = nextRepo; rev = nextRev; remotes = nextRemotes;
+      repo = nextRepo; rev = nextRev; remotesReady = Promise.resolve(nextRemotes);
       element.replaceChildren(); rows.clear(); commits = []; graphState = []; maxLanes = 1; selected = ""; loaded = 0; finished = false; loading = false;
       await loadMore();
     },

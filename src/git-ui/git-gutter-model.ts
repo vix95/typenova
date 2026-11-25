@@ -1,5 +1,5 @@
 /** Which lines of a document differ from the committed text: the markers of the margin. Pure, no DOM. */
-import { lineDiff } from "../ai/ai-model.js";
+import { ADDED, DELETED, SAME, diffKinds } from "./line-diff.js";
 
 export type ChangeKind = "added" | "modified" | "deleted";
 /** `line` counts from 1. A `deleted` marker sits on the line that now follows the removed lines (the last line when they were at the end). */
@@ -15,8 +15,9 @@ export function changedLines(base: string, current: string): LineChange[] {
   let endBefore = before.length, endAfter = after.length;
   while (endBefore > start && endAfter > start && before[endBefore - 1] === after[endAfter - 1]) { endBefore--; endAfter--; }
   if (start === endBefore && start === endAfter) return [];
-  const diff = lineDiff(before.slice(start, endBefore).join("\n"), after.slice(start, endAfter).join("\n"));
-  // `lineDiff` treats an empty text as no lines at all, so a middle that is empty on one side is handled by the same loop.
+  const middleBefore = before.slice(start, endBefore), middleAfter = after.slice(start, endAfter);
+  // Texts that differ in thousands of lines are not compared line by line: the whole stretch counts as changed.
+  const diff = diffKinds(middleBefore, middleAfter) ?? Uint8Array.from([...middleBefore.map(() => DELETED), ...middleAfter.map(() => ADDED)]);
   const changes: LineChange[] = [];
   let line = start + 1;
   let removed = 0, added: number[] = [];
@@ -26,9 +27,9 @@ export function changedLines(base: string, current: string): LineChange[] {
     else added.forEach((number, index) => changes.push({ line: number, kind: index < removed ? "modified" : "added" }));
     removed = 0; added = [];
   };
-  for (const entry of diff) {
-    if (entry.kind === "same") { flush(); line++; }
-    else if (entry.kind === "del") removed++;
+  for (const kind of diff) {
+    if (kind === SAME) { flush(); line++; }
+    else if (kind === DELETED) removed++;
     else { added.push(line); line++; }
   }
   flush();

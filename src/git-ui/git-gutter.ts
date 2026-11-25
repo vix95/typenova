@@ -8,8 +8,8 @@ import { normalizedFsPath, parentPath } from "../filesystem/project-tree-operati
 import { gitHeadText, gitRepoRoot } from "./git-api";
 import { changedLines, type ChangeKind } from "./git-gutter-model";
 
-/** A document longer than this gets no markers (the comparison is made on the main thread). */
-const MAX_DOCUMENT_CHARS = 1_500_000;
+/** A document longer than this gets no markers (the comparison is made on the main thread; it is fast, its cost follows the lines that differ). */
+const MAX_DOCUMENT_CHARS = 20_000_000;
 const AFTER_CHANGE_MS = 350;
 const AFTER_LOAD_MS = 80;
 

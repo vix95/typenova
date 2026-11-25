@@ -42,7 +42,8 @@ body.writer-mode .cm-activeLine { background: transparent; }
 .cm-writer-language { color: var(--ui-muted); font-size: 11px; letter-spacing: .04em; text-transform: lowercase; }
 
 /* Tables and formulas: drawn as a table and as KaTeX output (the same as the preview) until the caret is in them; the Markdown of a table in the source is styled as text. */
-.cm-writer-table { margin: .5em 0; overflow-x: auto; cursor: default; }
+.cm-writer-table { margin: .5em 0; overflow-x: auto; overflow-y: hidden; cursor: default; }
+.cm-writer-table-scroll { overflow-x: auto; }
 .cm-writer-table table { border-collapse: collapse; margin: 0; font-size: .95em; }
 .cm-writer-table th, .cm-writer-table td { padding: 6px 12px; border: 1px solid var(--ui-border); }
 .cm-writer-table th { background: var(--ui-panel2); font-weight: 700; }
@@ -51,10 +52,43 @@ body.writer-mode .cm-activeLine { background: transparent; }
 .cm-writer-table-row { padding: 0 12px !important; background: var(--ui-panel2); font-family: Consolas, "JetBrains Mono", monospace; font-size: .9em; line-height: 1.6; }
 .cm-writer-table-head { font-weight: 700; }
 .cm-writer-table-delim { color: var(--ui-muted); }
-.cm-writer-math-block { margin: .4em 0; padding: .3em 0; overflow-x: auto; text-align: center; cursor: default; }
+/* Nothing here scrolls: a formula with limits (an integral, a sum) is taller than its line, and a scrollbar would hide it. */
+.cm-writer-math-block { margin: .4em 0; padding: .5em 0; overflow: visible; text-align: center; cursor: default; }
 .cm-writer-math-block .katex-display { margin: 0; }
 .cm-writer-math { cursor: default; }
 
 html[data-theme="contrast"] .cm-writer-quote { border-left-color: #fff; }
 html[data-theme="contrast"] .cm-writer-code, html[data-theme="contrast"] .cm-writer-table-row, html[data-theme="contrast"] .cm-writer-code-inline { background: #000; outline: 1px solid #fff; }
 @media print { body.writer-mode .cm-editor .cm-content.cm-writer-content { width: 100%; padding: 0; } }
+
+/* Code blocks and diagrams drawn as in the preview: the same colours (highlight.js, the .markdown-body rules) and the same row of language and copy button above the code. */
+.cm-writer-code-widget, .cm-writer-diagram { margin: .5em 0; cursor: default; }
+.cm-writer-code-widget pre { margin: 0; overflow-x: auto; }
+.cm-writer-code-widget pre code { font-family: Consolas, "JetBrains Mono", monospace; font-size: .9em; white-space: pre; }
+.cm-writer-diagram { overflow-x: auto; overflow-y: hidden; text-align: center; }
+.cm-writer-diagram .mermaid-container { display: inline-block; max-width: 100%; margin: 0; }
+.cm-writer-diagram svg { max-width: 100%; height: auto; }
+.cm-writer-code-widget pre.has-code-copy { position: relative; padding-top: 34px !important; }
+.cm-writer-code-widget .code-block-toolbar {
+  position: sticky; left: 0; z-index: 3; display: flex; align-items: flex-start; justify-content: flex-end; box-sizing: border-box;
+  width: 100%; height: 0; margin: 0; padding: 0 6px; gap: 5px; min-width: 0; transform: translateY(-29px); pointer-events: none;
+}
+.cm-writer-code-widget .code-block-toolbar .code-language-pill { position: static !important; display: inline-flex; align-items: center; flex: 0 1 auto; min-width: 0; max-width: calc(100% - 82px); padding: 3px 8px; overflow: hidden; pointer-events: auto; text-overflow: ellipsis; white-space: nowrap; }
+.cm-writer-code-widget .code-copy-button, .cm-writer-code-widget .code-run-button {
+  position: static; display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 5px;
+  min-height: 24px; padding: 3px 8px; border: 1px solid var(--ui-border); border-radius: 6px; pointer-events: auto;
+  background: var(--ui-panel2); color: var(--ui-text); font: 600 10px/1.2 Inter, "Segoe UI", sans-serif; cursor: pointer;
+}
+.cm-writer-code-widget .code-run-button .ui-icon, .cm-writer-code-widget .code-copy-icon { display: block; width: 13px; height: 13px; flex: 0 0 13px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.cm-writer-code-widget .code-copy-label { white-space: nowrap; }
+.cm-writer-code-widget .code-copy-button:hover, .cm-writer-code-widget .code-copy-button:focus-visible, .cm-writer-code-widget .code-run-button:hover { border-color: var(--ui-accent); background: var(--ui-hover); color: var(--ui-text); }
+.cm-writer-code-widget .code-copy-button.copied { border-color: var(--ui-accent); }
+
+/* A table edited in place: its cells take the keyboard; the row of buttons under it shows when the pointer or the focus is in the table. */
+.cm-writer-table-edit th, .cm-writer-table-edit td { min-width: 64px; cursor: text; outline: none; }
+.cm-writer-table-edit th:focus, .cm-writer-table-edit td:focus { background: var(--ui-hover); box-shadow: inset 0 0 0 2px var(--ui-accent); }
+.cm-writer-table-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; opacity: 0; transition: opacity .12s; }
+.cm-writer-table-edit:hover .cm-writer-table-tools, .cm-writer-table-edit:focus-within .cm-writer-table-tools { opacity: 1; }
+.cm-writer-table-tools button { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 3px 8px; border: 1px solid var(--ui-border); border-radius: 6px; background: transparent; color: var(--ui-muted); font-size: 11.5px; box-shadow: none; cursor: pointer; }
+.cm-writer-table-tools button:hover { background: var(--ui-hover); color: var(--ui-text); border-color: var(--ui-accent); }
+.cm-writer-table-tools svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }

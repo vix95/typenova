@@ -58,7 +58,7 @@ export function isViewableImageFile(name: string): boolean {
 /** Files with a viewer of their own (picture, PDF, audio, video) or an import (Word) instead of the editor. */
 export function isViewerFile(name: string): boolean {
   const kind = fileKind(name);
-  return kind === "image" || kind === "pdf" || kind === "audio" || kind === "video" || kind === "docx";
+  return kind === "image" || kind === "pdf" || kind === "audio" || kind === "video" || kind === "docx" || kind === "database";
 }
 
 /** Files that can be tried in the editor: known text formats and files of an unknown kind (a binary one is turned away after reading the start of it). */

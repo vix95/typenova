@@ -133,7 +133,8 @@ export function initNativeContextMenuGuard(): void {
     const isOutline = target instanceof Element && target.closest("#outline") !== null;
     const isMediaViewer = target instanceof Element && target.closest("#mediaViewer") !== null;
     const isTerminal = target instanceof Element && target.closest("#terminalPanel") !== null;
-    if (isEditorSurface || isProjectTree || isPreviewSurface || isEditorTabStrip || isOutline || isMediaViewer || isTerminal) return;
+    const isGitWindow = target instanceof Element && target.closest(".git-dialog") !== null;
+    if (isEditorSurface || isProjectTree || isPreviewSurface || isEditorTabStrip || isOutline || isMediaViewer || isTerminal || isGitWindow) return;
     event.preventDefault();
     event.stopPropagation();
   }, true);
