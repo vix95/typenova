@@ -2,6 +2,17 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.159] - 2026-11-25
+
+### Added
+
+- **The Git window manages the repository, as Fork and GitHub Desktop do.** A row of buttons with icons: **Fetch** (all branches and changes from every remote, removing the branches that are gone), **Pull**, **Push** (with the number of commits to pull and to push) and **Stash**. The right-click menu of a branch has check out (also a double click), new branch from here, merge into the current branch, rebase the current branch onto it, rename and delete (a remote branch can be deleted on the server); a tag can start a branch, be merged or be deleted; a commit can be checked out, start a branch or a tag, be cherry-picked, reverted, or be the target of a soft, mixed or hard reset. Stashes are listed under the branches and can be applied, popped or dropped. What destroys work (a hard reset, a forced delete of an unmerged branch, deleting on the server) asks first.
+- **An operation that stops on a conflict is not lost.** A merge, rebase, cherry-pick or revert that stops shows a strip in the window ("A merge is in progress…") with Continue and Abort; the conflicts are resolved in the changes panel.
+
+### Fixed
+
+- The right-click menus of the Git window did not open: the guard that turns off the native menu swallowed them.
+
 ## [0.5.158] - 2026-11-23
 
 ### Added

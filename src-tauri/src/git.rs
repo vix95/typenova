@@ -33,7 +33,7 @@ pub(crate) fn run_git(repo: &str, args: &[&str]) -> Result<String, String> {
   Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
-fn valid_hash(value: &str) -> bool {
+pub(crate) fn valid_hash(value: &str) -> bool {
   (7..=64).contains(&value.len()) && value.chars().all(|c| c.is_ascii_hexdigit())
 }
 
@@ -79,6 +79,8 @@ pub struct Overview {
   pub branches: Vec<Branch>,
   pub tags: Vec<Tag>,
   pub dirty: u32,
+  /// A merge, rebase, cherry-pick or revert that is waiting to be continued or aborted.
+  pub operation: Option<String>,
 }
 
 #[derive(Serialize, Debug, PartialEq)]
@@ -244,7 +246,7 @@ pub fn git_overview(repo: String) -> Result<Overview, String> {
   });
   let refs = refs.map_err(|_| "git stopped unexpectedly".to_string())??;
   let tags = tags.map_err(|_| "git stopped unexpectedly".to_string())??;
-  Ok(Overview { detached: head == "HEAD", head, branches: parse_branches(&refs), tags: parse_tags(&tags), dirty })
+  Ok(Overview { detached: head == "HEAD", head, branches: parse_branches(&refs), tags: parse_tags(&tags), dirty, operation: crate::git_sync::operation_in_progress(repo).map(str::to_string) })
 }
 
 /// One page of the history of `rev` (a branch, tag or hash), or of every branch when `rev` is empty.

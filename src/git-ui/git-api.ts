@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 export interface GitBranch { name: string; remote: boolean; current: boolean; hash: string; upstream: string | null; ahead: number; behind: number }
 export interface GitTag { name: string; hash: string }
-export interface GitOverview { head: string; detached: boolean; branches: GitBranch[]; tags: GitTag[]; dirty: number }
+export interface GitOverview { head: string; detached: boolean; branches: GitBranch[]; tags: GitTag[]; dirty: number; operation: string | null }
 export interface GitCommit { hash: string; parents: string[]; author: string; email: string; date: string; refs: string[]; subject: string }
 export interface GitFileChange { status: string; path: string; oldPath: string | null; added: number | null; deleted: number | null }
 export interface GitCommitDetail { hash: string; parents: string[]; author: string; email: string; date: string; committer: string; body: string; files: GitFileChange[] }
@@ -18,6 +18,26 @@ export const gitInit = (path: string) => invoke<string>("git_init", { path });
 export const gitClone = (url: string, parent: string, name: string) => invoke<string>("git_clone", { url, parent, name });
 /** Fetches the latest changes of the current branch and fast-forwards to them; resolves with what git said. */
 export const gitPull = (repo: string) => invoke<string>("git_pull", { repo });
+/** What an operation that may stop on a conflict says: `ok` false with git's words, and `inProgress` while a merge, rebase, cherry-pick or revert waits to be continued or aborted. */
+export interface GitOpResult { ok: boolean; message: string; inProgress: string | null }
+export interface GitStash { index: number; message: string; date: string }
+export const gitFetch = (repo: string) => invoke<GitOpResult>("git_fetch", { repo });
+export const gitBranchCreate = (repo: string, name: string, start: string, checkout: boolean) => invoke<GitOpResult>("git_branch_create", { repo, name, start, checkout });
+export const gitBranchDelete = (repo: string, name: string, force: boolean) => invoke<GitOpResult>("git_branch_delete", { repo, name, force });
+export const gitBranchRename = (repo: string, old: string, name: string) => invoke<GitOpResult>("git_branch_rename", { repo, old, new: name });
+export const gitRemoteBranchDelete = (repo: string, remote: string, name: string) => invoke<GitOpResult>("git_remote_branch_delete", { repo, remote, name });
+export const gitMerge = (repo: string, rev: string) => invoke<GitOpResult>("git_merge", { repo, rev });
+export const gitRebase = (repo: string, onto: string) => invoke<GitOpResult>("git_rebase", { repo, onto });
+export const gitCherryPick = (repo: string, hash: string) => invoke<GitOpResult>("git_cherry_pick", { repo, hash });
+export const gitRevert = (repo: string, hash: string) => invoke<GitOpResult>("git_revert", { repo, hash });
+export const gitReset = (repo: string, hash: string, mode: "soft" | "mixed" | "hard") => invoke<GitOpResult>("git_reset", { repo, hash, mode });
+export const gitCheckoutCommit = (repo: string, hash: string) => invoke<GitOpResult>("git_checkout_commit", { repo, hash });
+export const gitTagCreate = (repo: string, name: string, rev: string, message: string) => invoke<GitOpResult>("git_tag_create", { repo, name, rev, message });
+export const gitTagDelete = (repo: string, name: string) => invoke<GitOpResult>("git_tag_delete", { repo, name });
+export const gitOperation = (repo: string, action: "continue" | "abort") => invoke<GitOpResult>("git_operation", { repo, action });
+export const gitStashPush = (repo: string, message: string, untracked: boolean) => invoke<GitOpResult>("git_stash_push", { repo, message, untracked });
+export const gitStashList = (repo: string) => invoke<GitStash[]>("git_stash_list", { repo });
+export const gitStashAction = (repo: string, index: number, action: "apply" | "pop" | "drop") => invoke<GitOpResult>("git_stash_action", { repo, index, action });
 export const gitCommitDetail = (repo: string, hash: string) => invoke<GitCommitDetail>("git_commit_detail", { repo, hash });
 export const gitFileDiff = (repo: string, hash: string, path: string, oldPath: string | null) => invoke<string>("git_file_diff", { repo, hash, path, oldPath });
 

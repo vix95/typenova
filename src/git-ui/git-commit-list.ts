@@ -46,7 +46,7 @@ export interface CommitList {
   jumpTo(hash: string): Promise<boolean>;
 }
 
-export function createCommitList(onSelect: (hash: string) => void): CommitList {
+export function createCommitList(onSelect: (hash: string) => void, onMenu?: (event: MouseEvent, commit: GitCommit) => void): CommitList {
   const element = el("div", "git-commits"); element.tabIndex = 0; element.setAttribute("role", "listbox"); element.setAttribute("aria-label", langText("Commity", "Commits"));
   const rows = new Map<string, HTMLElement>();
   let remotesReady: Promise<ReadonlySet<string>> = Promise.resolve(new Set<string>());
@@ -78,6 +78,7 @@ export function createCommitList(onSelect: (hash: string) => void): CommitList {
       page.forEach((commit, index) => {
         const row = buildRow(commit, laid.rows[index], columnWidth(maxLanes), remotes);
         row.addEventListener("click", () => { select(commit.hash, false); element.focus(); });
+        if (onMenu) row.addEventListener("contextmenu", event => { select(commit.hash, false); onMenu(event, commit); });
         rows.set(commit.hash, row); fragment.append(row);
       });
       element.append(fragment);

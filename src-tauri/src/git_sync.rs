@@ -86,7 +86,7 @@ fn git_dir(repo: &str) -> Option<PathBuf> {
 }
 
 /// What is in progress in the repository (a state in which staging everything is wrong), if anything.
-fn operation_in_progress(repo: &str) -> Option<&'static str> {
+pub(crate) fn operation_in_progress(repo: &str) -> Option<&'static str> {
   let dir = git_dir(repo)?;
   [("MERGE_HEAD", "merge"), ("rebase-merge", "rebase"), ("rebase-apply", "rebase"), ("CHERRY_PICK_HEAD", "cherry-pick"), ("REVERT_HEAD", "revert")]
     .into_iter()
