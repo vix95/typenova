@@ -1,7 +1,7 @@
 {
   "name": "typenova",
   "private": true,
-  "version": "0.5.163",
+  "version": "0.5.164",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
