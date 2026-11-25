@@ -16,14 +16,23 @@ export interface OverflowOptions {
   labelPl: string;
   labelEn: string;
   alwaysInMenu?: (button: HTMLElement) => boolean;
+  /** Room (in pixels) that must stay free beside the buttons, for what shares the row with them (the title of the section): the buttons move into the menu before they crowd it. */
+  reserve?: () => number;
 }
+
+/** The size of a button of the heading and the gap between two (see `.sidebar-heading-actions` in the style sheet). */
+const BUTTON_PX = 27;
+const BUTTON_GAP_PX = 3;
+/** Free space kept between the title of the Project heading and its first icon. */
+const TITLE_AIR_PX = 56;
 
 export function installProjectActionsOverflow(): void {
   const actions = $("openProject").parentElement as HTMLElement;
   const room = actions.closest<HTMLElement>(".sidebar-section-heading");
   if (!room) return;
-  const inMenu = new Set(["expandAllFolders", "collapseAllFolders", "openGitHistory", "openBookmarks", "openHighlights"]);
-  installOverflow({ actions, room, moreId: "projectActionsMore", labelPl: "Więcej akcji projektu", labelEn: "More project actions", alwaysInMenu: button => inMenu.has(button.id) });
+  const inMenu = new Set(["openGitPanel", "openBookmarks", "openHighlights"]);
+  const title = room.firstElementChild as HTMLElement | null;
+  installOverflow({ actions, room, moreId: "projectActionsMore", labelPl: "Więcej akcji projektu", labelEn: "More project actions", alwaysInMenu: button => inMenu.has(button.id), reserve: () => (title?.offsetWidth ?? 0) + TITLE_AIR_PX });
 }
 
 export function installOverflow(options: OverflowOptions): void {
@@ -54,7 +63,15 @@ export function installOverflow(options: OverflowOptions): void {
     for (const item of buttons) { const slot = slots.get(item); if (slot?.parentNode && item.parentElement !== actions) { slot.parentNode.insertBefore(item, slot); delete item.dataset.menuLabel; } }
     // Everything in the bar when it fits without the three-dot button; the button takes room of its own only when something has to move.
     more.hidden = true;
-    const fits = (): boolean => heading.scrollWidth <= heading.clientWidth + 1;
+    const fits = (): boolean => {
+      if (heading.scrollWidth > heading.clientWidth + 1) return false;
+      if (!options.reserve) return true;
+      // The title keeps its room: the buttons that are in the bar must fit in what is left of the row.
+      const shown = Array.from(actions.children).filter(child => child instanceof HTMLButtonElement && !child.hidden).length;
+      const style = getComputedStyle(heading);
+      const inner = heading.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      return !shown || shown * BUTTON_PX + (shown - 1) * BUTTON_GAP_PX + options.reserve() <= inner;
+    };
     if (fits() && !buttons.some(item => options.alwaysInMenu?.(item))) { close(); labels(); return; }
     more.hidden = false;
     let moved = false;

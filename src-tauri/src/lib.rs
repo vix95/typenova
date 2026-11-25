@@ -3,12 +3,15 @@ mod cache_cleanup;
 mod clipboard_files;
 mod git;
 mod git_sync;
+mod git_ops;
+mod git_remote;
 mod git_work;
 mod repo_dictionary;
 mod page_server;
 mod remote_image;
 mod secrets;
 mod spell;
+mod sqlite_view;
 mod terminal;
 mod window_fit;
 
@@ -161,6 +164,21 @@ fn harden_webview(window: &tauri::WebviewWindow) {
     use windows_core::Interface;
     let Ok(core) = webview.controller().CoreWebView2() else { return };
     let Ok(settings) = core.Settings() else { return };
+    // Reading the clipboard (the Paste of a context menu, of the terminal) must not ask the person for permission, as a web page would: this is the program's own window.
+    {
+      use webview2_com::Microsoft::Web::WebView2::Win32::{COREWEBVIEW2_PERMISSION_KIND, COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ, COREWEBVIEW2_PERMISSION_STATE_ALLOW};
+      let mut token = 0i64;
+      let handler = webview2_com::PermissionRequestedEventHandler::create(Box::new(|_, args| {
+        let Some(args) = args else { return Ok(()) };
+        let mut kind = COREWEBVIEW2_PERMISSION_KIND::default();
+        args.PermissionKind(&mut kind)?;
+        if kind == COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ {
+          args.SetState(COREWEBVIEW2_PERMISSION_STATE_ALLOW)?;
+        }
+        Ok(())
+      }));
+      let _ = core.add_PermissionRequested(&handler, &mut token);
+    }
     let _ = settings.SetAreDevToolsEnabled(false);
     let _ = settings.SetIsStatusBarEnabled(false);
     let _ = settings.SetIsZoomControlEnabled(false);
@@ -447,7 +465,7 @@ pub fn run() {
         }
       }
     })
-    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, git_sync::git_sync_plan, git_sync::git_commit_push, git_work::git_work_state, git_work::git_stage, git_work::git_unstage, git_work::git_commit_staged, git_work::git_push, git_work::git_switch, git_work::git_head_text, remote_image::fetch_remote_image, repo_dictionary::repo_dictionary_read, repo_dictionary::repo_dictionary_write, spell::spell_check, terminal::terminal_shells, terminal::terminal_spawn, terminal::terminal_write, terminal::terminal_resize, terminal::terminal_kill, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
+    .invoke_handler(tauri::generate_handler![take_launch_paths, clipboard_files::clipboard_file_list, clipboard_files::paste_clipboard_files, git::git_repo_root, git::git_overview, git::git_log, git::git_commit_detail, git::git_file_diff, git_sync::git_sync_plan, git_sync::git_commit_push, git_work::git_work_state, git_work::git_stage, git_work::git_unstage, git_work::git_commit_staged, git_work::git_push, git_work::git_switch, git_work::git_head_text, git_ops::git_fetch, git_ops::git_branch_create, git_ops::git_branch_delete, git_ops::git_branch_rename, git_ops::git_remote_branch_delete, git_ops::git_merge, git_ops::git_rebase, git_ops::git_cherry_pick, git_ops::git_revert, git_ops::git_reset, git_ops::git_checkout_commit, git_ops::git_tag_create, git_ops::git_tag_delete, git_ops::git_operation, git_ops::git_stash_push, git_ops::git_stash_list, git_ops::git_stash_action, git_remote::git_init, git_remote::git_clone, git_remote::git_pull, sqlite_view::sqlite_tables, sqlite_view::sqlite_query, remote_image::fetch_remote_image, repo_dictionary::repo_dictionary_read, repo_dictionary::repo_dictionary_write, spell::spell_check, terminal::terminal_shells, terminal::terminal_spawn, terminal::terminal_write, terminal::terminal_resize, terminal::terminal_kill, spell::spell_suggest, ai::ai_chat, ai::ai_cancel, ai::ai_list_models, secrets::secret_store, secrets::secret_info, secrets::secret_delete, allow_preview_image, open_page, open_document_window, window_under_cursor, deliver_tab, close_current_window, drag_ghost_show, drag_ghost_move, drag_ghost_hide, drag_hover, drag_hover_end])
     .build(tauri::generate_context!())
     .expect("error while building TypeNova")
     .run(|app, event| {

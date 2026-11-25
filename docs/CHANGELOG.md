@@ -2,6 +2,54 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.159] - 2026-11-25
+
+### Added
+
+- **The Git window manages the repository, as Fork and GitHub Desktop do.** A row of buttons with icons: **Fetch** (all branches and changes from every remote, removing the branches that are gone), **Pull**, **Push** (with the number of commits to pull and to push) and **Stash**. The right-click menu of a branch has check out (also a double click), new branch from here, merge into the current branch, rebase the current branch onto it, rename and delete (a remote branch can be deleted on the server); a tag can start a branch, be merged or be deleted; a commit can be checked out, start a branch or a tag, be cherry-picked, reverted, or be the target of a soft, mixed or hard reset. Stashes are listed under the branches and can be applied, popped or dropped. What destroys work (a hard reset, a forced delete of an unmerged branch, deleting on the server) asks first.
+- **An operation that stops on a conflict is not lost.** A merge, rebase, cherry-pick or revert that stops shows a strip in the window ("A merge is in progress…") with Continue and Abort; the conflicts are resolved in the changes panel.
+
+### Fixed
+
+- The right-click menus of the Git window did not open: the guard that turns off the native menu swallowed them.
+
+## [0.5.158] - 2026-11-23
+
+### Added
+
+- **Tables in the Writer mode are edited in place.** A table is drawn as a table whose cells can be typed in: the cell that has the focus shows its Markdown, the others show the formatting (bold, code, links, formulas). Tab and Enter move between cells (and add a row at the end), and a row of buttons under the table (shown when the pointer or the focus is in it) adds and removes rows and columns or switches to the Markdown of the table. Every change is written back into the document as Markdown, as an ordinary edit that can be undone.
+
+### Changed
+
+- **The Git window opens about three times faster** (on a repository of 113,000 files: from 0.8-1.0 s to 0.3 s until the commits are shown). The four runs of `git` that make the overview go at the same time, the log is read while the overview is, and the folders are asked about their repository at once; each run of `git` costs about 150 ms to start on Windows.
+- **The icons of the Project heading give way to the title.** When the left panel is narrow the icons move into the three-dot menu until there is room: the title keeps free space beside it (at least 56 px) and is never crowded by the icons.
+- The Writer mode loads what its blocks need (the code highlighter, the table renderer) while the window is idle, and keeps the typeset formulas, so that a block that scrolls out of view and back is drawn at once.
+
+### Fixed
+
+- A display formula (an integral, a sum) in the Writer mode had a scrollbar beside it; nothing in a drawn formula, table or diagram scrolls vertically now.
+
+## [0.5.157] - 2026-11-23
+
+### Added
+
+- **SQLite databases open in TypeNova.** A `.sqlite`, `.sqlite3`, `.db`, `.db3`, `.s3db` or `.sdb` file in the project tree opens in a window with its tables and views on the left (with their row counts) and the rows of the chosen one on the right, a hundred at a time. A line above the rows takes any query that only reads (`SELECT`…); the file is opened read only and anything that writes is refused. `.sql` files open in the editor with SQL highlighting.
+- **Git: the window of the history can make and clone repositories.** "Create a repository…" makes one in a folder chosen in the file explorer (branch `main`), "Clone…" asks for the address (https, ssh), the folder and its name, as Fork does, and "Pull" fetches the latest changes; the repository is added to the project tree. The window opens also when the project has no repository yet. The same actions are in a new "Git" menu of the application menu (which also holds the history, the changes panel and commit and push).
+- **A button that pulls the latest changes**, next to "Commit and push" (`git pull --ff-only`: never a merge commit, and git's own message when the branches have diverged).
+- **"Copy full path"** in the right-click menu of the project tree, for a file and for a folder.
+- **The Writer mode draws code blocks and diagrams like the preview.** A fenced block shows the highlight.js colours, the language and the copy button; a `mermaid` block is drawn as its diagram, and a `chart` block as its chart. The Markdown of a block is shown when the caret is in it.
+
+### Changed
+
+- The Git history button moved from the Project heading to the row of views of the left panel ("Git", between Tabs and Graph). "Expand all folders" and "Collapse all folders" are beside Refresh, and the button for the Git changes panel is in the three-dot menu.
+- The selected commit in the Git window no longer has a blue bar on its left.
+
+### Fixed
+
+- **Pasting no longer asks for permission.** Reading the clipboard (Paste in the context menu of the editor and of the terminal) made the web view ask whether the page may read it, as a browser does; the program's own window now allows it.
+- **Change markers (green, blue, red) in the margin of large files.** The comparison with the committed text gave up when the part between the first and the last change was large (a file of a few thousand lines edited at both ends), and files over 1.5 MB (the committed text over 2 MB) had no markers. It is now Myers' algorithm, fast for any size (200,000 lines with three distant edits in well under a second), and the limits are 20 MB.
+- **Adding a folder to the tree opened every folder again.** Each folder shown as a root was set open whenever one was added; now only the added folder (and the one that was the only folder until then) starts open, and the others stay as they were left.
+
 ## [0.5.156] - 2026-11-17
 
 ### Added

@@ -1,6 +1,6 @@
 [package]
 name = "typenova"
-version = "0.5.156"
+version = "0.5.159"
 description = "A fast, private Markdown workspace for writing, thinking and building knowledge."
 authors = ["itvix.pl"]
 edition = "2021"
@@ -28,6 +28,7 @@ machine-uid = "0.5"
 portable-pty = "0.9"
 base64 = "0.22"
 zeroize = "1"
+rusqlite = { version = "0.37", features = ["bundled"] }
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39"
 windows-core = "0.62"

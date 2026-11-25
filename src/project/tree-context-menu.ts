@@ -7,6 +7,7 @@ import { openViewerFile } from "../preview/open-media";
 import { exists, mkdir, rename, writeTextFile } from "@tauri-apps/plugin-fs";
 import { BinaryFileError, loadTextFile } from "../filesystem/text-io";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { copyTextToClipboard } from "../preview/code-blocks";
 import { runFolderTask } from "../ai/chat-panel";
 import { askForName, selectBaseName } from "../ui/name-dialog";
 import { fileNameProblem } from "../editor/image-paste-dialog";
@@ -79,7 +80,7 @@ export function showTreeContextMenu(event: MouseEvent, row: HTMLElement | null, 
     if (paste.disabled) void systemClipboardFiles().then(files => { if (files.names.length && menu && !menu.hidden) paste.disabled = false; });
     if (!isRoot) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń", "Delete"), "delete", { danger: true, shortcut: "Delete" }); }
     if (rootRow) { const hr = document.createElement("hr"); menu.append(hr); add(langText("Usuń folder z drzewa", "Remove folder from tree"), "remove-root"); }
-    { const hr = document.createElement("hr"); menu.append(hr); add(langText("Pokaż w eksploratorze", "Show in file explorer"), "reveal"); }
+    { const hr = document.createElement("hr"); menu.append(hr); add(langText("Pokaż w eksploratorze", "Show in file explorer"), "reveal"); add(langText("Kopiuj pełną ścieżkę", "Copy full path"), "copy-path"); }
   }
   { if (!refreshOnly) { const hr = document.createElement("hr"); menu.append(hr); } add(langText("Dodaj folder do obszaru roboczego…", "Add folder to workspace…"), "add-folder"); add(langText("Odśwież", "Refresh"), "refresh", { shortcut: "F5" }); }
   menu.hidden = false; menu.style.visibility = "hidden"; menu.style.left = "0px"; menu.style.top = "0px";
@@ -319,6 +320,7 @@ export async function handleTreeContextAction(action: string) {
     else if (action === "delete" && !isRoot) await deleteProjectEntry(path, isDirectory);
     else if (action === "rename" && !isRoot) await promptAndRenameProjectEntry(path, isDirectory);
     else if (action === "reveal") await revealItemInDir(path);
+    else if (action === "copy-path") showToast(await copyTextToClipboard(path) ? `${langText("Skopiowano ścieżkę", "Path copied")}: ${path}` : langText("Nie udało się skopiować ścieżki.", "Could not copy the path."));
     else if (action === "paste") await pasteIntoFolder(destinationFolder);
     else if (action === "paste-internal" && projectTreeState.clipboard) {
       const clipboard = { ...projectTreeState.clipboard };

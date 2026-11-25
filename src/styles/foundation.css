@@ -2514,7 +2514,7 @@ dialog.git-dialog[open]{display:flex}
 .git-commits{position:relative;outline:0}
 .git-row{display:grid;grid-template-columns:auto minmax(0,1fr) 130px 110px 64px;align-items:center;gap:8px;height:28px;padding-right:10px;border-bottom:1px solid color-mix(in srgb,var(--ui-border) 45%,transparent);cursor:pointer;font-size:12.5px}
 .git-row:hover{background:var(--ui-hover)}
-.git-row.selected{background:var(--ui-active);box-shadow:inset 3px 0 0 var(--ui-accent)}
+.git-row.selected{background:var(--ui-active)}
 .git-graph{display:block;flex:none}
 .git-subject{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden}
 .git-msg{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

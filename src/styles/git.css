@@ -68,3 +68,31 @@ html[data-theme="contrast"] .git-branch-button, html[data-theme="contrast"] .git
 .spell-repo-info { margin: 0; }
 .spell-repo .ai-flat-button:disabled { opacity: .5; cursor: default; }
 .spell-repo-auto { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+
+/* Making, cloning and pulling repositories (src/git-ui/git-repo-actions.ts, git-history.ts) */
+.git-toolbar .git-small-btn { flex: 0 0 auto; }
+.git-dialog-empty { width: min(560px, calc(100vw - 32px)); height: auto; }
+.git-dialog-empty .git-content { gap: 14px; }
+.git-empty-note { margin: 0; color: var(--ui-muted); font-size: 13px; line-height: 1.5; }
+dialog.git-clone-dialog { width: min(560px, calc(100vw - 32px)); }
+.git-clone-row { display: flex; align-items: flex-end; gap: 8px; }
+.git-clone-row .name-dialog-field { flex: 1 1 auto; min-width: 0; }
+.git-clone-row .git-small-btn { flex: 0 0 auto; min-height: 36px; }
+.git-clone-add { margin-top: 2px; }
+#gitPullButton.is-busy { opacity: .55; pointer-events: none; }
+
+/* Working with the repository from the Git window (src/git-ui/git-toolbar.ts, git-ops-ui.ts, git-menu.ts) */
+.git-ops { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.git-icon-btn { display: inline-flex; align-items: center; gap: 6px; }
+.git-icon-btn .ui-icon { width: 14px; height: 14px; flex: 0 0 14px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.git-icon-btn:disabled { opacity: .5; cursor: default; }
+.git-count { min-width: 16px; padding: 0 5px; border-radius: 999px; background: var(--ui-accent); color: var(--ui-accent-contrast, #fff); font-size: 10.5px; font-weight: 700; line-height: 16px; text-align: center; }
+.git-banner { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--ui-accent); border-radius: 8px; background: color-mix(in srgb, var(--ui-accent) 10%, transparent); font-size: 12.5px; }
+.git-banner[hidden] { display: none; }
+.git-banner-text { flex: 1 1 auto; min-width: 0; }
+.git-menu { min-width: 250px; }
+.git-menu button { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; }
+.git-menu button.danger { color: #e5534b; }
+.git-menu-icon { display: inline-flex; width: 16px; flex: 0 0 16px; }
+.git-menu-icon .ui-icon { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.git-branch-icon .ui-icon { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }

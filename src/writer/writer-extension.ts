@@ -6,6 +6,7 @@ import type { SyntaxNode } from "@lezer/common";
 import { classifyLink } from "./writer-model";
 import { buildWriterDecorations } from "./writer-decorations";
 import { writerBlocks } from "./writer-blocks";
+import { prepareWriterBlocks } from "./writer-widgets";
 
 class WriterPlugin {
   shown: DecorationSet = Decoration.none;
@@ -55,5 +56,6 @@ export const writerCompartment = new Compartment();
 
 /** The extensions of the mode: lines wrap (it is prose now), and the Markdown is rendered. */
 export function writerExtensions(enabled: boolean): Extension {
+  if (enabled) prepareWriterBlocks();
   return enabled ? [writerPlugin, writerBlocks, linkClicks, EditorView.lineWrapping, EditorView.contentAttributes.of({ class: "cm-writer-content" })] : [];
 }

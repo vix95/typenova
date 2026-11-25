@@ -63,6 +63,16 @@ export const ICONS = {
   profile: svg('<path d="M3 3v10h10"/><path d="M5.5 10.5V8M8 10.5V5.5M10.5 10.5V7"/>'),
   terminalSide: svg('<rect x="2" y="3" width="12" height="10" rx="2"/><path d="M8 3v10M3.8 6.4l1.4 1.1-1.4 1.1"/>'),
   stop: svg('<rect x="4" y="4" width="8" height="8" rx="1.5"/>'),
+  fetch: svg('<path d="M4.5 11.5a3 3 0 0 1-.4-5.9 4 4 0 0 1 7.6 1 2.5 2.5 0 0 1 .3 4.9"/><path d="M8 7.5v5M6 10.8l2 2 2-2"/>'),
+  branch: svg('<circle cx="4.5" cy="3.5" r="1.5"/><circle cx="4.5" cy="12.5" r="1.5"/><circle cx="11.5" cy="5.5" r="1.5"/><path d="M4.5 5v6M11.5 7c0 2.5-3 3-7 4"/>'),
+  merge: svg('<circle cx="4.5" cy="3.5" r="1.5"/><circle cx="4.5" cy="12.5" r="1.5"/><circle cx="11.5" cy="9" r="1.5"/><path d="M4.5 5v6M4.5 5c0 2.5 2 4 5.5 4"/>'),
+  rebase: svg('<path d="M3 4h7a3 3 0 0 1 0 6H5.5"/><path d="M7.5 8 5.5 10l2 2"/>'),
+  stash: svg('<path d="M2.5 6h11v7h-11z"/><path d="M2.5 6 4 3h8l1.5 3"/><path d="M6.5 9h3"/>'),
+  cherry: svg('<circle cx="5" cy="11.5" r="2"/><circle cx="11" cy="11.5" r="2"/><path d="M5 9.5C5.5 6 7 4 9 2.5M11 9.5C10.5 6 9.5 4 9 2.5"/>'),
+  revert: svg('<path d="M5 3 2.5 5.5 5 8"/><path d="M2.5 5.5H9a4 4 0 0 1 0 8H5"/>'),
+  commit: svg('<circle cx="8" cy="8" r="2.5"/><path d="M2 8h3.5M10.5 8H14"/>'),
+  push: svg('<path d="M8 12.5V3.5M4.5 7 8 3.5 11.5 7"/><path d="M3 13.5h10"/>'),
+  pull: svg('<path d="M8 3.5v9M4.5 9 8 12.5 11.5 9"/><path d="M3 2.5h10"/>'),
 } as const;
 
 export type IconName = keyof typeof ICONS;
