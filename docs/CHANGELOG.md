@@ -2,6 +2,12 @@
 
 All notable changes to TypeNova are recorded here, newest first. Every entry corresponds to a commit of this repository and links to it. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are the ones in `package.json`.
 
+## [0.5.161] - 2026-11-25
+
+### Added
+
+- **"What's new" in the Help menu.** A small panel that stays beside the work (it is not a modal window: the editor stays usable while it is open) with the last five versions, each in a few general words. It closes with its own button or with Escape.
+
 ## [0.5.160] - 2026-11-25
 
 ### Changed

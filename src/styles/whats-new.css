@@ -1,0 +1,14 @@
+
+/* "What's new": a small panel beside the work, not a modal window (src/app/whats-new.ts) */
+.whats-new { position: fixed; top: 54px; right: 16px; z-index: 6000; width: min(340px, calc(100vw - 32px)); padding: 14px 16px 12px; border: 1px solid var(--ui-border); border-radius: 12px; background: var(--ui-panel); color: var(--ui-text); box-shadow: var(--ui-shadow-popover, 0 12px 32px rgba(0, 0, 0, .35)); }
+.whats-new[hidden] { display: none; }
+.whats-new-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.whats-new-title { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: .1px; }
+.whats-new-close { display: inline-grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--ui-muted); box-shadow: none; cursor: pointer; }
+.whats-new-close:hover { background: var(--ui-hover); color: var(--ui-text); }
+.whats-new-close .ui-icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.whats-new-list { display: flex; flex-direction: column; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.whats-new-item { display: flex; align-items: baseline; gap: 10px; font-size: 12.5px; line-height: 1.45; }
+.whats-new-version { flex: 0 0 auto; min-width: 46px; padding: 1px 7px; border: 1px solid var(--ui-border); border-radius: 999px; color: var(--ui-muted); font-size: 11px; font-weight: 650; text-align: center; }
+.whats-new-item:first-child .whats-new-version { border-color: var(--ui-accent); color: var(--ui-accent); }
+.whats-new-text { min-width: 0; }
