@@ -1,4 +1,4 @@
-/** Updates of the program: at the start (when the setting is on) and from the Help menu it asks GitHub whether a newer release exists, tells the person, and after a confirmation downloads it, checks its signature, installs it and starts the program again. */
+/** Updates of the program: at the start (when the setting is on) and from the Help menu it asks GitHub whether a newer release exists, tells the person, and after a confirmation downloads it, checks its signature, installs it and starts the program again. While it works the icon of "Check now" turns and a bar runs (endless while it checks, filling while it downloads). */
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { $ } from "../app/dom";
@@ -10,19 +10,49 @@ import { checkIsDue, downloadPercent, releaseNote } from "./update-model";
 import { lastUpdateCheck, rememberUpdateCheck, setUpdateCheckEnabled, updateCheckEnabled } from "./update-settings";
 
 interface UpdateInfo { version: string; current: string; notes: string }
+type Phase = "idle" | "checking" | "downloading";
 
 const START_DELAY_MS = 6000;
+/** A manual check that finishes at once is still shown for this long, so that the person sees that something was done. */
+const MIN_VISIBLE_MS = 700;
+const sleep = (ms: number) => new Promise<void>(resolve => window.setTimeout(resolve, ms));
 let busy = false;
+
+/** The bars: one at the top of the window (for the checks made at the start and from the menu) and one in the settings, under the button. */
+function bars(): HTMLElement[] { return [...document.querySelectorAll<HTMLElement>(".update-bar")]; }
+
+/** Shows what the update is doing: the turning icon and disabled buttons, the bars (`percent` null = endless) and the line of the status bar. */
+function showPhase(phase: Phase, percent: number | null = null, version = ""): void {
+  const working = phase !== "idle";
+  const button = $<HTMLButtonElement>("updateCheckNow");
+  button.classList.toggle("is-checking", working);
+  button.disabled = working; button.setAttribute("aria-busy", String(working));
+  $<HTMLButtonElement>("menuCheckUpdates").disabled = working;
+  const label = phase === "downloading" ? langText(`Pobieranie aktualizacji ${version}`, `Downloading update ${version}`) : langText("Sprawdzanie aktualizacji", "Checking for updates");
+  for (const bar of bars()) {
+    bar.hidden = !working;
+    bar.dataset.state = percent === null ? "indeterminate" : "determinate";
+    bar.style.setProperty("--progress", `${percent ?? 0}%`);
+    bar.setAttribute("aria-label", label);
+    if (percent === null) bar.removeAttribute("aria-valuenow"); else bar.setAttribute("aria-valuenow", String(percent));
+  }
+  if (working) $("statusText").textContent = `${label}…${percent === null ? "" : ` ${percent}%`}`;
+}
+
+function createBar(extraClass = ""): HTMLElement {
+  const bar = document.createElement("div");
+  bar.className = `update-bar ${extraClass}`.trim(); bar.hidden = true;
+  bar.setAttribute("role", "progressbar"); bar.setAttribute("aria-valuemin", "0"); bar.setAttribute("aria-valuemax", "100");
+  return bar;
+}
 
 /** Downloads and installs the update that was found; the program ends when the installer starts, so this returns only on a failure. */
 async function install(info: UpdateInfo): Promise<void> {
-  const status = $("statusText");
   const stop = await listen<{ downloaded: number; total: number | null }>("update-progress", event => {
-    const percent = downloadPercent(event.payload.downloaded, event.payload.total);
-    status.textContent = langText(`Pobieranie aktualizacji ${info.version}…${percent === null ? "" : ` ${percent}%`}`, `Downloading update ${info.version}…${percent === null ? "" : ` ${percent}%`}`);
+    showPhase("downloading", downloadPercent(event.payload.downloaded, event.payload.total), info.version);
   });
-  status.textContent = langText(`Pobieranie aktualizacji ${info.version}…`, `Downloading update ${info.version}…`);
-  try { await invoke("update_install"); } finally { stop(); }
+  showPhase("downloading", null, info.version);
+  try { await invoke("update_install"); } finally { stop(); showPhase("idle"); }
 }
 
 /** Tells the person about the new version and goes on only when they agree and nothing unsaved would be lost. */
@@ -46,18 +76,23 @@ async function offer(info: UpdateInfo): Promise<void> {
 async function checkNow(manual: boolean): Promise<void> {
   if (busy) return;
   busy = true;
+  showPhase("checking");
   try {
     rememberUpdateCheck(Date.now());
-    const info = await invoke<UpdateInfo | null>("update_check");
+    const [info] = await Promise.all([invoke<UpdateInfo | null>("update_check"), manual ? sleep(MIN_VISIBLE_MS) : Promise.resolve()]);
+    showPhase("idle");
     if (info) await offer(info);
     else if (manual) showToast(langText("Masz najnowszą wersję TypeNova.", "TypeNova is up to date."));
   } catch (error) {
+    showPhase("idle");
     if (manual) await appAlert(langText(`Nie udało się sprawdzić aktualizacji: ${error}`, `Could not check for updates: ${error}`));
-  } finally { busy = false; }
+  } finally { busy = false; showPhase("idle"); }
 }
 
-/** Wires the menu item, the setting and the check at the start. */
+/** Wires the menu item, the setting, the bars and the check at the start. */
 export function installUpdater(): void {
+  document.body.append(createBar("update-bar-top"));
+  $("updateCheckBarSlot").append(createBar());
   $("menuCheckUpdates").addEventListener("click", () => { void checkNow(true); });
   $("updateCheckNow").addEventListener("click", () => { void checkNow(true); });
   const toggle = $<HTMLInputElement>("updateCheckToggle");
