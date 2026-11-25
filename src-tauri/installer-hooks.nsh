@@ -13,6 +13,46 @@
   ${EndIf}
 !macroend
 
+; An update replaces the files of the previous version (see the template installer.nsi, which marks its changes "TypeNova:"). Before the new files are copied, the files the previous
+; version installed besides the program itself (it listed them in `installed-files.txt`) are removed, so that a file the new version no longer has does not stay behind.
+; Only names inside the folder of the program are removed; the program and the uninstaller are replaced by the copy that follows.
+!macro NSIS_HOOK_PREINSTALL
+  ${If} ${FileExists} "$INSTDIR\installed-files.txt"
+    FileOpen $R8 "$INSTDIR\installed-files.txt" r
+    TypeNovaNextFile:
+      FileRead $R8 $R9
+      ${If} $R9 != ""
+        TypeNovaTrim:
+          StrCpy $R6 $R9 1 -1
+          ${If} $R6 == "$\r"
+          ${OrIf} $R6 == "$\n"
+            StrCpy $R9 $R9 -1
+            Goto TypeNovaTrim
+          ${EndIf}
+        StrCpy $R6 $R9 2
+        StrCpy $R5 $R9 1 1
+        ${If} $R9 != ""
+        ${AndIf} $R9 != "uninstall.exe"
+        ${AndIf} $R9 != "${MAINBINARYNAME}.exe"
+        ${AndIf} $R6 != ".."
+        ${AndIf} $R5 != ":"
+          StrCpy $R6 $R9 1
+          ${If} $R6 != "\"
+          ${AndIf} $R6 != "/"
+            Delete "$INSTDIR\$R9"
+          ${EndIf}
+        ${EndIf}
+        Goto TypeNovaNextFile
+      ${EndIf}
+    FileClose $R8
+  ${EndIf}
+!macroend
+
+; The list of the installed files goes with the program when it is uninstalled.
+!macro NSIS_HOOK_PREUNINSTALL
+  Delete "$INSTDIR\installed-files.txt"
+!macroend
+
 ; Uninstalling TypeNova leaves nothing of its own behind. The application data (settings, the link index, the WebView profile) is removed when the box in the
 ; uninstaller window is ticked, and in a silent uninstall (/S), which has no window to tick it in. An update (the new installer runs the old uninstaller with
 ; /UPDATE) keeps it, and so does a reinstall started from the installer's own window with the box left unticked: the settings survive it.
