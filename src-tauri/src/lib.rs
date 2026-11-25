@@ -14,6 +14,7 @@ mod spell;
 mod sqlite_view;
 mod terminal;
 mod window_fit;
+mod window_state;
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -441,6 +442,7 @@ pub fn run() {
       cache_cleanup::claim_profile();
       if let Some(window) = app.get_webview_window("main") {
         harden_webview(&window);
+        window_state::restore(app.handle(), &window);
         window_fit::fit_to_work_area(&window);
       }
       let paths = launch_paths(&std::env::args().collect::<Vec<_>>());
@@ -456,6 +458,14 @@ pub fn run() {
     // Otherwise an invisible instance would remain and the single-instance guard would swallow the next launch.
     .manage(terminal::Terminals::default())
     .on_window_event(|window, event| {
+      if window.label() == "main" {
+        let app = window.app_handle();
+        match event {
+          tauri::WindowEvent::Moved(_) | tauri::WindowEvent::Resized(_) => { if let Some(main) = app.get_webview_window("main") { window_state::track(&main); } }
+          tauri::WindowEvent::CloseRequested { .. } => { if let Some(main) = app.get_webview_window("main") { window_state::track(&main); } window_state::save(app); }
+          _ => {}
+        }
+      }
       if let tauri::WindowEvent::Destroyed = event {
         let app = window.app_handle();
         let another_editor_left = app.webview_windows().keys().any(|label| label != window.label() && is_editor_window_label(label));
