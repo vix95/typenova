@@ -6,13 +6,15 @@ import { normalizedFsPath, parentPath } from "../filesystem/project-tree-operati
 import { langText } from "../i18n/language";
 import { releaseCustomSelects, themeSelect } from "../ui/custom-select";
 import { showToast } from "../ui/toast";
-import { gitOverview, gitRepoRoot, type GitOverview } from "./git-api";
+import { gitOverview, gitRepoRoot, gitStashList, type GitOverview, type GitStash } from "./git-api";
 import { createBranchPanel } from "./git-branches";
 import { createCommitList } from "./git-commit-list";
 import { createDetailPanel } from "./git-detail";
 import { installGitGutter } from "./git-gutter";
 import { installGitPanel } from "./git-panel";
+import { createGitOps } from "./git-ops-ui";
 import { cloneRepository, createRepository, installGitRepoActions, pullChanges } from "./git-repo-actions";
+import { createOperationBanner, createOpsToolbar } from "./git-toolbar";
 import { installGitSync } from "./git-sync-dialog";
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className = "", text = ""): HTMLElementTagNameMap[K] => {
@@ -68,10 +70,13 @@ export async function openGitHistory(): Promise<void> {
   const repos = await findRepositories().catch(() => [] as string[]);
   if (!repos.length) { openWithoutRepository(); return; }
 
-  let repo = repos[0], rev = "", overview: GitOverview | null = null;
+  let repo = repos[0], rev = "", overview: GitOverview | null = null, stashes: readonly GitStash[] = [];
   const detail = createDetailPanel({ repo: () => repo, openCommit: hash => void list.jumpTo(hash).then(found => { if (!found) showToast(langText("Tego commita nie ma na bieżącej liście (inna gałąź).", "That commit is not in the current list (another branch).")); }) });
-  const list = createCommitList(hash => void detail.show(hash));
-  const branches = createBranchPanel(target => { rev = target; if (overview) branches.render(overview, rev); void list.reset(repo, rev, remotes()); });
+  const ops = createGitOps({ repo: () => repo, current: () => (overview && !overview.detached ? overview.head : null), reload: () => load(), host: () => dialog });
+  const list = createCommitList(hash => void detail.show(hash), ops.commitMenu);
+  const branches = createBranchPanel(target => { rev = target; if (overview) branches.render(overview, rev, stashes); void list.reset(repo, rev, remotes()); }, { branch: ops.branchMenu, tag: ops.tagMenu, stash: ops.stashMenu, open: (name, remote) => void ops.open(name, remote) });
+  const toolbar2 = createOpsToolbar({ fetch: ops.fetch, pull: async () => { await pullChanges(repo); await load(); }, push: ops.push, stash: ops.stash });
+  const banner = createOperationBanner(() => void ops.continueOperation(), () => void ops.abortOperation());
   const remotes = () => new Set((overview?.branches ?? []).filter(branch => branch.remote).map(branch => branch.name));
 
   const dialog = el("dialog", "git-dialog"); dialog.setAttribute("aria-labelledby", "gitTitle");
@@ -82,23 +87,27 @@ export async function openGitHistory(): Promise<void> {
   const status = el("div", "git-status-line");
   const refresh = el("button", "git-small-btn", langText("Odśwież", "Refresh")); refresh.type = "button";
   const toolbar = el("div", "git-toolbar");
-  toolbar.append(repoSelect, status, ...repositoryButtons(dialog, async () => { await pullChanges(repo); await load(); }), refresh);
+  toolbar.append(repoSelect, status, ...repositoryButtons(dialog, null), refresh);
   const columns = el("div", "git-columns"); columns.append(branches.element, list.element, detail.element);
   const close = el("button", "", langText("Zamknij", "Close")); close.type = "button";
   const actions = el("div", "dialog-actions"); actions.append(close);
-  const content = el("div", "dialog-content git-content"); content.append(title, toolbar, columns, actions);
+  const content = el("div", "dialog-content git-content"); content.append(title, toolbar, toolbar2.element, banner.element, columns, actions);
   dialog.append(content); document.body.append(dialog);
   dialog.querySelectorAll("select").forEach(themeSelect);
 
   const load = async () => {
     // The overview and the log are read at the same time: neither waits for the other (the commit list needs the names of the remote branches only to draw its rows).
     const reading = gitOverview(repo);
+    const stashing = gitStashList(repo).catch(() => [] as GitStash[]);
     const remoteNames = reading.then(found => new Set(found.branches.filter(branch => branch.remote).map(branch => branch.name)) as ReadonlySet<string>);
     const listing = list.reset(repo, rev, remoteNames);
     try {
       overview = await reading;
+      stashes = await stashing;
       status.textContent = describeHead(overview, repo);
-      branches.render(overview, rev);
+      branches.render(overview, rev, stashes);
+      toolbar2.update(overview);
+      banner.update(overview.operation);
     } catch (error) { status.textContent = String(error); }
     await listing;
   };
